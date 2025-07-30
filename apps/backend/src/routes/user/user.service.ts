@@ -1,6 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 import { CreateUserInput } from "./dto/create_user.input";
-import { GetUserListInput } from "./dto/get_user_list.input";
 import { UpdateUserInput } from "./dto/update_user.input";
 
 class UserService {
@@ -79,29 +78,24 @@ class UserService {
     return user;
   }
 
-  async getUserList(input: GetUserListInput, centerId: string) {
-    const { take, cursor } = input;
-
+  async getUserList(centerId: string) {
     const userList = await this.prisma.user.findMany({
       where: {
         centerId,
-        OR: input.searchString
-          ? [
-              {
-                firstName: {
-                  contains: input.searchString,
-                  mode: "insensitive",
-                },
-              },
-              {
-                lastName: { contains: input.searchString, mode: "insensitive" },
-              },
-            ]
-          : undefined,
+        // OR: input.searchString
+        //   ? [
+        //       {
+        //         firstName: {
+        //           contains: input.searchString,
+        //           mode: "insensitive",
+        //         },
+        //       },
+        //       {
+        //         lastName: { contains: input.searchString, mode: "insensitive" },
+        //       },
+        //     ]
+        //   : undefined,
       },
-      take,
-      cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 1 : undefined,
       orderBy: {
         createdAt: "desc",
       },

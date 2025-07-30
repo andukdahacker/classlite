@@ -20,10 +20,7 @@ import {
 } from "./dto/delete_user.input";
 import { GetUserInput, GetUserInputSchema } from "./dto/get_user.input";
 import { GetUserResponseSchema } from "./dto/get_user.response";
-import {
-  GetUserListInput,
-  GetUserListInputSchema,
-} from "./dto/get_user_list.input";
+import { GetUserListInputSchema } from "./dto/get_user_list.input";
 import { GetUserListResponseSchema } from "./dto/get_user_list.response";
 import {
   SignInUserInput,
@@ -124,17 +121,14 @@ async function userRoutes(fastify: FastifyInstance, opts: any) {
     schema: {
       description: "Get list of users",
       tags: ["users"],
-      querystring: GetUserListInputSchema,
       response: {
         200: GetUserListResponseSchema,
         500: BaseResponseErrorSchema,
       },
     },
     preHandler: [authMiddleware, roleMiddleware(["ADMIN"])],
-    handler: async (
-      request: FastifyRequest<{ Querystring: GetUserListInput }>,
-      _reply: FastifyReply,
-    ) => await userController.getUserList(request.query, request.jwtPayload),
+    handler: async (request: FastifyRequest, _reply: FastifyReply) =>
+      await userController.getUserList(request.jwtPayload),
   });
 
   fastify.post("/signIn", {

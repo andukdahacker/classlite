@@ -543,11 +543,7 @@ export interface paths {
         /** @description Get list of users */
         get: {
             parameters: {
-                query: {
-                    take: number;
-                    cursor?: string;
-                    searchString?: string;
-                };
+                query?: never;
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -561,38 +557,32 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            data?: {
-                                nodes: {
-                                    user: {
-                                        id: string;
-                                        email: string;
-                                        /** @default null */
-                                        username: string | null;
-                                        /** @default null */
-                                        firstName: string | null;
-                                        /** @default null */
-                                        lastName: string | null;
-                                        centerId: string;
-                                        role: "ADMIN" | "TEACHER" | "STUDENT";
-                                        /** @default null */
-                                        phoneNumber: string | null;
-                                        createdAt: unknown;
-                                        updatedAt: unknown;
-                                    };
-                                    classes: {
-                                        id: string;
-                                        name: string;
-                                        /** @default null */
-                                        description: string | null;
-                                        createdAt: unknown;
-                                        updatedAt: unknown;
-                                    }[];
-                                }[];
-                                pageInfo: {
-                                    hasNextPage: boolean;
-                                    cursor?: string;
+                            data: {
+                                user: {
+                                    id: string;
+                                    email: string;
+                                    /** @default null */
+                                    username: string | null;
+                                    /** @default null */
+                                    firstName: string | null;
+                                    /** @default null */
+                                    lastName: string | null;
+                                    centerId: string;
+                                    role: "ADMIN" | "TEACHER" | "STUDENT";
+                                    /** @default null */
+                                    phoneNumber: string | null;
+                                    createdAt: unknown;
+                                    updatedAt: unknown;
                                 };
-                            };
+                                classes: {
+                                    id: string;
+                                    name: string;
+                                    /** @default null */
+                                    description: string | null;
+                                    createdAt: unknown;
+                                    updatedAt: unknown;
+                                }[];
+                            }[];
                             message: string;
                         };
                     };
@@ -2586,8 +2576,6 @@ export interface components {
         };
         /** GetUserListInput */
         GetUserListInput: {
-            take: number;
-            cursor?: string;
             searchString?: string;
         };
         /** SignInUserInput */

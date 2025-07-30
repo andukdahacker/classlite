@@ -7,7 +7,6 @@ import { CreateUserResponse } from "./dto/create_user.response";
 import { DeleteUserInput } from "./dto/delete_user.input";
 import { GetUserInput } from "./dto/get_user.input";
 import { GetUserResponse } from "./dto/get_user.response";
-import { GetUserListInput } from "./dto/get_user_list.input";
 import { GetUserListResponse } from "./dto/get_user_list.response";
 import { SignInUserInput } from "./dto/sign_in_user.input";
 import { SignInUserResponse } from "./dto/sign_in_user.response";
@@ -97,51 +96,16 @@ class UserController {
     };
   }
 
-  async getUserList(
-    input: GetUserListInput,
-    jwtPayload: AppJwtPayload,
-  ): Promise<GetUserListResponse> {
+  async getUserList(jwtPayload: AppJwtPayload): Promise<GetUserListResponse> {
     const centerId = await this.getCenterId(jwtPayload);
 
-    const users = await this.userService.getUserList(input, centerId);
-
-    const mapped = users.map((e) => ({
-      user: e,
-      classes: e.classes.map((c) => c.class),
-    }));
-
-    if (users.length < input.take) {
-      return {
-        data: {
-          nodes: mapped,
-          pageInfo: { hasNextPage: false },
-        },
-        message: "Get user list successfully",
-      };
-    }
-
-    const cursor = users[users.length - 1]!.id;
-
-    const nextCall = await this.userService.getUserList(
-      { ...input, cursor },
-      centerId,
-    );
-
-    if (nextCall.length == 0) {
-      return {
-        data: {
-          nodes: mapped,
-          pageInfo: { hasNextPage: false },
-        },
-        message: "Get user list successfully",
-      };
-    }
+    const users = await this.userService.getUserList(centerId);
 
     return {
-      data: {
-        nodes: mapped,
-        pageInfo: { hasNextPage: true, cursor },
-      },
+      data: users.map((e) => ({
+        classes: e.classes.map((c) => c.class),
+        user: e,
+      })),
       message: "Get user list successfully",
     };
   }

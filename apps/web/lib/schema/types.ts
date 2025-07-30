@@ -59,6 +59,8 @@ export type ListeningTask = ListeningMultipleChoiceTask;
 export type WritingExercise = components["schemas"]["WritingExercise"];
 export type WritingExerciseType = components["schemas"]["WritingExerciseType"];
 
+export type UpdateUserInput = components["schemas"]["UpdateUserInput"];
+export type CreateUserInput = components["schemas"]["CreateUserInput"];
 export type RegisterCenterInput = components["schemas"]["RegisterCenterInput"];
 export type GetCenterClassListInput =
   components["schemas"]["GetClassListInput"];

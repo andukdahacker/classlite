@@ -44,7 +44,7 @@ const navItems: NavItem[] = [
   },
   {
     title: "Users",
-    url: "/users",
+    url: "/dashboard/users",
     icon: <Users2 />,
     allowRole: ["ADMIN"],
   },
