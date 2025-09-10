@@ -69,17 +69,8 @@ class ClassService {
 
   async getClassList(input: GetClassListInput) {
     const klasses = await this.db.class.findMany({
-      take: input.take,
-      cursor: input.cursor ? { id: input.cursor } : undefined,
-      skip: input.cursor ? 1 : undefined,
       where: {
         centerId: input.centerId,
-        name: input.searchString
-          ? {
-              contains: input.searchString,
-              mode: "insensitive",
-            }
-          : undefined,
       },
       include: {
         classMembers: {
@@ -95,21 +86,12 @@ class ClassService {
 
   async getClassListByUser(input: GetClassListByUserInput) {
     const klasses = await this.db.class.findMany({
-      take: input.take,
-      skip: input.cursor ? 1 : undefined,
-      cursor: input.cursor ? { id: input.cursor } : undefined,
       where: {
         classMembers: {
           some: {
             userId: input.userId,
           },
         },
-        name: input.searchString
-          ? {
-              contains: input.searchString,
-              mode: "insensitive",
-            }
-          : undefined,
       },
       include: {
         classMembers: {

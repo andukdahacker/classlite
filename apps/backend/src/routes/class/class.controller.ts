@@ -110,42 +110,8 @@ class ClassController {
       };
     });
 
-    if (klasses.length < input.take) {
-      return {
-        data: {
-          nodes: transformed,
-          pageInfo: {
-            hasNextPage: false,
-          },
-        },
-        message: "Get class list successfully",
-      };
-    }
-
-    const cursor = klasses[klasses.length - 1]!.id;
-
-    const nextCall = await this.classService.getClassList({ ...input, cursor });
-
-    if (nextCall.length == 0) {
-      return {
-        data: {
-          nodes: transformed,
-          pageInfo: {
-            hasNextPage: false,
-          },
-        },
-        message: "Get class list successfully",
-      };
-    }
-
     return {
-      data: {
-        nodes: transformed,
-        pageInfo: {
-          hasNextPage: true,
-          cursor,
-        },
-      },
+      data: transformed,
       message: "Get class list successfully",
     };
   }
@@ -162,45 +128,8 @@ class ClassController {
       };
     });
 
-    if (klasses.length < input.take) {
-      return {
-        data: {
-          nodes: transformed,
-          pageInfo: {
-            hasNextPage: false,
-          },
-        },
-        message: "Get class list successfully",
-      };
-    }
-
-    const cursor = klasses[klasses.length - 1]!.id;
-
-    const nextCall = await this.classService.getClassListByUser({
-      ...input,
-      cursor,
-    });
-
-    if (nextCall.length == 0) {
-      return {
-        data: {
-          nodes: transformed,
-          pageInfo: {
-            hasNextPage: false,
-          },
-        },
-        message: "Get class list successfully",
-      };
-    }
-
     return {
-      data: {
-        nodes: transformed,
-        pageInfo: {
-          hasNextPage: true,
-          cursor,
-        },
-      },
+      data: transformed,
       message: "Get class list successfully",
     };
   }

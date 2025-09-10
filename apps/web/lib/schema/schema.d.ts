@@ -969,10 +969,7 @@ export interface paths {
         get: {
             parameters: {
                 query: {
-                    take: number;
-                    cursor?: string;
                     centerId: string;
-                    searchString?: string;
                 };
                 header?: never;
                 path?: never;
@@ -987,38 +984,32 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            data?: {
-                                nodes: {
-                                    class: {
-                                        id: string;
-                                        name: string;
-                                        /** @default null */
-                                        description: string | null;
-                                        createdAt: unknown;
-                                        updatedAt: unknown;
-                                    };
-                                    members: {
-                                        id: string;
-                                        email: string;
-                                        /** @default null */
-                                        username: string | null;
-                                        /** @default null */
-                                        firstName: string | null;
-                                        /** @default null */
-                                        lastName: string | null;
-                                        centerId: string;
-                                        role: "ADMIN" | "TEACHER" | "STUDENT";
-                                        /** @default null */
-                                        phoneNumber: string | null;
-                                        createdAt: unknown;
-                                        updatedAt: unknown;
-                                    }[];
-                                }[];
-                                pageInfo: {
-                                    hasNextPage: boolean;
-                                    cursor?: string;
+                            data: {
+                                class: {
+                                    id: string;
+                                    name: string;
+                                    /** @default null */
+                                    description: string | null;
+                                    createdAt: unknown;
+                                    updatedAt: unknown;
                                 };
-                            };
+                                members: {
+                                    id: string;
+                                    email: string;
+                                    /** @default null */
+                                    username: string | null;
+                                    /** @default null */
+                                    firstName: string | null;
+                                    /** @default null */
+                                    lastName: string | null;
+                                    centerId: string;
+                                    role: "ADMIN" | "TEACHER" | "STUDENT";
+                                    /** @default null */
+                                    phoneNumber: string | null;
+                                    createdAt: unknown;
+                                    updatedAt: unknown;
+                                }[];
+                            }[];
                             message: string;
                         };
                     };
@@ -1057,9 +1048,6 @@ export interface paths {
             parameters: {
                 query: {
                     userId: string;
-                    take: number;
-                    cursor?: string;
-                    searchString?: string;
                 };
                 header?: never;
                 path?: never;
@@ -1074,38 +1062,32 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            data?: {
-                                nodes: {
-                                    class: {
-                                        id: string;
-                                        name: string;
-                                        /** @default null */
-                                        description: string | null;
-                                        createdAt: unknown;
-                                        updatedAt: unknown;
-                                    };
-                                    members: {
-                                        id: string;
-                                        email: string;
-                                        /** @default null */
-                                        username: string | null;
-                                        /** @default null */
-                                        firstName: string | null;
-                                        /** @default null */
-                                        lastName: string | null;
-                                        centerId: string;
-                                        role: "ADMIN" | "TEACHER" | "STUDENT";
-                                        /** @default null */
-                                        phoneNumber: string | null;
-                                        createdAt: unknown;
-                                        updatedAt: unknown;
-                                    }[];
-                                }[];
-                                pageInfo: {
-                                    hasNextPage: boolean;
-                                    cursor?: string;
+                            data: {
+                                class: {
+                                    id: string;
+                                    name: string;
+                                    /** @default null */
+                                    description: string | null;
+                                    createdAt: unknown;
+                                    updatedAt: unknown;
                                 };
-                            };
+                                members: {
+                                    id: string;
+                                    email: string;
+                                    /** @default null */
+                                    username: string | null;
+                                    /** @default null */
+                                    firstName: string | null;
+                                    /** @default null */
+                                    lastName: string | null;
+                                    centerId: string;
+                                    role: "ADMIN" | "TEACHER" | "STUDENT";
+                                    /** @default null */
+                                    phoneNumber: string | null;
+                                    createdAt: unknown;
+                                    updatedAt: unknown;
+                                }[];
+                            }[];
                             message: string;
                         };
                     };
@@ -1263,6 +1245,7 @@ export interface paths {
                     "application/json": {
                         id: string;
                         name?: string;
+                        description?: string;
                         content: unknown;
                     };
                 };
@@ -2603,10 +2586,7 @@ export interface components {
         };
         /** GetClassListInput */
         GetClassListInput: {
-            take: number;
-            cursor?: string;
             centerId: string;
-            searchString?: string;
         };
         /** UpdateClassInput */
         UpdateClassInput: {
@@ -2619,9 +2599,6 @@ export interface components {
         /** GetClassListByUserInput */
         GetClassListByUserInput: {
             userId: string;
-            take: number;
-            cursor?: string;
-            searchString?: string;
         };
         /** GetClassMemberInput */
         GetClassMemberInput: {
@@ -2917,6 +2894,7 @@ export interface components {
         UpdateExerciseInput: {
             id: string;
             name?: string;
+            description?: string;
             content: unknown;
         };
         /** CreateExerciseResponseSchema */

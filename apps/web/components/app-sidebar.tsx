@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  Activity,
-  BookPlus,
   GalleryVerticalEnd,
   LayoutDashboardIcon,
   LibraryBig,
@@ -13,7 +11,7 @@ import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
-import useMe from "@/lib/features/auth/hooks/me.hook";
+import { AuthContext } from "@/lib/features/auth/components/auth-context";
 import { UserRole } from "@/lib/schema/types";
 import {
   Sidebar,
@@ -50,33 +48,27 @@ const navItems: NavItem[] = [
   },
   {
     title: "Classes",
-    url: "/class",
+    url: "/dashboard/class",
     icon: <School />,
     allowRole: ["ADMIN", "TEACHER", "STUDENT"],
   },
   {
     title: "Exercises",
-    url: "/exercises",
+    url: "/dashboard/exercises",
     icon: <LibraryBig />,
     allowRole: ["ADMIN", "TEACHER"],
   },
-  {
-    title: "Exercise Builder",
-    url: "/exercises-builder",
-    icon: <BookPlus />,
-    allowRole: ["ADMIN", "TEACHER"],
-  },
-  {
-    title: "Analytics",
-    url: "/analytics",
-    icon: <Activity />,
-    allowRole: ["ADMIN", "TEACHER", "STUDENT"],
-  },
+  // {
+  //   title: "Analytics",
+  //   url: "/dashboard/analytics",
+  //   icon: <Activity />,
+  //   allowRole: ["ADMIN", "TEACHER", "STUDENT"],
+  // },
 ] as const;
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { data } = useMe();
-  const isCenter = data?.center;
+  const { center, user } = React.useContext(AuthContext);
+  const isCenter = center !== undefined;
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -90,7 +82,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <div className="flex flex-col text-left text-sm leading-tight">
                 <span className="truncate font-medium">IELTS Nook</span>
                 <span className="truncate text-xs">
-                  {isCenter ? "ADMIN" : data?.user?.role}
+                  {isCenter ? "ADMIN" : user?.role}
                 </span>
               </div>
             </SidebarMenuButton>
@@ -106,12 +98,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           user={
             isCenter
               ? {
-                  email: data.center?.email ?? "",
-                  name: data.center?.name ?? "",
+                  email: center?.email ?? "",
+                  name: center?.name ?? "",
                 }
               : {
-                  email: data?.user?.email ?? "",
-                  name: data?.user?.username ?? "",
+                  email: user?.email ?? "",
+                  name: user?.username ?? "",
                 }
           }
         />

@@ -19,7 +19,9 @@ import useRegister from "../hooks/register.hook";
 import { useSignUpWithGoogle } from "../hooks/sign-up-with-google.hook";
 
 const signUpFormSchema = z.object({
-  email: z.email(),
+  email: z
+    .email({ error: "Invalid email format" })
+    .nonempty({ error: "Please input email" }),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters long")

@@ -8,7 +8,7 @@ export function middleware(request: NextRequest) {
   const isPublic = publicRoutes.includes(path);
   const token = request.cookies.get("token");
 
-  if (isProtected && !token) {
+  if (!isPublic && !token) {
     return NextResponse.redirect(new URL("/sign-in", request.nextUrl));
   }
 

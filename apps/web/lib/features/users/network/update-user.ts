@@ -1,10 +1,10 @@
 import { UpdateUserInput } from "@/lib/schema/types";
 import client from "../../../core/client";
 
-async function updateUser(input: UpdateUserInput, userId: string) {
+async function updateUser(input: UpdateUserInput) {
   const result = await client.PUT("/api/user/", {
     body: {
-      userId,
+      userId: input.userId,
       firstName: input.firstName,
       lastName: input.lastName,
       phoneNumber: input.phoneNumber,

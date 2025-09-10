@@ -19,12 +19,6 @@ function getCookie(cname: string) {
 
 const authMiddleware: Middleware = {
   async onRequest({ request }) {
-    const token = getCookie("token");
-
-    if (token) {
-      request.headers.set("Authorization", `Bearer ${token}`);
-    }
-
     return request;
   },
 

@@ -1,4 +1,3 @@
-import { AddUserButton } from "@/lib/features/users/components/add-user-button";
 import { UsersTable } from "@/lib/features/users/components/users-table";
 
 export default function Page() {
@@ -9,7 +8,6 @@ export default function Page() {
           <span className="text-2xl font-bold">Users</span>
           <span>Manage your staffs, teacher and students</span>
         </div>
-        <AddUserButton />
       </div>
       <UsersTable />
     </div>

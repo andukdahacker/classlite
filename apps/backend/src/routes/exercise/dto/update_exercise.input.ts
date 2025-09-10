@@ -4,6 +4,7 @@ export const UpdateExerciseInputSchema = Type.Object(
   {
     id: Type.String(),
     name: Type.Optional(Type.String()),
+    description: Type.Optional(Type.String()),
     content: Type.Any(),
   },
   { $id: "UpdateExerciseInput" },

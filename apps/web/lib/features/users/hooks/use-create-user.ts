@@ -1,12 +1,20 @@
+import { User } from "@/lib/schema/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createUser } from "../network/create-user";
 
-function useCreateUser() {
+interface UseCreateUserProps {
+  onSuccess?: (user: User) => void;
+}
+
+function useCreateUser(props?: UseCreateUserProps) {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: createUser,
     onSuccess: (data) => {
+      if (props?.onSuccess) {
+        props.onSuccess(data.user);
+      }
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast("Created new user successfully");
     },

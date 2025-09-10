@@ -10,10 +10,13 @@ import {
   DialogTrigger,
 } from "@workspace/ui/components/dialog";
 import { PlusIcon } from "lucide-react";
-
+import { useState } from "react";
+import { AddUserForm } from "./add-user-form";
 function AddUserButton() {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
           <PlusIcon />
@@ -25,6 +28,7 @@ function AddUserButton() {
           <DialogTitle>Create a new user</DialogTitle>
           <DialogDescription>Let's create a new user</DialogDescription>
         </DialogHeader>
+        <AddUserForm onCreateUser={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
