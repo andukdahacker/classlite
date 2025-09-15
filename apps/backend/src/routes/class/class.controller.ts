@@ -1,17 +1,19 @@
-import { NoDataResponse } from "../../types/response";
-import ClassService from "./class.service";
-import { CreateClassInput } from "./dto/create_class.input";
-import { CreateClassResponse } from "./dto/create_class.response";
-import { DeleteClassInput } from "./dto/delete_class.input";
-import { GetClassInput } from "./dto/get_class.input";
-import { GetClassResponse } from "./dto/get_class.response";
-import { GetClassListInput } from "./dto/get_class_list.input";
-import { GetClassListResponse } from "./dto/get_class_list.response";
-import { GetClassListByUserInput } from "./dto/get_class_list_by_user.input";
-import { GetClassMemberInput } from "./dto/get_class_member.input";
-import { GetClassMemberResponse } from "./dto/get_class_member.response";
-import { UpdateClassInput } from "./dto/update_class.input";
-import { UpdateClassResponse } from "./dto/update_class.response";
+import {
+  CreateClassInput,
+  CreateClassResponse,
+  DeleteClassInput,
+  GetClassInput,
+  GetClassListByUserInput,
+  GetClassListInput,
+  GetClassListResponse,
+  GetClassMemberInput,
+  GetClassMemberResponse,
+  GetClassResponse,
+  NoDataResponse,
+  UpdateClassInput,
+  UpdateClassResponse,
+} from "@workspace/types";
+import ClassService from "./class.service.js";
 
 class ClassController {
   constructor(private readonly classService: ClassService) {}

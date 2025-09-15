@@ -5,6 +5,7 @@
   "prisma": {
     "seed": "ts-node prisma/seed_user.ts"
   },
+  "type": "module",
   "scripts": {
     "dev": "tsc-watch --onSuccess \"node ./dist/index.js\"",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -31,7 +32,8 @@
     "firebase-admin": "^13.0.2",
     "jsonwebtoken": "^9.0.2",
     "mime-types": "^2.1.35",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "@workspace/types": "workspace:*"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",

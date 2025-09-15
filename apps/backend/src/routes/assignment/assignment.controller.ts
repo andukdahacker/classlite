@@ -1,16 +1,18 @@
-import { NoDataResponse } from "../../types/response";
-import AssignmentService from "./assignment.service";
-import { CreateAssignmentsInput } from "./dto/create_assignments.input";
-import { CreateAssignmentResponse } from "./dto/create_assignments.response";
-import { DeleteAssignmentsInput } from "./dto/delete_assignments.input";
-import { GetAssignmentInput } from "./dto/get_assignment.input";
-import { GetAssignmentResponse } from "./dto/get_assignment.response";
-import { GetAssignmentsByExerciseInput } from "./dto/get_assignments_by_exercise.input";
-import { GetAssignmentsByExerciseResponse } from "./dto/get_assignments_by_exercise.response";
-import { GetAssignmentsByUserInput } from "./dto/get_assignments_by_user.input";
-import { GetAssignmentByUserResponse } from "./dto/get_assignments_by_user.response";
-import { UpdateAssignmentInput } from "./dto/update_assignments.input";
-import { UpdateAssignmentsResponse } from "./dto/update_assignments.response";
+import {
+  CreateAssignmentResponse,
+  CreateAssignmentsInput,
+  DeleteAssignmentsInput,
+  GetAssignmentByUserResponse,
+  GetAssignmentInput,
+  GetAssignmentResponse,
+  GetAssignmentsByExerciseInput,
+  GetAssignmentsByExerciseResponse,
+  GetAssignmentsByUserInput,
+  NoDataResponse,
+  UpdateAssignmentInput,
+  UpdateAssignmentsResponse,
+} from "@workspace/types";
+import AssignmentService from "./assignment.service.js";
 
 class AssignmentController {
   constructor(private readonly assignmentService: AssignmentService) {}

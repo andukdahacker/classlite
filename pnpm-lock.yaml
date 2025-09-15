@@ -59,6 +59,9 @@ importers:
       '@sinclair/typebox':
         specifier: ^0.34.11
         version: 0.34.37
+      '@workspace/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
@@ -147,6 +150,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.3.1
         version: 3.3.1
+      '@workspace/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@workspace/ui':
         specifier: workspace:*
         version: link:../../packages/ui

@@ -1,9 +1,11 @@
 import { PrismaClient } from "@prisma/client";
-import { CreateExerciseInput } from "./dto/create_exercise.input";
-import { DeleteExerciseInput } from "./dto/delete_exercise.input";
-import { GetExerciseInput } from "./dto/get_exercise.input";
-import { GetExerciseListInput } from "./dto/get_exercise_list.input";
-import { UpdateExerciseInput } from "./dto/update_exercise.input";
+import {
+  CreateExerciseInput,
+  DeleteExerciseInput,
+  GetExerciseInput,
+  GetExerciseListInput,
+  UpdateExerciseInput,
+} from "@workspace/types";
 
 class ExerciseService {
   constructor(private readonly db: PrismaClient) {}

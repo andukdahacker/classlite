@@ -11,7 +11,7 @@ function useUpdateExercise() {
     onSuccess: () => {
       toast.success("Updated exercise successfully");
       queryClient.invalidateQueries({ queryKey: ["exerciseList"] });
-      router.push(`/dashboard/exercises`);
+      // router.push(`/dashboard/exercises`);
     },
     onError: (error) => {
       toast.error("Failed to update exercise due to: " + error.message);

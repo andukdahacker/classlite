@@ -1,11 +1,13 @@
 import { PrismaClient } from "@prisma/client";
-import { CreateClassInput } from "./dto/create_class.input";
-import { DeleteClassInput } from "./dto/delete_class.input";
-import { GetClassInput } from "./dto/get_class.input";
-import { GetClassListInput } from "./dto/get_class_list.input";
-import { GetClassListByUserInput } from "./dto/get_class_list_by_user.input";
-import { GetClassMemberInput } from "./dto/get_class_member.input";
-import { UpdateClassInput } from "./dto/update_class.input";
+import {
+  CreateClassInput,
+  DeleteClassInput,
+  GetClassInput,
+  GetClassListByUserInput,
+  GetClassListInput,
+  GetClassMemberInput,
+  UpdateClassInput,
+} from "@workspace/types";
 
 class ClassService {
   constructor(private readonly db: PrismaClient) {}

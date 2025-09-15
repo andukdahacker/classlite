@@ -13,20 +13,24 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@workspace/ui/components/radio-group";
-import { ChevronDown, ChevronUp, GripVertical, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, GripVertical, X } from "lucide-react";
 import { useContext, useState } from "react";
 import { ReadingComposerContext } from "./reading-composer-context";
 
 interface MultipleChoiceTaskBuilderProps {
   task: ReadingMultipleChoiceTask;
   index: number;
+  dragHandleProps: any;
 }
 
 export function MultipleChoiceTaskBuilder({
   task,
   index,
+  dragHandleProps,
 }: MultipleChoiceTaskBuilderProps) {
-  const { editTask, removeTask } = useContext(ReadingComposerContext);
+  const { editTask, removeTask, duplicateTask } = useContext(
+    ReadingComposerContext,
+  );
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleInstructionChange = (e: any) => {
@@ -48,15 +52,6 @@ export function MultipleChoiceTaskBuilder({
     },
     immediatelyRender: false,
   });
-
-  const handleQuestionChange = (
-    qIndex: number,
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const newQuestions = [...task.questions];
-    newQuestions[qIndex]!.content = e.target.value;
-    editTask(index, { ...task, questions: newQuestions });
-  };
 
   const editQuestionContent = (questionIndex: number, content: string) => {
     const newQuestions = [...task.questions];
@@ -256,9 +251,14 @@ export function MultipleChoiceTaskBuilder({
   };
 
   return (
-    <div className="rounded-md border p-4 flex flex-col gap-4 w-full max-w-2xl">
+    <div className="rounded-md border p-4 flex flex-col gap-4 w-full max-w-2xl bg-background">
       <div className="flex justify-between items-center">
-        <h3 className="font-bold">Multiple Choice Task</h3>
+        <div className="flex items-center gap-2">
+          <div {...dragHandleProps} className="cursor-grab">
+            <GripVertical />
+          </div>
+          <h3 className="font-bold">Multiple Choice Task</h3>
+        </div>
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -266,6 +266,13 @@ export function MultipleChoiceTaskBuilder({
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => duplicateTask(index)}
+          >
+            <Copy size={16} />
           </Button>
           <Button variant="ghost" size="sm" onClick={() => removeTask(index)}>
             <X size={16} />
@@ -321,7 +328,9 @@ export function MultipleChoiceTaskBuilder({
                           <Input
                             placeholder="Question"
                             value={q.content}
-                            onChange={(e) => handleQuestionChange(qIndex, e)}
+                            onChange={(e) =>
+                              editQuestionContent(qIndex, e.target.value)
+                            }
                           />
                           <DragDropContext
                             onDragEnd={(result) => {
@@ -371,6 +380,7 @@ export function MultipleChoiceTaskBuilder({
                                               id={`${qIndex}-${oIndex}`}
                                             />
                                             <Input
+                                              placeholder="Option"
                                               value={opt.value}
                                               onChange={(event) => {
                                                 editOptionContent(

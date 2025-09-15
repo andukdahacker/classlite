@@ -1,7 +1,7 @@
+import { UserRole } from "@workspace/types";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { JwtPayload } from "jsonwebtoken";
-import { UserRole } from "../routes/user/schema/user.schema";
-import JwtService from "../services/jwt.service";
+import JwtService from "../services/jwt.service.js";
 
 export type AppJwtPayload = JwtPayload & {
   id: string;

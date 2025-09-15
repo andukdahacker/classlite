@@ -115,6 +115,44 @@ function ReadingComposerProvider({
     });
   };
 
+  const duplicateTask = (index: number) => {
+    setTasks((tasks) => {
+      const newArray = [...tasks];
+      const taskToDuplicate = newArray[index];
+      if (taskToDuplicate) {
+        newArray.splice(index + 1, 0, taskToDuplicate);
+      }
+
+      const remappedOrder: typeof newArray = newArray.map((e, i) => {
+        return {
+          ...e,
+          order: i + 1,
+        };
+      });
+
+      return remappedOrder;
+    });
+  };
+
+  const reorderTasks = (sourceIndex: number, destinationIndex: number) => {
+    setTasks((tasks) => {
+      const newArray = [...tasks];
+      const [removed] = newArray.splice(sourceIndex, 1);
+      if (removed) {
+        newArray.splice(destinationIndex, 0, removed);
+      }
+
+      const remappedOrder: typeof newArray = newArray.map((e, i) => {
+        return {
+          ...e,
+          order: i + 1,
+        };
+      });
+
+      return remappedOrder;
+    });
+  };
+
   function editTask<T extends ReadingTask>(index: number, task: T) {
     setTasks((tasks) => {
       const newArray = [...tasks];
@@ -144,7 +182,10 @@ function ReadingComposerProvider({
         tasks,
         addTask,
         removeTask,
+        duplicateTask,
+        reorderTasks,
         editTask,
+        exercise,
       }}
     >
       {children}

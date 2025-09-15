@@ -1,23 +1,25 @@
-import { JsonObject } from "@prisma/client/runtime/library";
-import { Prisma } from "../../generated/prisma/client";
-import S3Service from "../../services/s3_service";
-import { NoDataResponse } from "../../types/response";
-import { CreateExerciseInput } from "./dto/create_exercise.input";
-import { CreateExerciseResponse } from "./dto/create_exercise.response";
-import { DeleteExerciseInput } from "./dto/delete_exercise.input";
-import { DeleteListeningFileInput } from "./dto/delete_listening_file.input";
-import { DeleteWritingImageInput } from "./dto/delete_writing_image.input";
-import { GetExerciseInput } from "./dto/get_exercise.input";
-import { GetExerciseResponse } from "./dto/get_exercise.response";
-import { GetExerciseListInput } from "./dto/get_exercise_list.input";
-import { GetExerciseListResponse } from "./dto/get_exercise_list.response";
-import { UpdateExerciseInput } from "./dto/update_exercise.input";
-import { UpdateExerciseResponse } from "./dto/update_exercise.response";
-import { UploadListeningFileInput } from "./dto/upload_listening_file.input";
-import { UploadListeningFileResponse } from "./dto/upload_listening_file.response";
-import { UploadWritingImageInput } from "./dto/upload_writing_image.input";
-import { UploadWritingImageResponse } from "./dto/upload_writing_image.response";
-import ExerciseService from "./exercise.service";
+import { JsonObject } from "@prisma/client/runtime/library.js";
+import {
+  CreateExerciseInput,
+  CreateExerciseResponse,
+  DeleteExerciseInput,
+  DeleteListeningFileInput,
+  DeleteWritingImageInput,
+  GetExerciseInput,
+  GetExerciseListInput,
+  GetExerciseListResponse,
+  GetExerciseResponse,
+  NoDataResponse,
+  UpdateExerciseInput,
+  UpdateExerciseResponse,
+  UploadListeningFileInput,
+  UploadListeningFileResponse,
+  UploadWritingImageInput,
+  UploadWritingImageResponse,
+} from "@workspace/types";
+import { Prisma } from "../../generated/prisma/client/index.js";
+import S3Service from "../../services/s3_service.js";
+import ExerciseService from "./exercise.service.js";
 
 class ExerciseController {
   constructor(

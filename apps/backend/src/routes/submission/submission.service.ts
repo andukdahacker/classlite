@@ -1,10 +1,12 @@
 import { PrismaClient } from "@prisma/client";
-import { CreateSubmissionInput } from "./dto/create_submission.input";
-import { GetSubmissionInput } from "./dto/get_submission.input";
-import { GetSubmissionListInput } from "./dto/get_submission_list.input";
-import { UpdateSubmissionInput } from "./dto/update_submission.input";
-import { ListeningSubmissionGrade } from "./schema/listening_submission_grade.schema";
-import { ReadingSubmissionGrade } from "./schema/reading_submission_grade.schema";
+import {
+  CreateSubmissionInput,
+  GetSubmissionInput,
+  GetSubmissionListInput,
+  ListeningSubmissionGrade,
+  ReadingSubmissionGrade,
+  UpdateSubmissionInput,
+} from "@workspace/types";
 
 class SubmissionService {
   constructor(private readonly db: PrismaClient) {}

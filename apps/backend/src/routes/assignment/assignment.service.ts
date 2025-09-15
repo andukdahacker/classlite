@@ -1,10 +1,12 @@
 import { PrismaClient } from "@prisma/client";
-import { CreateAssignmentsInput } from "./dto/create_assignments.input";
-import { DeleteAssignmentsInput } from "./dto/delete_assignments.input";
-import { GetAssignmentInput } from "./dto/get_assignment.input";
-import { GetAssignmentsByExerciseInput } from "./dto/get_assignments_by_exercise.input";
-import { GetAssignmentsByUserInput } from "./dto/get_assignments_by_user.input";
-import { UpdateAssignmentInput } from "./dto/update_assignments.input";
+import {
+  CreateAssignmentsInput,
+  DeleteAssignmentsInput,
+  GetAssignmentInput,
+  GetAssignmentsByExerciseInput,
+  GetAssignmentsByUserInput,
+  UpdateAssignmentInput,
+} from "@workspace/types";
 
 class AssignmentService {
   constructor(private readonly db: PrismaClient) {}

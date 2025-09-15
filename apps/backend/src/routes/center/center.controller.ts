@@ -1,12 +1,14 @@
 import { Auth } from "firebase-admin/auth";
-import { AppJwtPayload } from "../../middlewares/auth.middleware";
-import JwtService from "../../services/jwt.service";
-import CenterService from "./center.service";
-import { GetCenterResponse } from "./dto/get_center.response";
-import { RegisterCenterInput } from "./dto/register_center.input";
-import { RegisterCenterResponse } from "./dto/register_center.response";
-import { SignInCenterInput } from "./dto/sign_in_center.input";
-import { SignInCenterResponse } from "./dto/sign_in_center.response";
+import {
+  GetCenterResponse,
+  RegisterCenterInput,
+  RegisterCenterResponse,
+  SignInCenterInput,
+  SignInCenterResponse,
+} from "@workspace/types";
+import { AppJwtPayload } from "../../middlewares/auth.middleware.js";
+import JwtService from "../../services/jwt.service.js";
+import CenterService from "./center.service.js";
 
 class CenterController {
   constructor(

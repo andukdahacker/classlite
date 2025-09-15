@@ -1,21 +1,23 @@
-import AssignmentService from "../assignment/assignment.service";
-import ClassService from "../class/class.service";
-import { Exercise } from "../exercise/schema/exercise.schema";
-import { ListeningExercise } from "../exercise/schema/listening_exercise.schema";
-import { ReadingExercise } from "../exercise/schema/reading_exercise.schema";
-import { CreateSubmissionInput } from "./dto/create_submission.input";
-import { CreateSubmissionResponse } from "./dto/create_submission.response";
-import { GetSubmissionInput } from "./dto/get_submission.input";
-import { GetSubmissionResponse } from "./dto/get_submission.response";
-import { GetSubmissionListInput } from "./dto/get_submission_list.input";
-import { GetSubmissionListResponse } from "./dto/get_submission_list.response";
-import { UpdateSubmissionInput } from "./dto/update_submission.input";
-import { UpdateSubmissionResponse } from "./dto/update_submission.response";
-import { ListeningSubmissionContent } from "./schema/listening_submission_content.schema";
-import { ListeningSubmissionGrade } from "./schema/listening_submission_grade.schema";
-import { ReadingSubmissionContent } from "./schema/reading_submission_content.schema";
-import { ReadingSubmissionGrade } from "./schema/reading_submission_grade.schema";
-import SubmissionService from "./submission.service";
+import {
+  CreateSubmissionInput,
+  CreateSubmissionResponse,
+  Exercise,
+  GetSubmissionInput,
+  GetSubmissionListInput,
+  GetSubmissionListResponse,
+  GetSubmissionResponse,
+  ListeningExercise,
+  ListeningSubmissionContent,
+  ListeningSubmissionGrade,
+  ReadingExercise,
+  ReadingSubmissionContent,
+  ReadingSubmissionGrade,
+  UpdateSubmissionInput,
+  UpdateSubmissionResponse,
+} from "@workspace/types";
+import AssignmentService from "../assignment/assignment.service.js";
+import ClassService from "../class/class.service.js";
+import SubmissionService from "./submission.service.js";
 
 class SubmissionController {
   constructor(

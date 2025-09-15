@@ -6,12 +6,12 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import Fastify, { FastifyInstance } from "fastify";
 import { IncomingMessage, Server, ServerResponse } from "http";
-import Env from "./env";
-import firebasePlugin from "./plugins/firebase.plugin";
-import prismaPlugin from "./plugins/prisma.plugin";
-import s3Plugin from "./plugins/s3.plugin";
-import routes from "./routes/routes";
-import JwtService from "./services/jwt.service";
+import Env from "./env.js";
+import firebasePlugin from "./plugins/firebase.plugin.js";
+import prismaPlugin from "./plugins/prisma.plugin.js";
+import s3Plugin from "./plugins/s3.plugin.js";
+import routes from "./routes/routes.js";
+import JwtService from "./services/jwt.service.js";
 
 const build = async () => {
   console.log("Starting server...", process.env.NODE_ENV);

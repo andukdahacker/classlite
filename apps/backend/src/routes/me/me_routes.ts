@@ -1,11 +1,10 @@
+import { BaseResponseErrorSchema, GetMeResponseSchema } from "@workspace/types";
 import { FastifyInstance, FastifyReply } from "fastify";
-import { FastifyRequest } from "fastify/types/request";
-import authMiddleware from "../../middlewares/auth.middleware";
-import { BaseResponseErrorSchema } from "../../types/response";
-import CenterService from "../center/center.service";
-import UserService from "../user/user.service";
-import { GetMeResponseSchema } from "./dto/get_me.response";
-import MeController from "./me_controller";
+import { FastifyRequest } from "fastify/types/request.js";
+import authMiddleware from "../../middlewares/auth.middleware.js";
+import CenterService from "../center/center.service.js";
+import UserService from "../user/user.service.js";
+import MeController from "./me_controller.js";
 
 async function meRoutes(fastify: FastifyInstance, opts: any) {
   const userService = new UserService(fastify.db);

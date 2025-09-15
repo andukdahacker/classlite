@@ -1,22 +1,32 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import authMiddleware from '../../middlewares/auth.middleware';
-import roleMiddleware from '../../middlewares/role.middleware';
-import { BaseResponseErrorSchema, NoDataResponseSchema } from '../../types/response';
-import ClassController from './class.controller';
-import ClassService from './class.service';
-import { CreateClassInput, CreateClassInputSchema } from './dto/create_class.input';
-import { CreateClassResponseSchema } from './dto/create_class.response';
-import { DeleteClassInput, DeleteClassInputSchema } from './dto/delete_class.input';
-import { GetClassInput, GetClassInputSchema } from './dto/get_class.input';
-import { GetClassResponseSchema } from './dto/get_class.response';
-import { GetClassListInput, GetClassListInputSchema } from './dto/get_class_list.input';
-import { GetClassListResponseSchema } from './dto/get_class_list.response';
-import { GetClassListByUserInput, GetClassListByUserInputSchema } from './dto/get_class_list_by_user.input';
-import { GetClassMemberInput, GetClassMemberInputSchema } from './dto/get_class_member.input';
-import { GetClassMemberResponseSchema } from './dto/get_class_member.response';
-import { UpdateClassInput, UpdateClassInputSchema } from './dto/update_class.input';
-import { UpdateClassResponseSchema } from './dto/update_class.response';
-import { ClassSchema } from './schema/class.schema';
+import {
+    BaseResponseErrorSchema,
+    ClassSchema,
+    CreateClassInput,
+    CreateClassInputSchema,
+    CreateClassResponseSchema,
+    DeleteClassInput,
+    DeleteClassInputSchema,
+    GetClassInput,
+    GetClassInputSchema,
+    GetClassListByUserInput,
+    GetClassListByUserInputSchema,
+    GetClassListInput,
+    GetClassListInputSchema,
+    GetClassListResponseSchema,
+    GetClassMemberInput,
+    GetClassMemberInputSchema,
+    GetClassMemberResponseSchema,
+    GetClassResponseSchema,
+    NoDataResponseSchema,
+    UpdateClassInput,
+    UpdateClassInputSchema,
+    UpdateClassResponseSchema,
+} from '@workspace/types';
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
+import ClassController from './class.controller.js';
+import ClassService from './class.service.js';
 
 async function classRoutes(fastify: FastifyInstance, opts: any) {
     fastify.addSchema(ClassSchema);

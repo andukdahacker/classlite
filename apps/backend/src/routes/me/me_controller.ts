@@ -1,7 +1,7 @@
-import { AppJwtPayload } from "../../middlewares/auth.middleware";
-import CenterService from "../center/center.service";
-import UserService from "../user/user.service";
-import { GetMeResponse } from "./dto/get_me.response";
+import { GetMeResponse } from "@workspace/types";
+import { AppJwtPayload } from "../../middlewares/auth.middleware.js";
+import CenterService from "../center/center.service.js";
+import UserService from "../user/user.service.js";
 
 class MeController {
   constructor(

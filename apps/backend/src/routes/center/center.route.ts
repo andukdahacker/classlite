@@ -1,25 +1,21 @@
-import { FastifyInstance } from "fastify/types/instance";
-import { FastifyReply } from "fastify/types/reply";
-import { FastifyRequest } from "fastify/types/request";
-import Env from "../../env";
-import authMiddleware from "../../middlewares/auth.middleware";
-import roleMiddleware from "../../middlewares/role.middleware";
-import JwtService from "../../services/jwt.service";
-import { BaseResponseErrorSchema } from "../../types/response";
-import CenterController from "./center.controller";
-import CenterService from "./center.service";
-import { GetCenterResponseSchema } from "./dto/get_center.response";
 import {
+  BaseResponseErrorSchema,
+  CenterSchema,
+  GetCenterResponseSchema,
   RegisterCenterInput,
   RegisterCenterInputSchema,
-} from "./dto/register_center.input";
-import { RegisterCenterResponseSchema } from "./dto/register_center.response";
-import {
+  RegisterCenterResponseSchema,
   SignInCenterInput,
   SignInCenterInputSchema,
-} from "./dto/sign_in_center.input";
-import { SignInCenterResponseSchema } from "./dto/sign_in_center.response";
-import { CenterSchema } from "./schema/center.schema";
+  SignInCenterResponseSchema,
+} from "@workspace/types";
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import Env from "../../env.js";
+import authMiddleware from "../../middlewares/auth.middleware.js";
+import roleMiddleware from "../../middlewares/role.middleware.js";
+import JwtService from "../../services/jwt.service.js";
+import CenterController from "./center.controller.js";
+import CenterService from "./center.service.js";
 
 async function centerRoutes(fastify: FastifyInstance, opts: any) {
   fastify.addSchema(CenterSchema);

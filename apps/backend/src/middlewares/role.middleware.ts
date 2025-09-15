@@ -1,6 +1,5 @@
-import { FastifyReply } from "fastify/types/reply";
-import { FastifyRequest } from "fastify/types/request";
-import { UserRole } from "../routes/user/schema/user.schema";
+import { UserRole } from "@workspace/types";
+import { FastifyReply, FastifyRequest } from "fastify";
 
 function roleMiddleware(roles: UserRole[]) {
   return (request: FastifyRequest, reply: FastifyReply, done: Function) => {

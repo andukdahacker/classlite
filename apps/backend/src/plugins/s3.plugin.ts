@@ -1,7 +1,7 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
-import Env from "../env";
+import Env from "../env.js";
 
 declare module "fastify" {
   interface FastifyInstance {

@@ -1,18 +1,20 @@
 import argon2 from "argon2";
-import { AppJwtPayload } from "../../middlewares/auth.middleware";
-import JwtService from "../../services/jwt.service";
-import { NoDataResponse } from "../../types/response";
-import { CreateUserInput } from "./dto/create_user.input";
-import { CreateUserResponse } from "./dto/create_user.response";
-import { DeleteUserInput } from "./dto/delete_user.input";
-import { GetUserInput } from "./dto/get_user.input";
-import { GetUserResponse } from "./dto/get_user.response";
-import { GetUserListResponse } from "./dto/get_user_list.response";
-import { SignInUserInput } from "./dto/sign_in_user.input";
-import { SignInUserResponse } from "./dto/sign_in_user.response";
-import { UpdateUserInput } from "./dto/update_user.input";
-import { UpdateUserResponse } from "./dto/update_user.response";
-import UserService from "./user.service";
+import {
+  CreateUserInput,
+  CreateUserResponse,
+  DeleteUserInput,
+  GetUserInput,
+  GetUserResponse,
+  GetUserListResponse,
+  NoDataResponse,
+  SignInUserInput,
+  SignInUserResponse,
+  UpdateUserInput,
+  UpdateUserResponse,
+} from "@workspace/types";
+import { AppJwtPayload } from "../../middlewares/auth.middleware.js";
+import JwtService from "../../services/jwt.service.js";
+import UserService from "./user.service.js";
 
 class UserController {
   constructor(

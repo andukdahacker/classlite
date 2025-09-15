@@ -1,40 +1,34 @@
 import { FastifyInstance } from "fastify";
-import { FastifyReply } from "fastify/types/reply";
-import { FastifyRequest } from "fastify/types/request";
-import Env from "../../env";
-import authMiddleware from "../../middlewares/auth.middleware";
-import roleMiddleware from "../../middlewares/role.middleware";
-import JwtService from "../../services/jwt.service";
+import { FastifyReply } from "fastify/types/reply.js";
+import { FastifyRequest } from "fastify/types/request.js";
 import {
   BaseResponseErrorSchema,
-  NoDataResponseSchema,
-} from "../../types/response";
-import {
   CreateUserInput,
   CreateUserInputSchema,
-} from "./dto/create_user.input";
-import { CreateUserResponseSchema } from "./dto/create_user.response";
-import {
+  CreateUserResponseSchema,
   DeleteUserInput,
   DeleteUserInputSchema,
-} from "./dto/delete_user.input";
-import { GetUserInput, GetUserInputSchema } from "./dto/get_user.input";
-import { GetUserResponseSchema } from "./dto/get_user.response";
-import { GetUserListInputSchema } from "./dto/get_user_list.input";
-import { GetUserListResponseSchema } from "./dto/get_user_list.response";
-import {
+  GetUserInput,
+  GetUserInputSchema,
+  GetUserListInputSchema,
+  GetUserListResponseSchema,
+  GetUserResponseSchema,
+  NoDataResponseSchema,
   SignInUserInput,
   SignInUserInputSchema,
-} from "./dto/sign_in_user.input";
-import { SignInUserResponseSchema } from "./dto/sign_in_user.response";
-import {
+  SignInUserResponseSchema,
   UpdateUserInput,
   UpdateUserInputSchema,
-} from "./dto/update_user.input";
-import { UpdateUserResponseSchema } from "./dto/update_user.response";
-import { UserRoleSchema, UserSchema } from "./schema/user.schema";
-import UserController from "./user.controller";
-import UserService from "./user.service";
+  UpdateUserResponseSchema,
+  UserRoleSchema,
+  UserSchema,
+} from "@workspace/types";
+import Env from "../../env.js";
+import authMiddleware from "../../middlewares/auth.middleware.js";
+import roleMiddleware from "../../middlewares/role.middleware.js";
+import JwtService from "../../services/jwt.service.js";
+import UserController from "./user.controller.js";
+import UserService from "./user.service.js";
 
 async function userRoutes(fastify: FastifyInstance, opts: any) {
   fastify.addSchema(UserRoleSchema);

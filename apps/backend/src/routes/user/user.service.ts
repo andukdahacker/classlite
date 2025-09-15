@@ -1,6 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { CreateUserInput } from "./dto/create_user.input";
-import { UpdateUserInput } from "./dto/update_user.input";
+import { CreateUserInput, UpdateUserInput } from "@workspace/types";
 
 class UserService {
   constructor(private readonly prisma: PrismaClient) {}
