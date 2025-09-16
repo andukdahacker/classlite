@@ -1,13 +1,9 @@
 "use client";
 
 import { Content } from "@tiptap/react";
-import { Exercise } from "@workspace/types";
+import { Exercise, ReadingExerciseTask } from "@workspace/types";
 import { createContext } from "react";
-import {
-  ReadingExercise,
-  ReadingExerciseType,
-  ReadingTask,
-} from "../../../../schema/types";
+import { ReadingExercise, ReadingExerciseType } from "../../../../schema/types";
 
 interface ReadingComposerContextProps {
   name: string;
@@ -23,7 +19,7 @@ interface ReadingComposerContextProps {
   removeTask: (index: number) => void;
   duplicateTask: (index: number) => void;
   reorderTasks: (sourceIndex: number, destinationIndex: number) => void;
-  editTask<T extends ReadingTask>(index: number, task: T): void;
+  editTask<T extends ReadingExerciseTask>(index: number, task: T): void;
   exercise?: Exercise;
 }
 

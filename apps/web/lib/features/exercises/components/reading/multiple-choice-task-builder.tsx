@@ -13,9 +13,10 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@workspace/ui/components/radio-group";
-import { ChevronDown, ChevronUp, Copy, GripVertical, X } from "lucide-react";
+import { GripVertical, X } from "lucide-react";
 import { useContext, useState } from "react";
 import { ReadingComposerContext } from "./reading-composer-context";
+import { TaskHeader } from "./task-header";
 
 interface MultipleChoiceTaskBuilderProps {
   task: ReadingMultipleChoiceTask;
@@ -252,33 +253,14 @@ export function MultipleChoiceTaskBuilder({
 
   return (
     <div className="rounded-md border p-4 flex flex-col gap-4 w-full max-w-2xl bg-background">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div {...dragHandleProps} className="cursor-grab">
-            <GripVertical />
-          </div>
-          <h3 className="font-bold">Multiple Choice Task</h3>
-        </div>
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => duplicateTask(index)}
-          >
-            <Copy size={16} />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => removeTask(index)}>
-            <X size={16} />
-          </Button>
-        </div>
-      </div>
+      <TaskHeader
+        title="Multiple Choice"
+        isExpanded={isExpanded}
+        onExpand={() => setIsExpanded(!isExpanded)}
+        onDuplicate={() => duplicateTask(index)}
+        onRemove={() => removeTask(index)}
+        dragHandleProps={dragHandleProps}
+      />
       {isExpanded && (
         <>
           <AppEditor editor={editor} />

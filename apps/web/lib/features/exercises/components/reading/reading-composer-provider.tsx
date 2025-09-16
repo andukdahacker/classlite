@@ -1,13 +1,15 @@
 import { Content } from "@tiptap/react";
+import {
+  ReadingExerciseTask,
+  ReadingSentenceCompletionTask,
+  ReadingSummaryCompletionTask,
+} from "@workspace/types";
 import { PropsWithChildren, useState } from "react";
 import {
   Exercise,
   ReadingExercise,
   ReadingExerciseType,
   ReadingMultipleChoiceTask,
-  ReadingSentenceCompletionTask,
-  ReadingSummaryCompletionTask,
-  ReadingTask,
   ReadingTFNGTask,
   ReadingYNNGTask,
 } from "../../../../schema/types";
@@ -77,6 +79,7 @@ function ReadingComposerProvider({
           questions: [],
           title: "",
           content: "",
+          taskType: "Typing",
         } as ReadingSentenceCompletionTask;
         setTasks([...tasks, task]);
         break;
@@ -153,7 +156,7 @@ function ReadingComposerProvider({
     });
   };
 
-  function editTask<T extends ReadingTask>(index: number, task: T) {
+  function editTask<T extends ReadingExerciseTask>(index: number, task: T) {
     setTasks((tasks) => {
       const newArray = [...tasks];
 

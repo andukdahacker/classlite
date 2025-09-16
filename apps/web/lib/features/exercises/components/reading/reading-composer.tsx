@@ -5,7 +5,10 @@ import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import TextAlign from "@tiptap/extension-text-align";
 import { useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
-import { ReadingExerciseTypes } from "@workspace/types";
+import {
+  ReadingExerciseTypes,
+  ReadingSentenceCompletionTask,
+} from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import {
   DropdownMenu,
@@ -24,11 +27,18 @@ import {
   Loader2Icon,
   Plus,
 } from "lucide-react";
+import Link from "next/link";
 import { useContext, useState } from "react";
-import { ReadingMultipleChoiceTask } from "../../../../schema/types";
+import {
+  ReadingMultipleChoiceTask,
+  ReadingTFNGTask,
+  ReadingYNNGTask,
+} from "../../../../schema/types";
 import useUpdateExercise from "../../hooks/use-update-exercise";
+import { FixedChoiceTaskBuilder } from "./fixed-choice-task-builder";
 import { MultipleChoiceTaskBuilder } from "./multiple-choice-task-builder";
 import { ReadingComposerContext } from "./reading-composer-context";
+import { SentenceCompletionTaskBuilder } from "./sentence-completion-task-builder";
 
 function ReadingComposer() {
   const {
@@ -128,8 +138,33 @@ function ReadingComposer() {
                               />
                             );
                           case "True/False/Not Given":
+                            return (
+                              <FixedChoiceTaskBuilder
+                                title="True/False/Not Given"
+                                options={["True", "False", "Not Given"]}
+                                task={t as ReadingTFNGTask}
+                                index={i}
+                                dragHandleProps={provided.dragHandleProps}
+                              />
+                            );
                           case "Yes/No/Not Given":
+                            return (
+                              <FixedChoiceTaskBuilder
+                                title="Yes/No/Not Given"
+                                options={["Yes", "No", "Not Given"]}
+                                task={t as ReadingYNNGTask}
+                                index={i}
+                                dragHandleProps={provided.dragHandleProps}
+                              />
+                            );
                           case "Sentence Completion":
+                            return (
+                              <SentenceCompletionTaskBuilder
+                                task={t as ReadingSentenceCompletionTask}
+                                index={i}
+                                dragHandleProps={provided.dragHandleProps}
+                              />
+                            );
                           case "Summary Completion":
                           default:
                             return (
@@ -168,9 +203,11 @@ function ReadingComposer() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button size="icon">
-            <Eye className="h-4 w-4" />
-          </Button>
+          <Link href={`/dashboard/exercises/${exercise?.id}/preview`}>
+            <Button size="icon">
+              <Eye className="h-4 w-4" />
+            </Button>
+          </Link>
           <Button
             size="icon"
             onClick={() =>

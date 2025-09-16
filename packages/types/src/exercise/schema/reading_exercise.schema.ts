@@ -131,6 +131,10 @@ export const ReadingSummaryCompletionTaskSchema = Type.Object(
   { $id: "ReadingSummaryCompletionTask" },
 );
 
+export type ReadingSummaryCompletionTask = Static<
+  typeof ReadingSummaryCompletionTaskSchema
+>;
+
 //Sentence completion
 export const ReadingSentenceCompletionQuestionSchema = Type.Object(
   {
@@ -144,11 +148,20 @@ export const ReadingSentenceCompletionTaskSchema = Type.Object(
   {
     order: Type.Number(),
     instruction: Type.Any(),
+    content: Type.Optional(Type.Any()),
     questions: Type.Array(ReadingSentenceCompletionQuestionSchema),
     type: ReadingExerciseTypeSchema,
+    taskType: Type.Optional(
+      Type.Union([Type.Literal("Typing"), Type.Literal("DragAndDrop")]),
+    ),
+    options: Type.Optional(Type.Array(Type.String())),
   },
   { $id: "ReadingSentenceCompletionTask" },
 );
+
+export type ReadingSentenceCompletionTask = Static<
+  typeof ReadingSentenceCompletionTaskSchema
+>;
 
 //Note completion
 export const ReadingNoteCompletionQuestionSchema = Type.Object(
@@ -253,20 +266,22 @@ export const ReadingMatchHTPTaskSchema = Type.Object(
   { $id: "ReadingMatchHTPTask" },
 );
 
+export const ReadingExerciseTaskSchema = Type.Union([
+  ReadingMultipleChoiceTaskSchema,
+  ReadingTFNGTaskSchema,
+  ReadingYNNGTaskSchema,
+  ReadingSummaryCompletionTaskSchema,
+  ReadingSentenceCompletionTaskSchema,
+]);
+
+export type ReadingExerciseTask = Static<typeof ReadingExerciseTaskSchema>;
+
 //Reading exercise
 export const ReadingExerciseSchema = Type.Object(
   {
     title: Type.String(),
     content: Type.Any(),
-    tasks: Type.Array(
-      Type.Union([
-        ReadingMultipleChoiceTaskSchema,
-        ReadingTFNGTaskSchema,
-        ReadingSummaryCompletionTaskSchema,
-        ReadingYNNGTaskSchema,
-        ReadingSentenceCompletionTaskSchema,
-      ]),
-    ),
+    tasks: Type.Array(ReadingExerciseTaskSchema),
   },
   { $id: "ReadingExercise" },
 );

@@ -40,11 +40,7 @@ export type ReadingExerciseType = ReadingExercise["tasks"][0]["type"];
 export type ReadingMultipleChoiceTask =
   components["schemas"]["ReadingMultipleChoiceTask"];
 export type ReadingTFNGTask = components["schemas"]["ReadingTFNGTask"];
-export type ReadingSentenceCompletionTask =
-  components["schemas"]["ReadingSentenceCompletionTask"];
 export type ReadingYNNGTask = components["schemas"]["ReadingYNNGTask"];
-export type ReadingSummaryCompletionTask =
-  components["schemas"]["ReadingSummaryCompletionTask"];
 export type ReadingTask =
   | ReadingMultipleChoiceTask
   | ReadingTFNGTask
