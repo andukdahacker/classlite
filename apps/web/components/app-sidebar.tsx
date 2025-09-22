@@ -12,7 +12,7 @@ import * as React from "react";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import { AuthContext } from "@/lib/features/auth/components/auth-context";
-import { UserRole } from "@/lib/schema/types";
+import { UserRole } from "@workspace/types";
 import {
   Sidebar,
   SidebarContent,

@@ -2611,7 +2611,8 @@ export interface components {
             content: unknown;
             tasks: ({
                 order: number;
-                type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
+                /** @enum {string} */
+                type: "Multiple choice";
                 instructions: unknown;
                 questions: {
                     content: string;
@@ -2625,7 +2626,8 @@ export interface components {
                 }[];
             } | {
                 order: number;
-                type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
+                /** @enum {string} */
+                type: "True/False/Not Given";
                 instructions: unknown;
                 questions: {
                     order: number;
@@ -2635,7 +2637,19 @@ export interface components {
                 }[];
             } | {
                 order: number;
-                type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
+                instructions: unknown;
+                /** @enum {string} */
+                type: "Yes/No/Not Given";
+                questions: {
+                    order: number;
+                    content: string;
+                    /** ReadingYNNGOption */
+                    correctAnswer: "YES" | "NO" | "NOT GIVEN";
+                }[];
+            } | {
+                order: number;
+                /** @enum {string} */
+                type: "Summary Completion";
                 instruction: unknown;
                 title: string;
                 content: string;
@@ -2650,28 +2664,43 @@ export interface components {
                 }[];
             } | {
                 order: number;
-                instructions: unknown;
-                type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
-                questions: {
-                    order: number;
-                    content: string;
-                    /** ReadingYNNGOption */
-                    correctAnswer: "YES" | "NO" | "NOT GIVEN";
-                }[];
-            } | {
-                order: number;
                 instruction: unknown;
+                content?: unknown;
                 questions: {
                     order: number;
                     correctAnswer: string;
                 }[];
-                type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
+                /** @enum {string} */
+                type: "Sentence Completion";
+                taskType?: "Typing" | "DragAndDrop";
+                options?: string[];
+            } | {
+                order: number;
+                /** @enum {string} */
+                type: "Note Completion";
+                instructions: unknown;
+                questions: {
+                    order: number;
+                    content: string;
+                    correctAnswer: string;
+                }[];
+            } | {
+                order: number;
+                /** @enum {string} */
+                type: "Table Completion";
+                instructions: unknown;
+                table: unknown;
+                questions: {
+                    order: number;
+                    correctAnswer: string;
+                }[];
             })[];
         };
         /** ReadingMultipleChoiceTask */
         ReadingMultipleChoiceTask: {
             order: number;
-            type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
+            /** @enum {string} */
+            type: "Multiple choice";
             instructions: unknown;
             questions: {
                 content: string;
@@ -2704,7 +2733,8 @@ export interface components {
         /** ReadingTFNGTask */
         ReadingTFNGTask: {
             order: number;
-            type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
+            /** @enum {string} */
+            type: "True/False/Not Given";
             instructions: unknown;
             questions: {
                 order: number;
@@ -2722,10 +2752,33 @@ export interface components {
         };
         /** ReadingTFNGOption */
         ReadingTFNGOption: "TRUE" | "FALSE" | "NOT GIVEN";
+        /** ReadingYNNGTask */
+        ReadingYNNGTask: {
+            order: number;
+            instructions: unknown;
+            /** @enum {string} */
+            type: "Yes/No/Not Given";
+            questions: {
+                order: number;
+                content: string;
+                /** ReadingYNNGOption */
+                correctAnswer: "YES" | "NO" | "NOT GIVEN";
+            }[];
+        };
+        /** ReadingYNNGQuestion */
+        ReadingYNNGQuestion: {
+            order: number;
+            content: string;
+            /** ReadingYNNGOption */
+            correctAnswer: "YES" | "NO" | "NOT GIVEN";
+        };
+        /** ReadingYNNGOption */
+        ReadingYNNGOption: "YES" | "NO" | "NOT GIVEN";
         /** ReadingSummaryCompletionTask */
         ReadingSummaryCompletionTask: {
             order: number;
-            type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
+            /** @enum {string} */
+            type: "Summary Completion";
             instruction: unknown;
             title: string;
             content: string;
@@ -2755,39 +2808,57 @@ export interface components {
             value: string;
             content: string;
         };
-        /** ReadingYNNGTask */
-        ReadingYNNGTask: {
-            order: number;
-            instructions: unknown;
-            type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
-            questions: {
-                order: number;
-                content: string;
-                /** ReadingYNNGOption */
-                correctAnswer: "YES" | "NO" | "NOT GIVEN";
-            }[];
-        };
-        /** ReadingYNNGQuestion */
-        ReadingYNNGQuestion: {
-            order: number;
-            content: string;
-            /** ReadingYNNGOption */
-            correctAnswer: "YES" | "NO" | "NOT GIVEN";
-        };
-        /** ReadingYNNGOption */
-        ReadingYNNGOption: "YES" | "NO" | "NOT GIVEN";
         /** ReadingSentenceCompletionTask */
         ReadingSentenceCompletionTask: {
             order: number;
             instruction: unknown;
+            content?: unknown;
             questions: {
                 order: number;
                 correctAnswer: string;
             }[];
-            type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
+            /** @enum {string} */
+            type: "Sentence Completion";
+            taskType?: "Typing" | "DragAndDrop";
+            options?: string[];
         };
         /** ReadingSentenceCompletionQuestion */
         ReadingSentenceCompletionQuestion: {
+            order: number;
+            correctAnswer: string;
+        };
+        /** ReadingNoteCompletionTask */
+        ReadingNoteCompletionTask: {
+            order: number;
+            /** @enum {string} */
+            type: "Note Completion";
+            instructions: unknown;
+            questions: {
+                order: number;
+                content: string;
+                correctAnswer: string;
+            }[];
+        };
+        /** ReadingNoteCompletionQuestion */
+        ReadingNoteCompletionQuestion: {
+            order: number;
+            content: string;
+            correctAnswer: string;
+        };
+        /** ReadingTableCompletionTask */
+        ReadingTableCompletionTask: {
+            order: number;
+            /** @enum {string} */
+            type: "Table Completion";
+            instructions: unknown;
+            table: unknown;
+            questions: {
+                order: number;
+                correctAnswer: string;
+            }[];
+        };
+        /** ReadingTableCompletionQuestion */
+        ReadingTableCompletionQuestion: {
             order: number;
             correctAnswer: string;
         };
@@ -2798,9 +2869,10 @@ export interface components {
                 key: string;
                 fileName: string;
             };
-            tasks: {
+            tasks: ({
                 order: number;
-                type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
+                /** @enum {string} */
+                type: "Multiple choice";
                 instructions: unknown;
                 questions: {
                     content: string;
@@ -2812,12 +2884,108 @@ export interface components {
                         value: string;
                     }[];
                 }[];
-            }[];
+            } | {
+                order: number;
+                /** @enum {string} */
+                type: "True/False/Not Given";
+                instructions: unknown;
+                questions: {
+                    order: number;
+                    content: string;
+                    /** ListeningTFNGOption */
+                    correctAnswer: "TRUE" | "FALSE" | "NOT GIVEN";
+                }[];
+            } | {
+                order: number;
+                instructions: unknown;
+                /** @enum {string} */
+                type: "Yes/No/Not Given";
+                questions: {
+                    order: number;
+                    content: string;
+                    /** ListeningYNNGOption */
+                    correctAnswer: "YES" | "NO" | "NOT GIVEN";
+                }[];
+            } | {
+                order: number;
+                /** @enum {string} */
+                type: "Summary Completion";
+                instruction: unknown;
+                title: string;
+                content: string;
+                questions: {
+                    order: number;
+                    options: {
+                        order: number;
+                        value: string;
+                        content: string;
+                    }[];
+                    correctAnswer: string;
+                }[];
+            } | {
+                order: number;
+                instruction: unknown;
+                content?: unknown;
+                questions: {
+                    order: number;
+                    correctAnswer: string;
+                }[];
+                /** @enum {string} */
+                type: "Sentence Completion";
+                taskType?: "Typing" | "DragAndDrop";
+                options?: string[];
+            } | {
+                order: number;
+                /** @enum {string} */
+                type: "Note Completion";
+                instructions: unknown;
+                questions: {
+                    order: number;
+                    content: string;
+                    correctAnswer: string;
+                }[];
+            } | {
+                order: number;
+                /** @enum {string} */
+                type: "Table Completion";
+                instructions: unknown;
+                table: unknown;
+                questions: {
+                    order: number;
+                    correctAnswer: string;
+                }[];
+            } | {
+                order: number;
+                /** @enum {string} */
+                type: "Flowchart Completion";
+                instructions: unknown;
+                table: unknown;
+                questions: {
+                    order: number;
+                    correctAnswer: string;
+                }[];
+            } | {
+                order: number;
+                /** @enum {string} */
+                type: "Matching heading to paragraph";
+                instructions: unknown;
+                questions: {
+                    order: number;
+                    content: string;
+                    correctAnswer: string;
+                }[];
+                options: {
+                    order: number;
+                    value: string;
+                    content: string;
+                }[];
+            })[];
         };
         /** ListeningMultipleChoiceTask */
         ListeningMultipleChoiceTask: {
             order: number;
-            type: "Multiple choice" | "True/False/Not Given" | "Yes/No/Not Given" | "Summary Completion" | "Sentence Completion" | "Note Completion" | "Tabel Completion" | "Flowchart Completion" | "Matching heading to paragraph";
+            /** @enum {string} */
+            type: "Multiple choice";
             instructions: unknown;
             questions: {
                 content: string;
@@ -2846,6 +3014,184 @@ export interface components {
             content: string;
             order: number;
             value: string;
+        };
+        /** ListeningTFNGTask */
+        ListeningTFNGTask: {
+            order: number;
+            /** @enum {string} */
+            type: "True/False/Not Given";
+            instructions: unknown;
+            questions: {
+                order: number;
+                content: string;
+                /** ListeningTFNGOption */
+                correctAnswer: "TRUE" | "FALSE" | "NOT GIVEN";
+            }[];
+        };
+        /** ListeningTFNGQuestion */
+        ListeningTFNGQuestion: {
+            order: number;
+            content: string;
+            /** ListeningTFNGOption */
+            correctAnswer: "TRUE" | "FALSE" | "NOT GIVEN";
+        };
+        /** ListeningTFNGOption */
+        ListeningTFNGOption: "TRUE" | "FALSE" | "NOT GIVEN";
+        /** ListeningYNNGTask */
+        ListeningYNNGTask: {
+            order: number;
+            instructions: unknown;
+            /** @enum {string} */
+            type: "Yes/No/Not Given";
+            questions: {
+                order: number;
+                content: string;
+                /** ListeningYNNGOption */
+                correctAnswer: "YES" | "NO" | "NOT GIVEN";
+            }[];
+        };
+        /** ListeningYNNGQuestion */
+        ListeningYNNGQuestion: {
+            order: number;
+            content: string;
+            /** ListeningYNNGOption */
+            correctAnswer: "YES" | "NO" | "NOT GIVEN";
+        };
+        /** ListeningYNNGOption */
+        ListeningYNNGOption: "YES" | "NO" | "NOT GIVEN";
+        /** ListeningSummaryCompletionTask */
+        ListeningSummaryCompletionTask: {
+            order: number;
+            /** @enum {string} */
+            type: "Summary Completion";
+            instruction: unknown;
+            title: string;
+            content: string;
+            questions: {
+                order: number;
+                options: {
+                    order: number;
+                    value: string;
+                    content: string;
+                }[];
+                correctAnswer: string;
+            }[];
+        };
+        /** ListeningSummaryCompletionQuestion */
+        ListeningSummaryCompletionQuestion: {
+            order: number;
+            options: {
+                order: number;
+                value: string;
+                content: string;
+            }[];
+            correctAnswer: string;
+        };
+        /** ListeningSummaryCompletionOption */
+        ListeningSummaryCompletionOption: {
+            order: number;
+            value: string;
+            content: string;
+        };
+        /** ListeningSentenceCompletionTask */
+        ListeningSentenceCompletionTask: {
+            order: number;
+            instruction: unknown;
+            content?: unknown;
+            questions: {
+                order: number;
+                correctAnswer: string;
+            }[];
+            /** @enum {string} */
+            type: "Sentence Completion";
+            taskType?: "Typing" | "DragAndDrop";
+            options?: string[];
+        };
+        /** ListeningSentenceCompletionQuestion */
+        ListeningSentenceCompletionQuestion: {
+            order: number;
+            correctAnswer: string;
+        };
+        /** ListeningNoteCompletionTask */
+        ListeningNoteCompletionTask: {
+            order: number;
+            /** @enum {string} */
+            type: "Note Completion";
+            instructions: unknown;
+            questions: {
+                order: number;
+                content: string;
+                correctAnswer: string;
+            }[];
+        };
+        /** ListeningNoteCompletionQuestion */
+        ListeningNoteCompletionQuestion: {
+            order: number;
+            content: string;
+            correctAnswer: string;
+        };
+        /** ListeningTableCompletionTask */
+        ListeningTableCompletionTask: {
+            order: number;
+            /** @enum {string} */
+            type: "Table Completion";
+            instructions: unknown;
+            table: unknown;
+            questions: {
+                order: number;
+                correctAnswer: string;
+            }[];
+        };
+        /** ListeningTableCompletionQuestion */
+        ListeningTableCompletionQuestion: {
+            order: number;
+            correctAnswer: string;
+        };
+        /** ListeningFlowchartCompletionTask */
+        ListeningFlowchartCompletionTask: {
+            order: number;
+            /** @enum {string} */
+            type: "Flowchart Completion";
+            instructions: unknown;
+            table: unknown;
+            questions: {
+                order: number;
+                correctAnswer: string;
+            }[];
+        };
+        /** ListeningFlowchartCompletionQuestion */
+        ListeningFlowchartCompletionQuestion: {
+            order: number;
+            correctAnswer: string;
+        };
+        /** ListeningMatchHTPTask */
+        ListeningMatchHTPTask: {
+            order: number;
+            /** @enum {string} */
+            type: "Matching heading to paragraph";
+            instructions: unknown;
+            questions: {
+                order: number;
+                content: string;
+                correctAnswer: string;
+            }[];
+            options: {
+                order: number;
+                value: string;
+                content: string;
+            }[];
+        };
+        /** ListeningMatchHTPQuestion */
+        ListeningMatchHTPQuestion: {
+            order: number;
+            content: string;
+            correctAnswer: string;
+        };
+        /** ListeningMatchHTPOption */
+        ListeningMatchHTPOption: {
+            order: number;
+            value: string;
+            content: string;
         };
         /** WritingExercise */
         WritingExercise: {

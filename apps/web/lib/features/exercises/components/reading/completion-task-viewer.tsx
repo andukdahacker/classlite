@@ -6,23 +6,21 @@ import { TableKit } from "@tiptap/extension-table";
 import TextAlign from "@tiptap/extension-text-align";
 import { ReactNodeViewRenderer, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { ReadingSentenceCompletionTask } from "@workspace/types";
-import { SentenceCompletionDragAndDropViewer } from "./sentence-completion-dnd-viewer";
+import { ReadingCompletionTask } from "@workspace/types";
+import { CompletionDragAndDropViewer } from "./completion-dnd-viewer";
 
-interface SentenceCompletionTaskViewerProps {
-  task: ReadingSentenceCompletionTask;
+interface CompletionTaskViewerProps {
+  task: ReadingCompletionTask;
 }
 
-export function SentenceCompletionTaskViewer({
-  task,
-}: SentenceCompletionTaskViewerProps) {
+export function CompletionTaskViewer({ task }: CompletionTaskViewerProps) {
   const instructionEditor = useEditor({
     extensions: [
       StarterKit,
       Link,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
-    content: task.instruction,
+    content: task.instructions,
     editable: false,
     immediatelyRender: false,
   });
@@ -45,13 +43,13 @@ export function SentenceCompletionTaskViewer({
   });
 
   if (task.taskType === "DragAndDrop") {
-    return <SentenceCompletionDragAndDropViewer task={task} />;
+    return <CompletionDragAndDropViewer task={task} />;
   }
 
   return (
     <div className="rounded-lg border bg-card text-card-foreground p-4 sm:p-6 flex flex-col gap-6">
-      <h3 className="text-xl font-bold">Sentence Completion</h3>
-      {task.instruction && <AppEditor editor={instructionEditor} />}
+      <h3 className="text-xl font-bold">Completion</h3>
+      {task.instructions && <AppEditor editor={instructionEditor} />}
       <AppEditor editor={contentEditor} showMenu={false} />
     </div>
   );

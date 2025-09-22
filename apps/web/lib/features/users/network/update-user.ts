@@ -1,4 +1,4 @@
-import { UpdateUserInput } from "@/lib/schema/types";
+import { UpdateUserInput } from "@workspace/types";
 import client from "../../../core/client";
 
 async function updateUser(input: UpdateUserInput) {

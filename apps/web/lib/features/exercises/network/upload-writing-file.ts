@@ -1,5 +1,5 @@
+import { UploadWritingImageInput } from "@workspace/types";
 import client from "../../../core/client";
-import { UploadWritingImageInput } from "../../../schema/types";
 
 async function uploadWritingFile(input: UploadWritingImageInput) {
   const result = await client.POST("/api/exercise/uploadWritingImage", {

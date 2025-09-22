@@ -1,9 +1,13 @@
 "use client";
 
 import { Content } from "@tiptap/react";
-import { Exercise, ReadingExerciseTask } from "@workspace/types";
+import {
+  Exercise,
+  ReadingExercise,
+  ReadingExerciseTask,
+  ReadingExerciseType,
+} from "@workspace/types";
 import { createContext } from "react";
-import { ReadingExercise, ReadingExerciseType } from "../../../../schema/types";
 
 interface ReadingComposerContextProps {
   name: string;

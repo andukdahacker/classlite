@@ -1,5 +1,5 @@
+import { CreateExerciseInput } from "@workspace/types";
 import client from "../../../core/client";
-import { CreateExerciseInput } from "../../../schema/types";
 
 async function createExercise(input: CreateExerciseInput) {
   const result = await client.POST("/api/exercise/", { body: input });

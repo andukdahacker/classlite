@@ -1,7 +1,7 @@
 "use client";
 
 import useDebounce from "@/lib/core/hooks/use-debounce";
-import { ExerciseType } from "@/lib/schema/types";
+import { ExerciseType } from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import {

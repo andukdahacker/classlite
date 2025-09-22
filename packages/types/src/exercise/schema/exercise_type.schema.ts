@@ -1,4 +1,4 @@
-import { Type } from "@sinclair/typebox";
+import { Static, Type } from "@sinclair/typebox";
 
 export const ExerciseTypeSchema = Type.Union(
   [
@@ -9,3 +9,5 @@ export const ExerciseTypeSchema = Type.Union(
   ],
   { $id: "ExerciseType" },
 );
+
+export type ExerciseType = Static<typeof ExerciseTypeSchema>;

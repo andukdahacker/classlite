@@ -3,8 +3,8 @@
 import { ReadingMaterialViewer } from "@/lib/features/exercises/components/reading/reading-material-viewer";
 import { TaskViewer } from "@/lib/features/exercises/components/reading/task-viewer";
 import { useGetExercise } from "@/lib/features/exercises/hooks/use-get-exercise";
-import { ReadingExercise } from "@/lib/schema/types";
 import { Content } from "@tiptap/core";
+import { ReadingExercise } from "@workspace/types";
 import { notFound } from "next/navigation";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 

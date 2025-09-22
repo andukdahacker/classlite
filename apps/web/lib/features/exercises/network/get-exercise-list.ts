@@ -1,5 +1,5 @@
+import { GetExerciseListInput } from "@workspace/types";
 import client from "../../../core/client";
-import { GetExerciseListInput } from "../../../schema/types";
 
 async function getExerciseList(input: GetExerciseListInput) {
   const result = await client.GET("/api/exercise/list", {

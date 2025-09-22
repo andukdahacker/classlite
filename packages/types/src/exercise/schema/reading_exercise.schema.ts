@@ -1,225 +1,65 @@
 import { Static, TSchema, Type } from "@sinclair/typebox";
+import {
+  createCompletionSchema,
+  createMatchHTPSchemas,
+  createMultipleChoiceSchemas,
+  createTFNGSchemas,
+  createYNNGSchemas,
+} from "./generic_exercise.schema.js";
 
 export const ReadingExerciseTypeSchema = Type.Union([
   Type.Literal("Multiple choice"),
   Type.Literal("True/False/Not Given"),
   Type.Literal("Yes/No/Not Given"),
-  Type.Literal("Summary Completion"),
-  Type.Literal("Sentence Completion"),
-  Type.Literal("Note Completion"),
-  Type.Literal("Tabel Completion"),
-  Type.Literal("Flowchart Completion"),
+  Type.Literal("Completion"),
   Type.Literal("Matching heading to paragraph"),
+  Type.Literal("Diagram Labeling"),
 ]);
-
-// ✅ Get the TypeScript type
 export type ReadingExerciseType = Static<typeof ReadingExerciseTypeSchema>;
-
-// ✅ Extract literals into an array at runtime
 export const ReadingExerciseTypes: ReadingExerciseType[] = (
   ReadingExerciseTypeSchema.anyOf ?? []
 ).map((schema: TSchema) => schema.const as ReadingExerciseType);
 
-//Multiple choice
-export const ReadingMultipleChoiceQuestionOptionSchema = Type.Object(
-  {
-    content: Type.String(),
-    order: Type.Number(),
-    value: Type.String(),
-  },
-  { $id: "ReadingMultipleChoiceQuestionOption" },
-);
-
-export const ReadingMultipleChoiceQuestionSchema = Type.Object(
-  {
-    content: Type.String(),
-    correctAnswer: Type.String(),
-    order: Type.Number(),
-    options: Type.Array(ReadingMultipleChoiceQuestionOptionSchema),
-  },
-  { $id: "ReadingMultipleChoiceQuestion" },
-);
-
-export const ReadingMultipleChoiceTaskSchema = Type.Object(
-  {
-    order: Type.Number(),
-    type: ReadingExerciseTypeSchema,
-    instructions: Type.Any(),
-    questions: Type.Array(ReadingMultipleChoiceQuestionSchema),
-  },
-  { $id: "ReadingMultipleChoiceTask" },
-);
-
-//True/false/Not given
-export const ReadingTFNGOptionSchema = Type.Union(
-  [Type.Literal("TRUE"), Type.Literal("FALSE"), Type.Literal("NOT GIVEN")],
-  { $id: "ReadingTFNGOption" },
-);
-
-export const ReadingTFNGQuestionSchema = Type.Object(
-  {
-    order: Type.Number(),
-    content: Type.String(),
-    correctAnswer: ReadingTFNGOptionSchema,
-  },
-  { $id: "ReadingTFNGQuestion" },
-);
-
-export const ReadingTFNGTaskSchema = Type.Object(
-  {
-    order: Type.Number(),
-    type: ReadingExerciseTypeSchema,
-    instructions: Type.Any(),
-    questions: Type.Array(ReadingTFNGQuestionSchema),
-  },
-  { $id: "ReadingTFNGTask" },
-);
-
-//Yes/No/Not Given
-export const ReadingYNNGOptionSchema = Type.Union(
-  [Type.Literal("YES"), Type.Literal("NO"), Type.Literal("NOT GIVEN")],
-  { $id: "ReadingYNNGOption" },
-);
-
-export const ReadingYNNGQuestionSchema = Type.Object(
-  {
-    order: Type.Number(),
-    content: Type.String(),
-    correctAnswer: ReadingYNNGOptionSchema,
-  },
-  { $id: "ReadingYNNGQuestion" },
-);
-
-export const ReadingYNNGTaskSchema = Type.Object(
-  {
-    order: Type.Number(),
-    instructions: Type.Any(),
-    type: ReadingExerciseTypeSchema,
-    questions: Type.Array(ReadingYNNGQuestionSchema),
-  },
-  { $id: "ReadingYNNGTask" },
-);
-
-//Summary completion
-export const ReadingSummaryCompletionOptionSchema = Type.Object(
-  {
-    order: Type.Number(),
-    value: Type.String(),
-    content: Type.String(),
-  },
-  { $id: "ReadingSummaryCompletionOption" },
-);
-
-export const ReadingSummaryCompletionQuestionSchema = Type.Object(
-  {
-    order: Type.Number(),
-    options: Type.Array(ReadingSummaryCompletionOptionSchema),
-    correctAnswer: Type.String(),
-  },
-  { $id: "ReadingSummaryCompletionQuestion" },
-);
-
-export const ReadingSummaryCompletionTaskSchema = Type.Object(
-  {
-    order: Type.Number(),
-    type: ReadingExerciseTypeSchema,
-    instruction: Type.Any(),
-    title: Type.String(),
-    content: Type.String(),
-    questions: Type.Array(ReadingSummaryCompletionQuestionSchema),
-  },
-  { $id: "ReadingSummaryCompletionTask" },
-);
-
-export type ReadingSummaryCompletionTask = Static<
-  typeof ReadingSummaryCompletionTaskSchema
+// Schemas
+const mc = createMultipleChoiceSchemas("Reading");
+export const ReadingMultipleChoiceQuestionOptionSchema =
+  mc.QuestionOptionSchema;
+export type ReadingMultipleChoiceQuestionOption = Static<
+  typeof ReadingMultipleChoiceQuestionOptionSchema
+>;
+export const ReadingMultipleChoiceQuestionSchema = mc.QuestionSchema;
+export type ReadingMultipleChoiceQuestion = Static<
+  typeof ReadingMultipleChoiceQuestionSchema
+>;
+export const ReadingMultipleChoiceTaskSchema = mc.TaskSchema;
+export type ReadingMultipleChoiceTask = Static<
+  typeof ReadingMultipleChoiceTaskSchema
 >;
 
-//Sentence completion
-export const ReadingSentenceCompletionQuestionSchema = Type.Object(
-  {
-    order: Type.Number(),
-    correctAnswer: Type.String(),
-  },
-  { $id: "ReadingSentenceCompletionQuestion" },
-);
+const tfng = createTFNGSchemas("Reading");
+export const ReadingTFNGOptionSchema = tfng.OptionSchema;
+export type ReadingTFNGOption = Static<typeof ReadingTFNGOptionSchema>;
+export const ReadingTFNGQuestionSchema = tfng.QuestionSchema;
+export type ReadingTFNGQuestion = Static<typeof ReadingTFNGQuestionSchema>;
+export const ReadingTFNGTaskSchema = tfng.TaskSchema;
+export type ReadingTFNGTask = Static<typeof ReadingTFNGTaskSchema>;
 
-export const ReadingSentenceCompletionTaskSchema = Type.Object(
-  {
-    order: Type.Number(),
-    instruction: Type.Any(),
-    content: Type.Optional(Type.Any()),
-    questions: Type.Array(ReadingSentenceCompletionQuestionSchema),
-    type: ReadingExerciseTypeSchema,
-    taskType: Type.Optional(
-      Type.Union([Type.Literal("Typing"), Type.Literal("DragAndDrop")]),
-    ),
-    options: Type.Optional(Type.Array(Type.String())),
-  },
-  { $id: "ReadingSentenceCompletionTask" },
-);
+const ynng = createYNNGSchemas("Reading");
+export const ReadingYNNGOptionSchema = ynng.OptionSchema;
+export type ReadingYNNGOption = Static<typeof ReadingYNNGOptionSchema>;
+export const ReadingYNNGQuestionSchema = ynng.QuestionSchema;
+export type ReadingYNNGQuestion = Static<typeof ReadingYNNGQuestionSchema>;
+export const ReadingYNNGTaskSchema = ynng.TaskSchema;
+export type ReadingYNNGTask = Static<typeof ReadingYNNGTaskSchema>;
 
-export type ReadingSentenceCompletionTask = Static<
-  typeof ReadingSentenceCompletionTaskSchema
+const completion = createCompletionSchema("Reading");
+export const ReadingCompletionQuestionSchema = completion.QuestionSchema;
+export type ReadingCompletionQuestion = Static<
+  typeof ReadingCompletionQuestionSchema
 >;
+export const ReadingCompletionTaskSchema = completion.TaskSchema;
+export type ReadingCompletionTask = Static<typeof ReadingCompletionTaskSchema>;
 
-//Note completion
-export const ReadingNoteCompletionQuestionSchema = Type.Object(
-  {
-    order: Type.Number(),
-    content: Type.String(),
-    correctAnswer: Type.String(),
-  },
-  { $id: "ReadingNoteCompletionQuestion" },
-);
-
-export const ReadingNoteCompletionTaskSchema = Type.Object(
-  {
-    order: Type.Number(),
-    instructions: Type.Any(),
-    questions: Type.Array(ReadingNoteCompletionQuestionSchema),
-  },
-  { $id: "ReadingNoteCompletionTask" },
-);
-
-//Table completion
-export const ReadingTableCompletionQuestionSchema = Type.Object(
-  {
-    order: Type.Number(),
-    correctAnswer: Type.String(),
-  },
-  { $id: "ReadingTableCompletionQuestion" },
-);
-
-export const ReadingTableCompletionTaskSchema = Type.Object(
-  {
-    order: Type.Number(),
-    instructions: Type.Any(),
-    table: Type.Any(),
-    questions: Type.Array(ReadingTableCompletionQuestionSchema),
-  },
-  { $id: "ReadingTableCompletionTask" },
-);
-
-//Flowchart completion
-export const ReadingFlowchartCompletionQuestionSchema = Type.Object(
-  {
-    order: Type.Number(),
-    correctAnswer: Type.String(),
-  },
-  { $id: "ReadingFlowchartCompletionQuestion" },
-);
-
-export const ReadingFlowchartCompletionTaskSchema = Type.Object(
-  {
-    instructions: Type.Any(),
-    table: Type.Any(),
-    questions: Type.Array(ReadingFlowchartCompletionQuestionSchema),
-  },
-  { $id: "ReadingFlowchartCompletionTask" },
-);
-
-//Diagram label
 export const ReadingDiagramLabelCompletionQuestionSchema = Type.Object(
   {
     order: Type.Number(),
@@ -227,53 +67,42 @@ export const ReadingDiagramLabelCompletionQuestionSchema = Type.Object(
   },
   { $id: "ReadingDiagramLabelCompletionQuestion" },
 );
+export type ReadingDiagramLabelCompletionQuestion = Static<
+  typeof ReadingDiagramLabelCompletionQuestionSchema
+>;
 
 export const ReadingDiagramLabelCompletionTaskSchema = Type.Object(
   {
     order: Type.Number(),
+    type: Type.Literal("Diagram Labeling"),
     instructions: Type.Any(),
     diagram: Type.Any(),
+    questions: Type.Array(ReadingDiagramLabelCompletionQuestionSchema),
   },
   { $id: "ReadingDiagramLabelCompletionTask" },
 );
+export type ReadingDiagramLabelCompletionTask = Static<
+  typeof ReadingDiagramLabelCompletionTaskSchema
+>;
 
-//Match headings to paragraph
-export const ReadingMatchHTPOptionSchema = Type.Object(
-  {
-    order: Type.Number(),
-    value: Type.String(),
-    content: Type.String(),
-  },
-  { $id: "ReadingMatchHTPOption" },
-);
-
-export const ReadingMatchHTPQuestionSchema = Type.Object(
-  {
-    order: Type.Number(),
-    content: Type.String(),
-    correctAnswer: Type.String(),
-  },
-  { $id: "ReadingMatchHTPQuestion" },
-);
-
-export const ReadingMatchHTPTaskSchema = Type.Object(
-  {
-    order: Type.Number(),
-    instructions: Type.Any(),
-    questions: Type.Array(ReadingMatchHTPQuestionSchema),
-    options: Type.Array(ReadingMatchHTPOptionSchema),
-  },
-  { $id: "ReadingMatchHTPTask" },
-);
+const match = createMatchHTPSchemas("Reading");
+export const ReadingMatchHTPOptionSchema = match.OptionSchema;
+export type ReadingMatchHTPOption = Static<typeof ReadingMatchHTPOptionSchema>;
+export const ReadingMatchHTPQuestionSchema = match.QuestionSchema;
+export type ReadingMatchHTPQuestion = Static<
+  typeof ReadingMatchHTPQuestionSchema
+>;
+export const ReadingMatchHTPTaskSchema = match.TaskSchema;
+export type ReadingMatchHTPTask = Static<typeof ReadingMatchHTPTaskSchema>;
 
 export const ReadingExerciseTaskSchema = Type.Union([
   ReadingMultipleChoiceTaskSchema,
   ReadingTFNGTaskSchema,
   ReadingYNNGTaskSchema,
-  ReadingSummaryCompletionTaskSchema,
-  ReadingSentenceCompletionTaskSchema,
+  ReadingCompletionTaskSchema,
+  ReadingDiagramLabelCompletionTaskSchema,
+  ReadingMatchHTPTaskSchema,
 ]);
-
 export type ReadingExerciseTask = Static<typeof ReadingExerciseTaskSchema>;
 
 //Reading exercise
@@ -285,5 +114,4 @@ export const ReadingExerciseSchema = Type.Object(
   },
   { $id: "ReadingExercise" },
 );
-
 export type ReadingExercise = Static<typeof ReadingExerciseSchema>;

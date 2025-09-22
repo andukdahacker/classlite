@@ -1,18 +1,15 @@
 import { Content } from "@tiptap/react";
 import {
-  ReadingExerciseTask,
-  ReadingSentenceCompletionTask,
-  ReadingSummaryCompletionTask,
-} from "@workspace/types";
-import { PropsWithChildren, useState } from "react";
-import {
   Exercise,
+  ReadingCompletionTask,
   ReadingExercise,
+  ReadingExerciseTask,
   ReadingExerciseType,
   ReadingMultipleChoiceTask,
   ReadingTFNGTask,
   ReadingYNNGTask,
-} from "../../../../schema/types";
+} from "@workspace/types";
+import { PropsWithChildren, useState } from "react";
 import { ReadingComposerContext } from "./reading-composer-context";
 
 interface ReadingComposerProviderProps {
@@ -42,57 +39,45 @@ function ReadingComposerProvider({
   const addTask = (type: ReadingExerciseType) => {
     switch (type) {
       case "Multiple choice": {
-        const multipleChoiceTask = {
+        const multipleChoiceTask: ReadingMultipleChoiceTask = {
           order: tasks.length + 1,
           type: "Multiple choice",
           instructions: "",
           questions: [],
-        } as ReadingMultipleChoiceTask;
+        };
         setTasks([...tasks, multipleChoiceTask]);
         break;
       }
       case "True/False/Not Given": {
-        const task = {
+        const task: ReadingTFNGTask = {
           order: tasks.length + 1,
           type: "True/False/Not Given",
           instructions: "",
           questions: [],
-        } as ReadingTFNGTask;
+        };
         setTasks([...tasks, task]);
         break;
       }
       case "Yes/No/Not Given": {
-        const task = {
+        const task: ReadingYNNGTask = {
           order: tasks.length + 1,
           instructions: "",
           questions: [],
           type: "Yes/No/Not Given",
-        } as ReadingYNNGTask;
+        };
         setTasks([...tasks, task]);
         break;
       }
-      case "Sentence Completion": {
-        const task = {
+      case "Completion": {
+        const task: ReadingCompletionTask = {
           order: tasks.length + 1,
-          type: "Sentence Completion",
-          instruction: "",
+          type: "Completion",
+          instructions: "",
           questions: [],
-          title: "",
           content: "",
+          title: "",
           taskType: "Typing",
-        } as ReadingSentenceCompletionTask;
-        setTasks([...tasks, task]);
-        break;
-      }
-      case "Summary Completion": {
-        const task = {
-          order: tasks.length + 1,
-          type: "Summary Completion",
-          instruction: "",
-          questions: [],
-          content: "",
-          title: "",
-        } as ReadingSummaryCompletionTask;
+        };
         setTasks([...tasks, task]);
         break;
       }

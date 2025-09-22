@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
+import { Exercise } from "@workspace/types";
 import { toast } from "sonner";
-import { Exercise } from "../../../schema/types";
 import { uploadWritingFile } from "../network/upload-writing-file";
 
 interface UseUploadWritingImageProps {

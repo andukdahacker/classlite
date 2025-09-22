@@ -1,12 +1,12 @@
 "use client";
 
 import { AppEditor } from "@/lib/core/components/editor/app-editor";
-import { ReadingMultipleChoiceTask } from "@/lib/schema/types";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import { JSONContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { ReadingMultipleChoiceTask } from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import {

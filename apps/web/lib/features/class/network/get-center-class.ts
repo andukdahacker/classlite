@@ -1,7 +1,7 @@
+import { GetClassListInput } from "@workspace/types";
 import client from "../../../core/client";
-import { GetCenterClassListInput } from "../../../schema/types";
 
-async function getCenterClassList(input: GetCenterClassListInput) {
+async function getCenterClassList(input: GetClassListInput) {
   const result = await client.GET("/api/class/list", {
     params: { query: input },
   });

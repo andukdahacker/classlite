@@ -1,5 +1,5 @@
+import { DeleteListeningFileInput } from "@workspace/types";
 import client from "../../../core/client";
-import { DeleteListeningFileInput } from "../../../schema/types";
 
 async function deleteListeningFile(input: DeleteListeningFileInput) {
   const result = await client.DELETE("/api/exercise/deleteListeningFile", {

@@ -1,5 +1,5 @@
+import { UploadListeningFileInput } from "@workspace/types";
 import client from "../../../core/client";
-import { UploadListeningFileInput } from "../../../schema/types";
 
 async function uploadListeningFile(input: UploadListeningFileInput) {
   const result = await client.POST("/api/exercise/uploadListeningFile", {

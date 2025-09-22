@@ -6,8 +6,11 @@ import TextAlign from "@tiptap/extension-text-align";
 import { useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
 import {
+  ReadingCompletionTask,
   ReadingExerciseTypes,
-  ReadingSentenceCompletionTask,
+  ReadingMultipleChoiceTask,
+  ReadingTFNGTask,
+  ReadingYNNGTask,
 } from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -29,16 +32,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useContext, useState } from "react";
-import {
-  ReadingMultipleChoiceTask,
-  ReadingTFNGTask,
-  ReadingYNNGTask,
-} from "../../../../schema/types";
 import useUpdateExercise from "../../hooks/use-update-exercise";
+import { CompletionTaskBuilder } from "./completion-task-builder";
 import { FixedChoiceTaskBuilder } from "./fixed-choice-task-builder";
 import { MultipleChoiceTaskBuilder } from "./multiple-choice-task-builder";
 import { ReadingComposerContext } from "./reading-composer-context";
-import { SentenceCompletionTaskBuilder } from "./sentence-completion-task-builder";
 
 function ReadingComposer() {
   const {
@@ -157,15 +155,14 @@ function ReadingComposer() {
                                 dragHandleProps={provided.dragHandleProps}
                               />
                             );
-                          case "Sentence Completion":
+                          case "Completion":
                             return (
-                              <SentenceCompletionTaskBuilder
-                                task={t as ReadingSentenceCompletionTask}
+                              <CompletionTaskBuilder
+                                task={t as ReadingCompletionTask}
                                 index={i}
                                 dragHandleProps={provided.dragHandleProps}
                               />
                             );
-                          case "Summary Completion":
                           default:
                             return (
                               <div className="rounded-md border p-4 flex justify-between items-center w-full max-w-2xl bg-background">
@@ -236,3 +233,4 @@ function ReadingComposer() {
 }
 
 export { ReadingComposer };
+

@@ -1,5 +1,5 @@
+import { UpdateExerciseInput } from "@workspace/types";
 import client from "../../../core/client";
-import { UpdateExerciseInput } from "../../../schema/types";
 
 async function updateExercise(input: UpdateExerciseInput) {
   const result = await client.PUT("/api/exercise/", { body: input });

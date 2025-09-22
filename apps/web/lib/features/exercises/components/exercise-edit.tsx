@@ -1,6 +1,6 @@
 "use client";
 
-import { ReadingExercise } from "@/lib/schema/types";
+import { ReadingExercise } from "@workspace/types";
 import { Loader2Icon } from "lucide-react";
 import { useGetExercise } from "../hooks/use-get-exercise";
 import { ReadingComposer } from "./reading/reading-composer";

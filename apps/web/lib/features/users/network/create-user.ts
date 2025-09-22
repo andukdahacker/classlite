@@ -1,4 +1,4 @@
-import { CreateUserInput } from "@/lib/schema/types";
+import { CreateUserInput } from "@workspace/types";
 import client from "../../../core/client";
 
 async function createUser(input: CreateUserInput) {

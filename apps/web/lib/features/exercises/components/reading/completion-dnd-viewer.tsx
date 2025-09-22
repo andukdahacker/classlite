@@ -11,16 +11,16 @@ import {
   useEditor,
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { ReadingSentenceCompletionTask } from "@workspace/types";
+import { ReadingCompletionTask } from "@workspace/types";
 import { DragEvent, useState } from "react";
 
-interface SentenceCompletionDragAndDropViewerProps {
-  task: ReadingSentenceCompletionTask;
+interface CompletionDragAndDropViewerProps {
+  task: ReadingCompletionTask;
 }
 
-export function SentenceCompletionDragAndDropViewer({
+export function CompletionDragAndDropViewer({
   task,
-}: SentenceCompletionDragAndDropViewerProps) {
+}: CompletionDragAndDropViewerProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [options, setOptions] = useState(task.options ?? []);
 
@@ -138,7 +138,7 @@ export function SentenceCompletionDragAndDropViewer({
 
   return (
     <div className="rounded-lg border bg-card text-card-foreground p-4 sm:p-6 flex flex-col gap-6">
-      <h3 className="text-xl font-bold">Sentence Completion</h3>
+      <h3 className="text-xl font-bold">Completion</h3>
       <AppEditor editor={contentEditor} showMenu={false} />
       <div
         onDragOver={handleDragOver}

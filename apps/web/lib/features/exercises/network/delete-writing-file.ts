@@ -1,5 +1,5 @@
+import { DeleteWritingImageInput } from "@workspace/types";
 import client from "../../../core/client";
-import { DeleteWritingImageInput } from "../../../schema/types";
 
 async function deleteWritingImage(input: DeleteWritingImageInput) {
   const result = await client.DELETE("/api/exercise/writingImage", {

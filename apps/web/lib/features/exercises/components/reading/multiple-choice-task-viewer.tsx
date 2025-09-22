@@ -1,11 +1,11 @@
 "use client";
 
 import { AppEditor } from "@/lib/core/components/editor/app-editor";
-import { ReadingMultipleChoiceTask } from "@/lib/schema/types";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import { Content, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { ReadingMultipleChoiceTask } from "@workspace/types";
 import { Label } from "@workspace/ui/components/label";
 import {
   RadioGroup,

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { CreateExerciseResponse } from "@workspace/types";
 import { toast } from "sonner";
-import { CreateExerciseResponse } from "../../../schema/types";
 import { createExercise } from "../network/create-exercise";
 
 interface UseCreateExerciseProps {

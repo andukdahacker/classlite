@@ -7,7 +7,7 @@ import { TableKit } from "@tiptap/extension-table";
 import TextAlign from "@tiptap/extension-text-align";
 import { JSONContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { ReadingSentenceCompletionTask } from "@workspace/types";
+import { ReadingCompletionTask } from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
@@ -27,24 +27,24 @@ import { useContext, useEffect, useState } from "react";
 import { ReadingComposerContext } from "./reading-composer-context";
 import { TaskHeader } from "./task-header";
 
-interface SentenceCompletionTaskBuilderProps {
-  task: ReadingSentenceCompletionTask;
+interface CompletionTaskBuilderProps {
+  task: ReadingCompletionTask;
   index: number;
   dragHandleProps: any;
 }
 
-export function SentenceCompletionTaskBuilder({
+export function CompletionTaskBuilder({
   task,
   index,
   dragHandleProps,
-}: SentenceCompletionTaskBuilderProps) {
+}: CompletionTaskBuilderProps) {
   const { editTask, removeTask, duplicateTask } = useContext(
     ReadingComposerContext,
   );
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleInstructionChange = (e: any) => {
-    editTask<ReadingSentenceCompletionTask>(index, { ...task, instruction: e });
+    editTask<ReadingCompletionTask>(index, { ...task, instructions: e });
   };
 
   const instructionEditor = useEditor({
@@ -55,7 +55,7 @@ export function SentenceCompletionTaskBuilder({
         types: ["heading", "paragraph"],
       }),
     ],
-    content: task.instruction ?? "",
+    content: task.instructions ?? "",
     onUpdate: ({ editor }) => {
       handleInstructionChange(editor.getJSON());
     },
@@ -145,9 +145,9 @@ export function SentenceCompletionTaskBuilder({
   };
 
   const handleTaskTypeChange = (
-    taskType: ReadingSentenceCompletionTask["taskType"],
+    taskType: ReadingCompletionTask["taskType"],
   ) => {
-    editTask<ReadingSentenceCompletionTask>(index, {
+    editTask<ReadingCompletionTask>(index, {
       ...task,
       taskType,
       options: taskType === "DragAndDrop" ? [] : undefined,
@@ -156,7 +156,7 @@ export function SentenceCompletionTaskBuilder({
 
   const handleAddOption = () => {
     const newOptions = [...(task.options ?? []), "Option"];
-    editTask<ReadingSentenceCompletionTask>(index, {
+    editTask<ReadingCompletionTask>(index, {
       ...task,
       options: newOptions,
     });
@@ -165,7 +165,7 @@ export function SentenceCompletionTaskBuilder({
   const handleEditOption = (oIndex: number, value: string) => {
     const newOptions = [...(task.options ?? [])];
     newOptions[oIndex] = value;
-    editTask<ReadingSentenceCompletionTask>(index, {
+    editTask<ReadingCompletionTask>(index, {
       ...task,
       options: newOptions,
     });
@@ -174,7 +174,7 @@ export function SentenceCompletionTaskBuilder({
   const handleRemoveOption = (oIndex: number) => {
     const newOptions = [...(task.options ?? [])];
     newOptions.splice(oIndex, 1);
-    editTask<ReadingSentenceCompletionTask>(index, {
+    editTask<ReadingCompletionTask>(index, {
       ...task,
       options: newOptions,
     });
@@ -185,7 +185,7 @@ export function SentenceCompletionTaskBuilder({
       const currentContent = JSON.stringify(contentEditor.getJSON());
       const taskContent = JSON.stringify(task.content);
       if (currentContent !== taskContent) {
-        contentEditor.commands.setContent(task.content);
+        contentEditor.commands.setContent(task.content ?? "");
       }
     }
   }, [task.content, contentEditor]);
@@ -193,7 +193,7 @@ export function SentenceCompletionTaskBuilder({
   return (
     <div className="rounded-md border p-4 flex flex-col gap-4 w-full max-w-2xl bg-background">
       <TaskHeader
-        title="Sentence Completion"
+        title={task.type}
         isExpanded={isExpanded}
         onExpand={() => setIsExpanded(!isExpanded)}
         onDuplicate={() => duplicateTask(index)}
@@ -208,11 +208,9 @@ export function SentenceCompletionTaskBuilder({
           <div className="flex flex-col gap-2">
             <Label>Task Type</Label>
             <RadioGroup
-              defaultValue={task.taskType}
+              defaultValue={task.taskType ?? "Typing"}
               onValueChange={(value) =>
-                handleTaskTypeChange(
-                  value as ReadingSentenceCompletionTask["taskType"],
-                )
+                handleTaskTypeChange(value as ReadingCompletionTask["taskType"])
               }
               className="flex gap-4"
             >
@@ -273,13 +271,7 @@ export function SentenceCompletionTaskBuilder({
             {task.questions.map((q, qIndex) => (
               <div key={qIndex} className="flex items-center gap-2">
                 <Label className="w-20">Gap {q.order}</Label>
-                {task.taskType === "Typing" ? (
-                  <Input
-                    placeholder="Correct Answer"
-                    value={q.correctAnswer}
-                    onChange={(e) => editCorrectAnswer(qIndex, e.target.value)}
-                  />
-                ) : (
+                {task.taskType === "DragAndDrop" ? (
                   <Select
                     value={q.correctAnswer}
                     onValueChange={(value) => editCorrectAnswer(qIndex, value)}
@@ -297,6 +289,12 @@ export function SentenceCompletionTaskBuilder({
                         ))}
                     </SelectContent>
                   </Select>
+                ) : (
+                  <Input
+                    placeholder="Correct Answer"
+                    value={q.correctAnswer}
+                    onChange={(e) => editCorrectAnswer(qIndex, e.target.value)}
+                  />
                 )}
               </div>
             ))}
