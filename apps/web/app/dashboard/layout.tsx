@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
+import { ModeToggle } from "@/components/theme-toggle-button";
 import { AuthProvider } from "@/lib/features/auth/components/auth-provider";
 import { Separator } from "@workspace/ui/components/separator";
 import {
@@ -23,6 +24,7 @@ export default async function Layout({
                 orientation="vertical"
                 className="mr-2 data-[orientation=vertical]:h-4"
               />
+              <ModeToggle />
             </div>
           </header>
           {children}

@@ -2,6 +2,7 @@ import { AppEditor } from "@/lib/core/components/editor/app-editor";
 import { Gap } from "@/lib/core/components/editor/extensions/gap";
 import { GapInput } from "@/lib/core/components/editor/extensions/gap-input";
 import Link from "@tiptap/extension-link";
+import { TableKit } from "@tiptap/extension-table";
 import TextAlign from "@tiptap/extension-text-align";
 import { ReactNodeViewRenderer, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -36,6 +37,7 @@ export function SentenceCompletionTaskViewer({
           return ReactNodeViewRenderer(GapInput);
         },
       }),
+      TableKit,
     ],
     content: task.content,
     editable: false,
@@ -47,10 +49,10 @@ export function SentenceCompletionTaskViewer({
   }
 
   return (
-    <div className="rounded-md border p-4 flex flex-col gap-4">
-      <h3 className="font-bold">Sentence Completion</h3>
+    <div className="rounded-lg border bg-card text-card-foreground p-4 sm:p-6 flex flex-col gap-6">
+      <h3 className="text-xl font-bold">Sentence Completion</h3>
       {task.instruction && <AppEditor editor={instructionEditor} />}
-      <AppEditor editor={contentEditor} />
+      <AppEditor editor={contentEditor} showMenu={false} />
     </div>
   );
 }

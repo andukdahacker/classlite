@@ -19,6 +19,7 @@
     "@tanstack/react-query": "^5.81.5",
     "@tiptap/core": "^3.4.3",
     "@tiptap/extension-link": "^3.4.3",
+    "@tiptap/extension-table": "^3.4.4",
     "@tiptap/extension-text-align": "^3.4.3",
     "@tiptap/pm": "^3.4.3",
     "@tiptap/react": "^3.4.3",

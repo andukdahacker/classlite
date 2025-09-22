@@ -34,7 +34,7 @@ export function MultipleChoiceTaskViewer({
     <div className="rounded-md border p-4 flex flex-col gap-4">
       <h3 className="font-bold">Multiple Choice Task</h3>
       {(task.instructions as Content) && (
-        <AppEditor editor={instructionEditor} />
+        <AppEditor editor={instructionEditor} showMenu={false} />
       )}
       <div className="flex flex-col gap-4">
         {task.questions.map((q, qIndex) => (

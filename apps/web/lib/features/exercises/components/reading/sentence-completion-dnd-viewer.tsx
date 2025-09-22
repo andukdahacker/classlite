@@ -2,13 +2,8 @@
 
 import { AppEditor } from "@/lib/core/components/editor/app-editor";
 import { Gap } from "@/lib/core/components/editor/extensions/gap";
-import {
-  DragDropContext,
-  Draggable,
-  Droppable,
-  DropResult,
-} from "@hello-pangea/dnd";
 import Link from "@tiptap/extension-link";
+import { TableKit } from "@tiptap/extension-table";
 import TextAlign from "@tiptap/extension-text-align";
 import {
   NodeViewWrapper,
@@ -17,7 +12,7 @@ import {
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { ReadingSentenceCompletionTask } from "@workspace/types";
-import { useState } from "react";
+import { DragEvent, useState } from "react";
 
 interface SentenceCompletionDragAndDropViewerProps {
   task: ReadingSentenceCompletionTask;
@@ -29,162 +24,141 @@ export function SentenceCompletionDragAndDropViewer({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [options, setOptions] = useState(task.options ?? []);
 
-  const contentEditor = useEditor({
-    extensions: [
-      StarterKit,
-      Link,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Gap.extend({
-        onUpdate(event) {
-          console.log("event", event);
-        },
-        addNodeView() {
-          return ReactNodeViewRenderer(({ node }) => {
-            const gapIndex = node.attrs.order;
-            console.log("Rendering gap", gapIndex, answers[gapIndex]);
-            return (
-              <NodeViewWrapper className="inline-block">
-                <Droppable
-                  droppableId={`gap-${gapIndex}`}
-                  direction="horizontal"
-                >
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`p-2 border rounded-md min-h-16 min-w-24 flex items-center justify-center ${
-                        snapshot.isDraggingOver ? "bg-gray-200" : ""
-                      }`}
-                    >
-                      {answers[gapIndex] ? (
-                        <Draggable draggableId={answers[gapIndex]!} index={0}>
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="bg-white p-2 rounded-md shadow-md"
-                            >
-                              {answers[gapIndex]}
-                            </div>
-                          )}
-                        </Draggable>
-                      ) : (
-                        <span className="text-gray-400">{gapIndex}</span>
-                      )}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </NodeViewWrapper>
-            );
-          });
-        },
-      }),
-    ],
-    content: task.content,
-    editable: false,
-    immediatelyRender: false,
-  });
+  const handleDragStart = (
+    e: DragEvent<HTMLDivElement>,
+    item: string,
+    source: string,
+  ) => {
+    e.dataTransfer.setData("text/plain", item);
+    e.dataTransfer.setData("source", source);
+  };
 
-  // useEffect(() => {
-  //   if (contentEditor) {
-  //     contentEditor.commands.setContent(task.content);
-  //   }
-  // }, [answers, contentEditor, task.content]);
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
 
-  const onDragEnd = (result: DropResult<string>) => {
-    const { source, destination } = result;
+  const handleDrop = (
+    e: DragEvent<HTMLDivElement>,
+    target: string,
+    isGap: boolean,
+  ) => {
+    e.preventDefault();
+    const item = e.dataTransfer.getData("text/plain");
+    const source = e.dataTransfer.getData("source");
 
-    if (!destination) return;
-
-    const sourceId = source.droppableId;
-    const destinationId = destination.droppableId;
-
-    if (sourceId === destinationId && source.index === destination.index) {
+    if (source === "options" && !isGap) {
       return;
     }
 
-    if (sourceId === "options") {
-      const newOptions = Array.from(options);
-      const [removed] = newOptions.splice(source.index, 1);
-
-      if (!removed) return;
-
-      if (destinationId.startsWith("gap-")) {
-        const gapIndex = destinationId.split("-")[1];
-        if (!gapIndex) return;
-        const newAnswers = { ...answers };
-        const oldAnswer = newAnswers[gapIndex];
-        if (oldAnswer) {
-          newOptions.push(oldAnswer);
+    if (source === "options") {
+      const newOptions = options.filter((o) => o !== item);
+      if (isGap) {
+        const gapIndex = target;
+        const existingItem = answers[gapIndex];
+        if (existingItem) {
+          newOptions.push(existingItem);
         }
-        newAnswers[gapIndex] = removed;
-        setAnswers(newAnswers);
-      } else {
-        newOptions.splice(destination.index, 0, removed);
+        setAnswers({ ...answers, [gapIndex]: item });
       }
       setOptions(newOptions);
-    } else if (sourceId.startsWith("gap-")) {
-      const gapIndex = sourceId.split("-")[1];
-      if (!gapIndex) return;
+    } else if (source.startsWith("gap-")) {
+      const sourceGapIndex = source.replace("gap-", "");
       const newAnswers = { ...answers };
-      const movedItem = newAnswers[gapIndex];
+      delete newAnswers[sourceGapIndex];
 
-      if (!movedItem) return;
-
-      delete newAnswers[gapIndex];
-
-      if (destinationId === "options") {
-        const newOptions = Array.from(options);
-        newOptions.splice(destination.index, 0, movedItem);
-        setOptions(newOptions);
-      } else if (destinationId.startsWith("gap-")) {
-        const destGapIndex = destinationId.split("-")[1];
-        if (!destGapIndex) return;
-        const oldAnswer = newAnswers[destGapIndex];
-        if (oldAnswer) {
-          const newOptions = Array.from(options);
-          newOptions.push(oldAnswer);
+      if (isGap) {
+        const targetGapIndex = target;
+        const existingItem = newAnswers[targetGapIndex];
+        if (existingItem) {
+          const newOptions = [...options, existingItem];
           setOptions(newOptions);
         }
-        newAnswers[destGapIndex] = movedItem;
+        newAnswers[targetGapIndex] = item;
+      } else {
+        const newOptions = [...options, item];
+        setOptions(newOptions);
       }
       setAnswers(newAnswers);
     }
   };
+
+  const contentEditor = useEditor(
+    {
+      extensions: [
+        StarterKit,
+        Link,
+        TextAlign.configure({ types: ["heading", "paragraph"] }),
+        TableKit,
+        Gap.extend({
+          addNodeView() {
+            return ReactNodeViewRenderer(({ node }) => {
+              const gapIndex = String(node.attrs.order);
+              return (
+                <NodeViewWrapper className="inline-block px-1">
+                  <div
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, gapIndex, true)}
+                    className="border-2 border-dashed rounded-md min-h-[3.5rem] p-2 min-w-[8rem] flex items-center justify-center bg-muted/20"
+                  >
+                    {answers[gapIndex] ? (
+                      <div
+                        draggable
+                        onDragStart={(e) =>
+                          handleDragStart(
+                            e,
+                            answers[gapIndex]!,
+                            `gap-${gapIndex}`,
+                          )
+                        }
+                        className="bg-background border rounded-lg p-2 shadow-sm text-sm cursor-move w-full text-center"
+                      >
+                        <span className="text-xs text-muted-foreground font-semibold">
+                          {gapIndex}
+                        </span>
+                        <div className="font-medium">{answers[gapIndex]}</div>
+                      </div>
+                    ) : (
+                      <span className="font-semibold text-muted-foreground">
+                        {gapIndex}
+                      </span>
+                    )}
+                  </div>
+                </NodeViewWrapper>
+              );
+            });
+          },
+        }),
+      ],
+      content: task.content,
+      editable: false,
+      immediatelyRender: false,
+    },
+    [answers],
+  );
+
   return (
-    <DragDropContext onDragEnd={(result) => onDragEnd(result)}>
-      <div className="rounded-md border p-4 flex flex-col gap-4">
-        <h3 className="font-bold">Sentence Completion</h3>
-        <Droppable droppableId="options" direction="horizontal">
-          {(provided, snapshot) => (
+    <div className="rounded-lg border bg-card text-card-foreground p-4 sm:p-6 flex flex-col gap-6">
+      <h3 className="text-xl font-bold">Sentence Completion</h3>
+      <AppEditor editor={contentEditor} showMenu={false} />
+      <div
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, "options", false)}
+        className="flex flex-col gap-4 p-4 border rounded-lg min-h-[8rem] bg-muted/30"
+      >
+        <h4 className="font-semibold">Word Bank</h4>
+        <div className="flex gap-2 flex-wrap">
+          {options.map((option) => (
             <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={`flex gap-2 p-4 border rounded-md min-h-24 ${
-                snapshot.isDraggingOver ? "bg-gray-100" : ""
-              }`}
+              key={option}
+              draggable
+              onDragStart={(e) => handleDragStart(e, option, "options")}
+              className="bg-background border rounded-lg px-3 py-1.5 shadow-sm text-sm cursor-move hover:shadow-md transition-shadow"
             >
-              <AppEditor editor={contentEditor} showMenu={false} />
-              {options.map((option, index) => (
-                <Draggable key={option} draggableId={option} index={index}>
-                  {(provided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      className="bg-white p-2 rounded-md shadow-md text-black"
-                    >
-                      {option}
-                    </div>
-                  )}
-                </Draggable>
-              ))}
+              {option}
             </div>
-          )}
-        </Droppable>
+          ))}
+        </div>
       </div>
-    </DragDropContext>
+    </div>
   );
 }

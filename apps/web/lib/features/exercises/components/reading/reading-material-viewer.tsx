@@ -31,7 +31,7 @@ export function ReadingMaterialViewer({
   return (
     <div className="p-4 h-full overflow-y-auto">
       <h1 className="text-2xl font-bold mb-4">{title}</h1>
-      <AppEditor editor={editor} />
+      <AppEditor editor={editor} showMenu={false} />
     </div>
   );
 }

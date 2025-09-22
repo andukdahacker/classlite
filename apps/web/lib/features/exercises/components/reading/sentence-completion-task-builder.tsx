@@ -3,6 +3,7 @@
 import { AppEditor } from "@/lib/core/components/editor/app-editor";
 import { Gap } from "@/lib/core/components/editor/extensions/gap";
 import Link from "@tiptap/extension-link";
+import { TableKit } from "@tiptap/extension-table";
 import TextAlign from "@tiptap/extension-text-align";
 import { JSONContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -69,6 +70,11 @@ export function SentenceCompletionTaskBuilder({
         types: ["heading", "paragraph"],
       }),
       Gap,
+      TableKit.configure({
+        table: {
+          resizable: true,
+        },
+      }),
     ],
     content: task.content ?? "",
     onUpdate: ({ editor }) => {
@@ -282,11 +288,13 @@ export function SentenceCompletionTaskBuilder({
                       <SelectValue placeholder="Select Answer" />
                     </SelectTrigger>
                     <SelectContent>
-                      {task.options?.map((option, oIndex) => (
-                        <SelectItem key={oIndex} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
+                      {task.options
+                        ?.filter((option) => option !== "")
+                        .map((option, oIndex) => (
+                          <SelectItem key={oIndex} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 )}
