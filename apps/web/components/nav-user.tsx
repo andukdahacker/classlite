@@ -9,11 +9,23 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { AuthContext } from "@/lib/features/auth/components/auth-context";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +41,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@workspace/ui/components/sidebar";
+import React, { useState } from "react";
 
 export function NavUser({
   user,
@@ -39,7 +52,9 @@ export function NavUser({
     avatar?: string;
   };
 }) {
+  const { logOut } = React.useContext(AuthContext);
   const { isMobile } = useSidebar();
+  const [logoutConfirmDialogOpen, setLogoutConfirmDialogOpen] = useState(false);
 
   return (
     <SidebarMenu>
@@ -106,13 +121,31 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLogoutConfirmDialogOpen(true)}>
               <LogOut />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
+
+      <AlertDialog
+        open={logoutConfirmDialogOpen}
+        onOpenChange={setLogoutConfirmDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will be redirected to the login page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={logOut}>Log Out</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarMenu>
   );
 }

@@ -11,9 +11,10 @@ import { CompletionDragAndDropViewer } from "./completion-dnd-viewer";
 
 interface CompletionTaskViewerProps {
   task: ReadingCompletionTask;
+  questionBefore: number;
 }
 
-export function CompletionTaskViewer({ task }: CompletionTaskViewerProps) {
+export function CompletionTaskViewer({ task, questionBefore }: CompletionTaskViewerProps) {
   const instructionEditor = useEditor({
     extensions: [
       StarterKit,
@@ -43,7 +44,7 @@ export function CompletionTaskViewer({ task }: CompletionTaskViewerProps) {
   });
 
   if (task.taskType === "DragAndDrop") {
-    return <CompletionDragAndDropViewer task={task} />;
+    return <CompletionDragAndDropViewer task={task} questionBefore={questionBefore} />;
   }
 
   return (

@@ -3,6 +3,7 @@ import { ExerciseSchema } from "../../exercise/schema/exercise.schema.js";
 import { Nullable } from "../../nullable.js";
 import { BaseResponseSchema } from "../../response.js";
 import { SubmissionSchema } from "../../submission/schema/submission.schema.js";
+import { UserSchema } from "../../user/schema/user.schema.js";
 import { AssignmentSchema } from "../schema/assignment.schema.js";
 
 export const GetAssignmentResponseSchema = BaseResponseSchema(
@@ -10,6 +11,7 @@ export const GetAssignmentResponseSchema = BaseResponseSchema(
     assignment: AssignmentSchema,
     exercise: ExerciseSchema,
     submission: Nullable(SubmissionSchema),
+    student: UserSchema,
   }),
 );
 

@@ -1,9 +1,10 @@
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
+import { ExerciseDetails } from "@/lib/features/exercises/components/exercise-details";
 
-  return <div>{slug}</div>;
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default async function Page({ params }: PageProps) {
+  const { slug } = await params;
+  return <ExerciseDetails id={slug} />;
 }

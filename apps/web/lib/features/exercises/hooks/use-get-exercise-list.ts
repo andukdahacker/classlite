@@ -6,7 +6,7 @@ function useGetExerciseList(searchString: string) {
     queryKey: ["exerciseList", searchString],
     queryFn: async (value) => {
       return getExerciseList({
-        take: 2,
+        take: 20,
         cursor: value.pageParam == "" ? undefined : value.pageParam,
         isPublic: false,
         searchString: searchString,

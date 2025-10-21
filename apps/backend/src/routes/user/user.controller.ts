@@ -1,10 +1,9 @@
-import argon2 from "argon2";
 import {
   CreateUserInput,
   CreateUserResponse,
   DeleteUserInput,
+  GetUserDetailsResponse,
   GetUserInput,
-  GetUserResponse,
   GetUserListResponse,
   NoDataResponse,
   SignInUserInput,
@@ -12,6 +11,7 @@ import {
   UpdateUserInput,
   UpdateUserResponse,
 } from "@workspace/types";
+import argon2 from "argon2";
 import { AppJwtPayload } from "../../middlewares/auth.middleware.js";
 import JwtService from "../../services/jwt.service.js";
 import UserService from "./user.service.js";
@@ -22,7 +22,7 @@ class UserController {
     private readonly jwtService: JwtService,
   ) {}
 
-  async getUserById(input: GetUserInput): Promise<GetUserResponse> {
+  async getUserById(input: GetUserInput): Promise<GetUserDetailsResponse> {
     const user = await this.userService.findUserById(input.id);
 
     if (!user) {
@@ -30,7 +30,10 @@ class UserController {
     }
 
     return {
-      data: user,
+      data: {
+        user: user,
+        classes: user.classes,
+      },
       message: "Get user successfully",
     };
   }

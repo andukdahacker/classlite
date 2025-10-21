@@ -1,10 +1,12 @@
-import { Type } from "@sinclair/typebox";
+import { Static, Type } from "@sinclair/typebox";
 import { Nullable } from "../../nullable.js";
 
 export const WritingExerciseTypeSchema = Type.Union(
   [Type.Literal("Task 1"), Type.Literal("Task 2")],
   { $id: "WritingExerciseType" },
 );
+
+export type WritingExerciseType = Static<typeof WritingExerciseTypeSchema>;
 
 export const WritingExerciseSchema = Type.Object(
   {
@@ -21,3 +23,5 @@ export const WritingExerciseSchema = Type.Object(
   },
   { $id: "WritingExercise" },
 );
+
+export type WritingExercise = Static<typeof WritingExerciseSchema>;

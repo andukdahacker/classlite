@@ -1,6 +1,6 @@
 "use client";
 
-import { Center, User } from "@/lib/schema/types";
+import { Center, User } from "@workspace/types";
 import React from "react";
 
 interface AuthContextProps {
@@ -8,6 +8,7 @@ interface AuthContextProps {
   user?: User;
   isAuthenticated: boolean;
   isLoading: boolean;
+  logOut: () => Promise<void>;
 }
 
 export const AuthContext = React.createContext<AuthContextProps>({
@@ -15,4 +16,5 @@ export const AuthContext = React.createContext<AuthContextProps>({
   user: undefined,
   isAuthenticated: false,
   isLoading: true,
+  logOut: async () => {},
 });

@@ -1,10 +1,18 @@
 "use client";
 
-import { ReadingExercise } from "@workspace/types";
+import {
+  ListeningExercise,
+  ReadingExercise,
+  WritingExercise,
+} from "@workspace/types";
 import { Loader2Icon } from "lucide-react";
 import { useGetExercise } from "../hooks/use-get-exercise";
+import { ListeningComposer } from "./listening/listening-composer";
+import { ListeningComposerProvider } from "./listening/listening-composer-provider";
 import { ReadingComposer } from "./reading/reading-composer";
 import { ReadingComposerProvider } from "./reading/reading-composer-provider";
+import { WritingComposer } from "./writing/writing-composer";
+import { WritingComposerProvider } from "./writing/writing-composer-provider";
 
 interface ExerciseEditProps {
   id: string;
@@ -34,6 +42,30 @@ function ExerciseEdit({ id }: ExerciseEditProps) {
             >
               <ReadingComposer />
             </ReadingComposerProvider>
+          );
+        }
+        case "LISTENING": {
+          const listeningExercise = data.exercise.content as ListeningExercise;
+
+          return (
+            <ListeningComposerProvider
+              listeningExercise={listeningExercise}
+              exercise={data.exercise}
+            >
+              <ListeningComposer />
+            </ListeningComposerProvider>
+          );
+        }
+        case "WRITING": {
+          const writingExercise = data.exercise.content as WritingExercise;
+
+          return (
+            <WritingComposerProvider
+              writingExercise={writingExercise}
+              exercise={data.exercise}
+            >
+              <WritingComposer />
+            </WritingComposerProvider>
           );
         }
       }

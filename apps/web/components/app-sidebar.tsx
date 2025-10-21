@@ -58,12 +58,6 @@ const navItems: NavItem[] = [
     icon: <LibraryBig />,
     allowRole: ["ADMIN", "TEACHER"],
   },
-  // {
-  //   title: "Analytics",
-  //   url: "/dashboard/analytics",
-  //   icon: <Activity />,
-  //   allowRole: ["ADMIN", "TEACHER", "STUDENT"],
-  // },
 ] as const;
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

@@ -7,5 +7,9 @@ export default async function Page({
 }) {
   const { slug } = await params;
 
-  return <UserDetails id={slug} />;
+  return (
+    <div className="p-4">
+      <UserDetails id={slug} />
+    </div>
+  );
 }

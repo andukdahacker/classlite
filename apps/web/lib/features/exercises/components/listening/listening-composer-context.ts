@@ -13,10 +13,13 @@ export type ListeningComposerState = {
   setName: (name: string) => void;
   description: string;
   setDescription: (description: string) => void;
-  listeningFile: string | null;
-  setListeningFile: (file: string | null) => void;
+  listeningFile: ListeningExercise["file"] | null;
+  setListeningFile: (file: ListeningExercise["file"] | null) => void;
   tasks: ListeningExerciseTask[];
   addTask: (type: ListeningExerciseType) => void;
+  removeTask: (index: number) => void;
+  duplicateTask: (index: number) => void;
+  editTask: <T extends ListeningExerciseTask>(index: number, task: T) => void;
   exercise: Exercise | null;
   reorderTasks: (from: number, to: number) => void;
 };
@@ -30,6 +33,9 @@ export const ListeningComposerContext = createContext<ListeningComposerState>({
   setListeningFile: () => {},
   tasks: [],
   addTask: () => {},
+  removeTask: () => {},
+  duplicateTask: () => {},
+  editTask: () => {},
   exercise: null,
   reorderTasks: () => {},
 });

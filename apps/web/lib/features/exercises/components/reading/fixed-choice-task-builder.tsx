@@ -1,15 +1,18 @@
 "use client";
 
 import { AppEditor } from "@/lib/core/components/editor/app-editor";
-import {
-  ReadingTFNGTask,
-  ReadingYNNGTask,
-} from "@/lib/schema/types";
+
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import { JSONContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import {
+  ReadingTFNGQuestion,
+  ReadingTFNGTask,
+  ReadingYNNGQuestion,
+  ReadingYNNGTask,
+} from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
@@ -43,7 +46,7 @@ export function FixedChoiceTaskBuilder({
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleInstructionChange = (e: any) => {
-    editTask(index, { ...task, instruction: e });
+    editTask(index, { ...task, instructions: e });
   };
 
   const editor = useEditor({
@@ -67,12 +70,19 @@ export function FixedChoiceTaskBuilder({
 
     if (!newQuestions[questionIndex]) return;
 
-    newQuestions[questionIndex].content = content;
+    newQuestions[questionIndex]!.content = content;
 
-    editTask(index, {
-      ...task,
-      questions: newQuestions,
-    });
+    if (task.type === "True/False/Not Given") {
+      editTask(index, {
+        ...task,
+        questions: newQuestions as ReadingTFNGQuestion[],
+      });
+    } else {
+      editTask(index, {
+        ...task,
+        questions: newQuestions as ReadingYNNGQuestion[],
+      });
+    }
   };
 
   const removeQuestion = (questionIndex: number) => {
@@ -80,17 +90,22 @@ export function FixedChoiceTaskBuilder({
 
     newQuestions.splice(questionIndex, 1);
 
-    const remappedOrder: typeof newQuestions = newQuestions.map((e, i) => {
-      return {
-        ...e,
-        order: i + 1,
-      };
-    });
+    const remappedOrder = newQuestions.map((e, i) => ({
+      ...e,
+      order: i + 1,
+    }));
 
-    editTask(index, {
-      ...task,
-      questions: remappedOrder,
-    });
+    if (task.type === "True/False/Not Given") {
+      editTask(index, {
+        ...task,
+        questions: remappedOrder as ReadingTFNGQuestion[],
+      });
+    } else {
+      editTask(index, {
+        ...task,
+        questions: remappedOrder as ReadingYNNGQuestion[],
+      });
+    }
   };
 
   const onDragEndQuestion = (sourceIndex: number, destinationIndex: number) => {
@@ -98,48 +113,72 @@ export function FixedChoiceTaskBuilder({
 
     const temp = newQuestions[destinationIndex];
 
-    if (!newQuestions[sourceIndex]) return;
-    if (!temp) return;
+    if (!newQuestions[sourceIndex] || !temp) return;
 
-    newQuestions[destinationIndex] = newQuestions[sourceIndex];
+    newQuestions[destinationIndex] = newQuestions[sourceIndex]!;
     newQuestions[sourceIndex] = temp;
 
-    const remappedOrder: typeof newQuestions = newQuestions.map((e, i) => {
-      return {
-        ...e,
-        order: i + 1,
-      };
-    });
+    const remappedOrder = newQuestions.map((e, i) => ({
+      ...e,
+      order: i + 1,
+    }));
 
-    editTask(index, {
-      ...task,
-      questions: remappedOrder,
-    });
+    if (task.type === "True/False/Not Given") {
+      editTask(index, {
+        ...task,
+        questions: remappedOrder as ReadingTFNGQuestion[],
+      });
+    } else {
+      editTask(index, {
+        ...task,
+        questions: remappedOrder as ReadingYNNGQuestion[],
+      });
+    }
   };
 
   const addQuestion = () => {
     const order = task.questions.length + 1;
-    editTask(index, {
-      ...task,
-      questions: [
-        ...task.questions,
+    if (task.type === "True/False/Not Given") {
+      const newQuestions = [
+        ...(task.questions as ReadingTFNGQuestion[]),
         {
           order,
           content: `Question ${order}`,
-          correctAnswer: options[0],
-        },
-      ],
-    });
+          correctAnswer: "TRUE",
+        } as ReadingTFNGQuestion,
+      ];
+      editTask(index, { ...task, questions: newQuestions });
+    } else {
+      const newQuestions = [
+        ...(task.questions as ReadingYNNGQuestion[]),
+        {
+          order,
+          content: `Question ${order}`,
+          correctAnswer: "YES",
+        } as ReadingYNNGQuestion,
+      ];
+      editTask(index, { ...task, questions: newQuestions });
+    }
   };
 
   const markCorrect = (questionIndex: number, value: string) => {
     const newQuestions = [...task.questions];
+    const question = newQuestions[questionIndex];
+    if (!question) return;
 
-    if (!newQuestions[questionIndex]) return;
-
-    newQuestions[questionIndex].correctAnswer = value as any;
-
-    editTask(index, { ...task, questions: newQuestions });
+    if (task.type === "True/False/Not Given") {
+      question.correctAnswer = value as "TRUE" | "FALSE" | "NOT GIVEN";
+      editTask(index, {
+        ...task,
+        questions: newQuestions as ReadingTFNGQuestion[],
+      });
+    } else {
+      question.correctAnswer = value as "YES" | "NO" | "NOT GIVEN";
+      editTask(index, {
+        ...task,
+        questions: newQuestions as ReadingYNNGQuestion[],
+      });
+    }
   };
 
   return (
@@ -210,7 +249,7 @@ export function FixedChoiceTaskBuilder({
                             value={q.correctAnswer}
                             className="flex gap-4"
                           >
-                            {options.map((opt) => (
+                            {(options as string[]).map((opt) => (
                               <div key={opt} className="flex items-center">
                                 <RadioGroupItem
                                   value={opt}

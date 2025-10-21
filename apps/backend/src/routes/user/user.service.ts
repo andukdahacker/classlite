@@ -25,6 +25,18 @@ class UserService {
       where: {
         id,
       },
+      include: {
+        classes: {
+          include: {
+            class: true,
+            assignments: {
+              include: {
+                submission: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 

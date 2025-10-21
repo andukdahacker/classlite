@@ -196,7 +196,7 @@ class SubmissionController {
   ): Promise<UpdateSubmissionResponse> {
     const submission = await this.submissionService.updateSubmission(input);
 
-    if (input.isReviewed) {
+    if (input.isReviewed && submission.assignment.status != "REVIEWED") {
       await this.assignmentService.updateAssignment({
         id: submission.assignmentId,
         status: "REVIEWED",

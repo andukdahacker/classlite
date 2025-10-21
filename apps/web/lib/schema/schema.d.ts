@@ -270,6 +270,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/center/sign-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Sign out a center */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/user/": {
         parameters: {
             query?: never;
@@ -440,20 +490,44 @@ export interface paths {
                     content: {
                         "application/json": {
                             data: {
-                                id: string;
-                                email: string;
-                                /** @default null */
-                                username: string | null;
-                                /** @default null */
-                                firstName: string | null;
-                                /** @default null */
-                                lastName: string | null;
-                                centerId: string;
-                                role: "ADMIN" | "TEACHER" | "STUDENT";
-                                /** @default null */
-                                phoneNumber: string | null;
-                                createdAt: unknown;
-                                updatedAt: unknown;
+                                user: {
+                                    id: string;
+                                    email: string;
+                                    /** @default null */
+                                    username: string | null;
+                                    /** @default null */
+                                    firstName: string | null;
+                                    /** @default null */
+                                    lastName: string | null;
+                                    centerId: string;
+                                    role: "ADMIN" | "TEACHER" | "STUDENT";
+                                    /** @default null */
+                                    phoneNumber: string | null;
+                                    createdAt: unknown;
+                                    updatedAt: unknown;
+                                };
+                                classes: {
+                                    class: {
+                                        id: string;
+                                        name: string;
+                                        /** @default null */
+                                        description: string | null;
+                                        createdAt: unknown;
+                                        updatedAt: unknown;
+                                    };
+                                    assignments?: {
+                                        id: string;
+                                        title: string;
+                                        /** @default null */
+                                        dueDate: unknown | null;
+                                        classMemberClassId: string;
+                                        classMemberUserId: string;
+                                        exerciseId: string;
+                                        status: "ASSIGNED" | "SUBMITTED" | "REVIEWED";
+                                        createdAt: unknown;
+                                        updatedAt: unknown;
+                                    }[];
+                                }[];
                             };
                             message: string;
                         };
@@ -2184,6 +2258,22 @@ export interface paths {
                                     createdAt: unknown;
                                     updatedAt: unknown;
                                 } | null;
+                                student: {
+                                    id: string;
+                                    email: string;
+                                    /** @default null */
+                                    username: string | null;
+                                    /** @default null */
+                                    firstName: string | null;
+                                    /** @default null */
+                                    lastName: string | null;
+                                    centerId: string;
+                                    role: "ADMIN" | "TEACHER" | "STUDENT";
+                                    /** @default null */
+                                    phoneNumber: string | null;
+                                    createdAt: unknown;
+                                    updatedAt: unknown;
+                                };
                             };
                             message: string;
                         };
@@ -2649,50 +2739,40 @@ export interface components {
             } | {
                 order: number;
                 /** @enum {string} */
-                type: "Summary Completion";
-                instruction: unknown;
-                title: string;
-                content: string;
-                questions: {
-                    order: number;
-                    options: {
-                        order: number;
-                        value: string;
-                        content: string;
-                    }[];
-                    correctAnswer: string;
-                }[];
-            } | {
-                order: number;
-                instruction: unknown;
+                type: "Completion";
+                instructions?: unknown;
+                title?: string;
                 content?: unknown;
                 questions: {
                     order: number;
                     correctAnswer: string;
                 }[];
-                /** @enum {string} */
-                type: "Sentence Completion";
                 taskType?: "Typing" | "DragAndDrop";
                 options?: string[];
             } | {
                 order: number;
                 /** @enum {string} */
-                type: "Note Completion";
+                type: "Diagram Labeling";
+                instructions: unknown;
+                diagram: unknown;
+                questions: {
+                    order: number;
+                    correctAnswer: string;
+                }[];
+            } | {
+                order: number;
+                /** @enum {string} */
+                type: "Matching heading to paragraph";
                 instructions: unknown;
                 questions: {
                     order: number;
                     content: string;
                     correctAnswer: string;
                 }[];
-            } | {
-                order: number;
-                /** @enum {string} */
-                type: "Table Completion";
-                instructions: unknown;
-                table: unknown;
-                questions: {
+                options: {
                     order: number;
-                    correctAnswer: string;
+                    value: string;
+                    content: string;
                 }[];
             })[];
         };
@@ -2774,93 +2854,71 @@ export interface components {
         };
         /** ReadingYNNGOption */
         ReadingYNNGOption: "YES" | "NO" | "NOT GIVEN";
-        /** ReadingSummaryCompletionTask */
-        ReadingSummaryCompletionTask: {
+        /** ReadingCompletionTask */
+        ReadingCompletionTask: {
             order: number;
             /** @enum {string} */
-            type: "Summary Completion";
-            instruction: unknown;
-            title: string;
-            content: string;
-            questions: {
-                order: number;
-                options: {
-                    order: number;
-                    value: string;
-                    content: string;
-                }[];
-                correctAnswer: string;
-            }[];
-        };
-        /** ReadingSummaryCompletionQuestion */
-        ReadingSummaryCompletionQuestion: {
-            order: number;
-            options: {
-                order: number;
-                value: string;
-                content: string;
-            }[];
-            correctAnswer: string;
-        };
-        /** ReadingSummaryCompletionOption */
-        ReadingSummaryCompletionOption: {
-            order: number;
-            value: string;
-            content: string;
-        };
-        /** ReadingSentenceCompletionTask */
-        ReadingSentenceCompletionTask: {
-            order: number;
-            instruction: unknown;
+            type: "Completion";
+            instructions?: unknown;
+            title?: string;
             content?: unknown;
             questions: {
                 order: number;
                 correctAnswer: string;
             }[];
-            /** @enum {string} */
-            type: "Sentence Completion";
             taskType?: "Typing" | "DragAndDrop";
             options?: string[];
         };
-        /** ReadingSentenceCompletionQuestion */
-        ReadingSentenceCompletionQuestion: {
+        /** ReadingCompletionQuestion */
+        ReadingCompletionQuestion: {
             order: number;
             correctAnswer: string;
         };
-        /** ReadingNoteCompletionTask */
-        ReadingNoteCompletionTask: {
+        /** ReadingDiagramLabelCompletionTask */
+        ReadingDiagramLabelCompletionTask: {
             order: number;
             /** @enum {string} */
-            type: "Note Completion";
+            type: "Diagram Labeling";
+            instructions: unknown;
+            diagram: unknown;
+            questions: {
+                order: number;
+                correctAnswer: string;
+            }[];
+        };
+        /** ReadingDiagramLabelCompletionQuestion */
+        ReadingDiagramLabelCompletionQuestion: {
+            order: number;
+            correctAnswer: string;
+        };
+        /** ReadingMatchHTPTask */
+        ReadingMatchHTPTask: {
+            order: number;
+            /** @enum {string} */
+            type: "Matching heading to paragraph";
             instructions: unknown;
             questions: {
                 order: number;
                 content: string;
                 correctAnswer: string;
             }[];
+            options: {
+                order: number;
+                value: string;
+                content: string;
+            }[];
         };
-        /** ReadingNoteCompletionQuestion */
-        ReadingNoteCompletionQuestion: {
+        /** ReadingMatchHTPQuestion */
+        ReadingMatchHTPQuestion: {
             order: number;
             content: string;
             correctAnswer: string;
         };
-        /** ReadingTableCompletionTask */
-        ReadingTableCompletionTask: {
+        /** ReadingMatchHTPOption */
+        ReadingMatchHTPOption: {
             order: number;
-            /** @enum {string} */
-            type: "Table Completion";
-            instructions: unknown;
-            table: unknown;
-            questions: {
-                order: number;
-                correctAnswer: string;
-            }[];
-        };
-        /** ReadingTableCompletionQuestion */
-        ReadingTableCompletionQuestion: {
-            order: number;
-            correctAnswer: string;
+            value: string;
+            content: string;
         };
         /** ListeningExercise */
         ListeningExercise: {
@@ -2909,61 +2967,16 @@ export interface components {
             } | {
                 order: number;
                 /** @enum {string} */
-                type: "Summary Completion";
-                instruction: unknown;
-                title: string;
-                content: string;
-                questions: {
-                    order: number;
-                    options: {
-                        order: number;
-                        value: string;
-                        content: string;
-                    }[];
-                    correctAnswer: string;
-                }[];
-            } | {
-                order: number;
-                instruction: unknown;
+                type: "Completion";
+                instructions?: unknown;
+                title?: string;
                 content?: unknown;
                 questions: {
                     order: number;
                     correctAnswer: string;
                 }[];
-                /** @enum {string} */
-                type: "Sentence Completion";
                 taskType?: "Typing" | "DragAndDrop";
                 options?: string[];
-            } | {
-                order: number;
-                /** @enum {string} */
-                type: "Note Completion";
-                instructions: unknown;
-                questions: {
-                    order: number;
-                    content: string;
-                    correctAnswer: string;
-                }[];
-            } | {
-                order: number;
-                /** @enum {string} */
-                type: "Table Completion";
-                instructions: unknown;
-                table: unknown;
-                questions: {
-                    order: number;
-                    correctAnswer: string;
-                }[];
-            } | {
-                order: number;
-                /** @enum {string} */
-                type: "Flowchart Completion";
-                instructions: unknown;
-                table: unknown;
-                questions: {
-                    order: number;
-                    correctAnswer: string;
-                }[];
             } | {
                 order: number;
                 /** @enum {string} */
@@ -3059,108 +3072,23 @@ export interface components {
         };
         /** ListeningYNNGOption */
         ListeningYNNGOption: "YES" | "NO" | "NOT GIVEN";
-        /** ListeningSummaryCompletionTask */
-        ListeningSummaryCompletionTask: {
+        /** ListeningCompletionTask */
+        ListeningCompletionTask: {
             order: number;
             /** @enum {string} */
-            type: "Summary Completion";
-            instruction: unknown;
-            title: string;
-            content: string;
-            questions: {
-                order: number;
-                options: {
-                    order: number;
-                    value: string;
-                    content: string;
-                }[];
-                correctAnswer: string;
-            }[];
-        };
-        /** ListeningSummaryCompletionQuestion */
-        ListeningSummaryCompletionQuestion: {
-            order: number;
-            options: {
-                order: number;
-                value: string;
-                content: string;
-            }[];
-            correctAnswer: string;
-        };
-        /** ListeningSummaryCompletionOption */
-        ListeningSummaryCompletionOption: {
-            order: number;
-            value: string;
-            content: string;
-        };
-        /** ListeningSentenceCompletionTask */
-        ListeningSentenceCompletionTask: {
-            order: number;
-            instruction: unknown;
+            type: "Completion";
+            instructions?: unknown;
+            title?: string;
             content?: unknown;
             questions: {
                 order: number;
                 correctAnswer: string;
             }[];
-            /** @enum {string} */
-            type: "Sentence Completion";
             taskType?: "Typing" | "DragAndDrop";
             options?: string[];
         };
-        /** ListeningSentenceCompletionQuestion */
-        ListeningSentenceCompletionQuestion: {
-            order: number;
-            correctAnswer: string;
-        };
-        /** ListeningNoteCompletionTask */
-        ListeningNoteCompletionTask: {
-            order: number;
-            /** @enum {string} */
-            type: "Note Completion";
-            instructions: unknown;
-            questions: {
-                order: number;
-                content: string;
-                correctAnswer: string;
-            }[];
-        };
-        /** ListeningNoteCompletionQuestion */
-        ListeningNoteCompletionQuestion: {
-            order: number;
-            content: string;
-            correctAnswer: string;
-        };
-        /** ListeningTableCompletionTask */
-        ListeningTableCompletionTask: {
-            order: number;
-            /** @enum {string} */
-            type: "Table Completion";
-            instructions: unknown;
-            table: unknown;
-            questions: {
-                order: number;
-                correctAnswer: string;
-            }[];
-        };
-        /** ListeningTableCompletionQuestion */
-        ListeningTableCompletionQuestion: {
-            order: number;
-            correctAnswer: string;
-        };
-        /** ListeningFlowchartCompletionTask */
-        ListeningFlowchartCompletionTask: {
-            order: number;
-            /** @enum {string} */
-            type: "Flowchart Completion";
-            instructions: unknown;
-            table: unknown;
-            questions: {
-                order: number;
-                correctAnswer: string;
-            }[];
-        };
-        /** ListeningFlowchartCompletionQuestion */
-        ListeningFlowchartCompletionQuestion: {
+        /** ListeningCompletionQuestion */
+        ListeningCompletionQuestion: {
             order: number;
             correctAnswer: string;
         };
@@ -3452,6 +3380,7 @@ export interface components {
             lexicalResourceComment: string;
             grammaticalRangeAndAccuracy: number;
             grammaticalRangeAndAccuracyComment: string;
+            overallScore: number;
         };
         /** ReadingSubmissionGrade */
         ReadingSubmissionGrade: {
@@ -3473,6 +3402,7 @@ export interface components {
             lexicalResourceComment: string;
             grammaticalRangeAndAccuracy: number;
             grammaticalRangeAndAccuracyComment: string;
+            overallScore: number;
         };
         /** SubmissionFeedback */
         SubmissionFeedback: {
@@ -3487,7 +3417,7 @@ export interface components {
                 updatedAt: string;
             }[];
         } | {
-            feedback: string;
+            feedback: unknown;
         } | {
             feedback: string;
         };
@@ -3517,7 +3447,7 @@ export interface components {
         };
         /** ReadingSubmissionFeedback */
         ReadingSubmissionFeedback: {
-            feedback: string;
+            feedback: unknown;
         };
         /** ListeningSubmissionFeedback */
         ListeningSubmissionFeedback: {

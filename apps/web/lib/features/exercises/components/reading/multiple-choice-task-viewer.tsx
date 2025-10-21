@@ -14,10 +14,12 @@ import {
 
 interface MultipleChoiceTaskViewerProps {
   task: ReadingMultipleChoiceTask;
+  questionBefore: number;
 }
 
 export function MultipleChoiceTaskViewer({
   task,
+  questionBefore,
 }: MultipleChoiceTaskViewerProps) {
   const instructionEditor = useEditor({
     extensions: [
@@ -40,7 +42,7 @@ export function MultipleChoiceTaskViewer({
         {task.questions.map((q, qIndex) => (
           <div key={qIndex} className="flex flex-col gap-2">
             <p>
-              <strong>Question {q.order}:</strong> {q.content}
+              <strong>{q.order + questionBefore}.</strong> {q.content}
             </p>
             <RadioGroup className="ml-4">
               {q.options.map((opt, oIndex) => (

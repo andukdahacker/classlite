@@ -80,6 +80,7 @@ export * from "./user/dto/create_user.response.js";
 export * from "./user/dto/delete_user.input.js";
 export * from "./user/dto/get_user.input.js";
 export * from "./user/dto/get_user.response.js";
+export * from "./user/dto/get-user-details.dto.js";
 export * from "./user/dto/get_user_list.input.js";
 export * from "./user/dto/get_user_list.response.js";
 export * from "./user/dto/sign_in_user.input.js";

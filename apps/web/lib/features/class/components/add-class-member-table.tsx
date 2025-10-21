@@ -1,6 +1,6 @@
 "use client";
 
-import { Class } from "@/lib/schema/types";
+import { Class } from "@workspace/types";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Checkbox } from "@workspace/ui/components/checkbox";

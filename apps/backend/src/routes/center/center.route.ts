@@ -86,6 +86,25 @@ async function centerRoutes(fastify: FastifyInstance, opts: any) {
     handler: async (request: FastifyRequest, _reply: FastifyReply) =>
       await centerController.getCurrentCenter(request.jwtPayload.id),
   });
+
+  fastify.post("/sign-out", {
+    schema: {
+      description: "Sign out a center",
+      tags: ["center"],
+      response: {
+        200: { type: "object", properties: { message: { type: "string" } } },
+        500: BaseResponseErrorSchema,
+      },
+    },
+    preHandler: [authMiddleware],
+    handler: async (_request: FastifyRequest, reply: FastifyReply) => {
+      return reply
+        .clearCookie("token", {
+          path: "/",
+        })
+        .send({ message: "Sign out successfully" });
+    },
+  });
 }
 
 export default centerRoutes;

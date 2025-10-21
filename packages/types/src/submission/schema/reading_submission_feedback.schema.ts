@@ -1,12 +1,14 @@
-import { Static, Type } from '@sinclair/typebox';
+import { Static, Type } from "@sinclair/typebox";
 
 export const ReadingSubmissionFeedbackSchema = Type.Object(
-    {
-        feedback: Type.String(),
-    },
-    {
-        $id: 'ReadingSubmissionFeedback',
-    },
+  {
+    feedback: Type.Any(),
+  },
+  {
+    $id: "ReadingSubmissionFeedback",
+  },
 );
 
-export type ReadingSubmissionFeedback = Static<typeof ReadingSubmissionFeedbackSchema>;
+export type ReadingSubmissionFeedback = Static<
+  typeof ReadingSubmissionFeedbackSchema
+>;

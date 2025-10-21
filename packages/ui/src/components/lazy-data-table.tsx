@@ -52,6 +52,8 @@ interface DataTableProps<TData, TValue> {
   headerComponent?: ReactNode;
 }
 
+export type ColumnDefinition<T> = ColumnDef<T>;
+
 function LazyDataTable<TData, TValue>({
   columns,
   data,

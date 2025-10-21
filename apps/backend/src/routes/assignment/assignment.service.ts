@@ -62,6 +62,11 @@ class AssignmentService {
       include: {
         exercise: true,
         submission: true,
+        classMember: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
 

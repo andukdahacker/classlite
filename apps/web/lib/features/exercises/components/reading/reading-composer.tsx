@@ -31,6 +31,7 @@ import {
   Plus,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useContext, useState } from "react";
 import useUpdateExercise from "../../hooks/use-update-exercise";
 import { CompletionTaskBuilder } from "./completion-task-builder";
@@ -67,6 +68,7 @@ function ReadingComposer() {
   });
 
   const [maximizeContent, setMaximizeContent] = useState(true);
+  const router = useRouter();
 
   const { mutate, isPending } = useUpdateExercise();
 
@@ -200,11 +202,30 @@ function ReadingComposer() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Link href={`/dashboard/exercises/${exercise?.id}/preview`}>
-            <Button size="icon">
-              <Eye className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button
+            size="icon"
+            onClick={() => {
+              mutate(
+                {
+                  id: exercise!.id,
+                  content: {
+                    title,
+                    content,
+                    tasks,
+                  },
+                  name,
+                },
+                {
+                  onSuccess: () => {
+                    router.push(`/dashboard/exercises/${exercise?.id}/preview`);
+                  },
+                },
+              );
+            }}
+            disabled={isPending}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
           <Button
             size="icon"
             onClick={() =>

@@ -14,9 +14,10 @@ import {
 
 interface FixedChoiceTaskViewerProps {
   task: ReadingTFNGTask | ReadingYNNGTask;
+  questionBefore: number;
 }
 
-export function FixedChoiceTaskViewer({ task }: FixedChoiceTaskViewerProps) {
+export function FixedChoiceTaskViewer({ task, questionBefore }: FixedChoiceTaskViewerProps) {
   const instructionEditor = useEditor({
     extensions: [
       StarterKit,
@@ -41,7 +42,7 @@ export function FixedChoiceTaskViewer({ task }: FixedChoiceTaskViewerProps) {
         {task.questions.map((q, qIndex) => (
           <div key={qIndex} className="flex flex-col gap-2">
             <p>
-              <strong>Question {q.order}:</strong> {q.content}
+              <strong>Question {questionBefore + q.order}:</strong> {q.content}
             </p>
             <RadioGroup className="ml-4 flex gap-4">
               {options.map((opt, oIndex) => (

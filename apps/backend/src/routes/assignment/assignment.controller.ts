@@ -123,6 +123,7 @@ class AssignmentController {
         assignment: assignment,
         exercise: assignment.exercise,
         submission: assignment.submission,
+        student: assignment.classMember.user,
       },
       message: "Get assignment successfully",
     };

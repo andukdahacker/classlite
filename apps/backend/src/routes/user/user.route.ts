@@ -1,6 +1,3 @@
-import { FastifyInstance } from "fastify";
-import { FastifyReply } from "fastify/types/reply.js";
-import { FastifyRequest } from "fastify/types/request.js";
 import {
   BaseResponseErrorSchema,
   CreateUserInput,
@@ -8,11 +5,11 @@ import {
   CreateUserResponseSchema,
   DeleteUserInput,
   DeleteUserInputSchema,
+  GetUserDetailsResponseSchema,
   GetUserInput,
   GetUserInputSchema,
   GetUserListInputSchema,
   GetUserListResponseSchema,
-  GetUserResponseSchema,
   NoDataResponseSchema,
   SignInUserInput,
   SignInUserInputSchema,
@@ -23,6 +20,9 @@ import {
   UserRoleSchema,
   UserSchema,
 } from "@workspace/types";
+import { FastifyInstance } from "fastify";
+import { FastifyReply } from "fastify/types/reply.js";
+import { FastifyRequest } from "fastify/types/request.js";
 import Env from "../../env.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
@@ -66,7 +66,7 @@ async function userRoutes(fastify: FastifyInstance, opts: any) {
       tags: ["users"],
       params: GetUserInputSchema,
       response: {
-        200: GetUserResponseSchema,
+        200: GetUserDetailsResponseSchema,
         500: BaseResponseErrorSchema,
       },
     },
@@ -137,8 +137,19 @@ async function userRoutes(fastify: FastifyInstance, opts: any) {
     },
     handler: async (
       request: FastifyRequest<{ Body: SignInUserInput }>,
-      _reply: FastifyReply,
-    ) => userController.signIn(request.body),
+      reply: FastifyReply,
+    ) => {
+      const result = await userController.signIn(request.body);
+
+      return reply
+        .setCookie("token", result.data.token, {
+          httpOnly: true,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365,
+        })
+        .send(result);
+    },
   });
 }
 

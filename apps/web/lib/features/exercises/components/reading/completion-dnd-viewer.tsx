@@ -16,10 +16,12 @@ import { DragEvent, useState } from "react";
 
 interface CompletionDragAndDropViewerProps {
   task: ReadingCompletionTask;
+  questionBefore: number;
 }
 
 export function CompletionDragAndDropViewer({
   task,
+  questionBefore,
 }: CompletionDragAndDropViewerProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [options, setOptions] = useState(task.options ?? []);
@@ -113,13 +115,13 @@ export function CompletionDragAndDropViewer({
                         className="bg-background border rounded-lg p-2 shadow-sm text-sm cursor-move w-full text-center"
                       >
                         <span className="text-xs text-muted-foreground font-semibold">
-                          {gapIndex}
+                          {questionBefore + Number(gapIndex)}
                         </span>
                         <div className="font-medium">{answers[gapIndex]}</div>
                       </div>
                     ) : (
                       <span className="font-semibold text-muted-foreground">
-                        {gapIndex}
+                        {questionBefore + Number(gapIndex)}
                       </span>
                     )}
                   </div>
