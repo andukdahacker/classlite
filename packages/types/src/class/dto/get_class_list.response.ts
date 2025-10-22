@@ -8,6 +8,7 @@ export const GetClassListResponseSchema = BaseResponseSchema(
     Type.Object({
       class: ClassSchema,
       members: Type.Array(UserSchema),
+      enrolledAt: Type.Optional(Type.Any()),
     }),
   ),
 );

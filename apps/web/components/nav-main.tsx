@@ -17,6 +17,9 @@ export function NavMain({ items }: { items: NavItem[] }) {
     <SidebarGroup>
       <SidebarMenu>
         {items.map((item) => {
+          if (!center && !user) {
+            return null;
+          }
           if (!center && !item.allowRole.includes(user!.role)) {
             return null;
           }

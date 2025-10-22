@@ -153,6 +153,36 @@ class ClassService {
 
     return classMember;
   }
+
+  async getStudentClass(classId: string, userId: string) {
+    const klass = await this.db.classMember.findUnique({
+      where: {
+        classId_userId: {
+          classId,
+          userId,
+        },
+      },
+      include: {
+        assignments: {
+          include: {
+            exercise: true,
+            submission: true,
+          },
+        },
+        class: {
+          include: {
+            classMembers: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return klass;
+  }
 }
 
 export default ClassService;

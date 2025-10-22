@@ -1032,6 +1032,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/class/{classId}/student": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get student's class */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    classId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                class: {
+                                    id: string;
+                                    name: string;
+                                    /** @default null */
+                                    description: string | null;
+                                    createdAt: unknown;
+                                    updatedAt: unknown;
+                                };
+                                teachers: {
+                                    id: string;
+                                    email: string;
+                                    /** @default null */
+                                    username: string | null;
+                                    /** @default null */
+                                    firstName: string | null;
+                                    /** @default null */
+                                    lastName: string | null;
+                                    centerId: string;
+                                    role: "ADMIN" | "TEACHER" | "STUDENT";
+                                    /** @default null */
+                                    phoneNumber: string | null;
+                                    createdAt: unknown;
+                                    updatedAt: unknown;
+                                }[];
+                                assignments: {
+                                    assignment: {
+                                        id: string;
+                                        title: string;
+                                        /** @default null */
+                                        dueDate: unknown | null;
+                                        classMemberClassId: string;
+                                        classMemberUserId: string;
+                                        exerciseId: string;
+                                        status: "ASSIGNED" | "SUBMITTED" | "REVIEWED";
+                                        createdAt: unknown;
+                                        updatedAt: unknown;
+                                    };
+                                    /** @default null */
+                                    submission: {
+                                        id: string;
+                                        assignmentId: string;
+                                        content: unknown;
+                                        grade: unknown;
+                                        feedback: unknown;
+                                        createdAt: unknown;
+                                        updatedAt: unknown;
+                                    } | null;
+                                    exercise: {
+                                        id: string;
+                                        name: string;
+                                        type: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                                        content: unknown;
+                                        /** @default null */
+                                        centerId: string | null;
+                                        createdAt: unknown;
+                                        updatedAt: unknown;
+                                    };
+                                }[];
+                            };
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                            message: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/class/list": {
         parameters: {
             query?: never;
@@ -1083,6 +1195,7 @@ export interface paths {
                                     createdAt: unknown;
                                     updatedAt: unknown;
                                 }[];
+                                enrolledAt?: unknown;
                             }[];
                             message: string;
                         };
@@ -1161,6 +1274,7 @@ export interface paths {
                                     createdAt: unknown;
                                     updatedAt: unknown;
                                 }[];
+                                enrolledAt?: unknown;
                             }[];
                             message: string;
                         };

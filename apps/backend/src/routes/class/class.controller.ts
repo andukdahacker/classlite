@@ -9,6 +9,8 @@ import {
   GetClassMemberInput,
   GetClassMemberResponse,
   GetClassResponse,
+  GetStudentClassInput,
+  GetStudentClassResponse,
   NoDataResponse,
   UpdateClassInput,
   UpdateClassResponse,
@@ -127,12 +129,41 @@ class ClassController {
       return {
         class: e,
         members: e.classMembers.map((classMember) => classMember.user),
+        enrolledAt: e.createdAt,
       };
     });
 
     return {
       data: transformed,
       message: "Get class list successfully",
+    };
+  }
+
+  async getStudentClass(
+    input: GetStudentClassInput & { userId: string },
+  ): Promise<GetStudentClassResponse> {
+    const result = await this.classService.getStudentClass(
+      input.classId,
+      input.userId,
+    );
+
+    if (!result) {
+      throw new Error("Cannot get class");
+    }
+
+    return {
+      data: {
+        class: result.class,
+        assignments: result.assignments.map((a) => ({
+          assignment: a,
+          exercise: a.exercise,
+          submission: a.submission,
+        })),
+        teachers: result.class.classMembers
+          .filter((cm) => cm.user.role == "TEACHER")
+          .map((cm) => cm.user),
+      },
+      message: "Get student's class successfully",
     };
   }
 }
