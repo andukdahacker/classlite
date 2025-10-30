@@ -31,7 +31,7 @@ import {
 } from "@workspace/ui/components/radio-group";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { CheckIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useCreateSubmission from "../hooks/use-create-submission";
 import { CompletionTaskSubmission } from "./reading/completion-task-submission";
 
@@ -53,21 +53,9 @@ function DoReadingExercise({
   const [answers, setAnswers] = useState<ReadingSubmissionContent>({
     tasks: [],
   });
-
-  useEffect(() => {
-    if (submission?.content) {
-      setAnswers(submission.content as ReadingSubmissionContent);
-    } else {
-      const initialTasks = tasks.map((task) => ({
-        order: task.order,
-        questions: task.questions.map((question) => ({
-          order: question.order,
-          answer: null,
-        })),
-      }));
-      setAnswers({ tasks: initialTasks });
-    }
-  }, [submission, tasks]);
+  const [selectedQuestionNumber, setSelectedQuestionNumber] = useState<
+    number | null
+  >(null);
 
   const editor = useEditor({
     extensions: [
@@ -91,12 +79,11 @@ function DoReadingExercise({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("values", answers);
-    // if (submission) return;
-    // createSubmission({
-    //   assignmentId: assignment.id,
-    //   content: answers,
-    // });
+    if (submission) return;
+    createSubmission({
+      assignmentId: assignment.id,
+      content: answers,
+    });
   };
 
   const handleAnswerChange = (
@@ -113,6 +100,8 @@ function DoReadingExercise({
           targetQuestion.answer = answer;
         }
       }
+      const questionNumber = getQuestionNumber(tasks, taskIndex, questionIndex);
+      setSelectedQuestionNumber(questionNumber);
       return { tasks: newTasks };
     });
   };
@@ -128,6 +117,52 @@ function DoReadingExercise({
       questionCount += tasks[i]!.questions?.length || 0;
     }
     return questionCount + questionIndex + 1;
+  };
+
+  const allQuestions = useMemo(() => {
+    const questions: {
+      taskIndex: number;
+      questionIndex: number;
+      questionNumber: number;
+      order: number;
+    }[] = [];
+    let questionCounter = 1;
+    tasks.forEach((task, taskIndex) => {
+      task.questions?.forEach((question, questionIndex) => {
+        questions.push({
+          taskIndex,
+          questionIndex,
+          questionNumber: questionCounter,
+          order: question.order,
+        });
+        questionCounter++;
+      });
+    });
+    return questions;
+  }, [tasks]);
+
+  useEffect(() => {
+    if (submission?.content) {
+      setAnswers(submission.content as ReadingSubmissionContent);
+    } else {
+      const initialTasks = tasks.map((task) => ({
+        order: task.order,
+        questions: task.questions.map((question) => ({
+          order: question.order,
+          answer: null,
+        })),
+      }));
+      setAnswers({ tasks: initialTasks });
+    }
+    if (allQuestions.length > 0) {
+      setSelectedQuestionNumber(allQuestions[0]!.questionNumber);
+    }
+  }, [submission, tasks, allQuestions]);
+
+  const scrollToQuestion = (questionNumber: number) => {
+    setSelectedQuestionNumber(questionNumber);
+    const element = document.getElementById(`question-${questionNumber}`);
+    element?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   return (
@@ -170,40 +205,42 @@ function DoReadingExercise({
                                   ]?.answer;
                                 return (
                                   <div
+                                    id={`question-${questionNumber}`}
                                     key={question.order}
-                                    className="space-y-3"
                                   >
-                                    <Label>
-                                      {questionNumber}. {question.content}
-                                    </Label>
-                                    <RadioGroup
-                                      value={answer || undefined}
-                                      onValueChange={(value) =>
-                                        handleAnswerChange(
-                                          taskIndex,
-                                          questionIndex,
-                                          value,
-                                        )
-                                      }
-                                      className="flex flex-col space-y-1"
-                                      disabled={!!submission}
-                                    >
-                                      {question.options.map(
-                                        (option, optionIndex) => (
-                                          <div
-                                            key={optionIndex}
-                                            className="flex items-center space-x-3 space-y-0"
-                                          >
-                                            <RadioGroupItem
-                                              value={option.value}
-                                            />
-                                            <Label className="font-normal">
-                                              {option.content}
-                                            </Label>
-                                          </div>
-                                        ),
-                                      )}
-                                    </RadioGroup>
+                                    <div className="space-y-3">
+                                      <Label>
+                                        {questionNumber}. {question.content}
+                                      </Label>
+                                      <RadioGroup
+                                        value={answer || undefined}
+                                        onValueChange={(value) =>
+                                          handleAnswerChange(
+                                            taskIndex,
+                                            questionIndex,
+                                            value,
+                                          )
+                                        }
+                                        className="flex flex-col space-y-1"
+                                        disabled={!!submission}
+                                      >
+                                        {question.options.map(
+                                          (option, optionIndex) => (
+                                            <div
+                                              key={optionIndex}
+                                              className="flex items-center space-x-3 space-y-0"
+                                            >
+                                              <RadioGroupItem
+                                                value={option.value}
+                                              />
+                                              <Label className="font-normal">
+                                                {option.content}
+                                              </Label>
+                                            </div>
+                                          ),
+                                        )}
+                                      </RadioGroup>
+                                    </div>
                                   </div>
                                 );
                               },
@@ -227,42 +264,44 @@ function DoReadingExercise({
                                   ]?.answer;
                                 return (
                                   <div
+                                    id={`question-${questionNumber}`}
                                     key={question.order}
-                                    className="space-y-3"
                                   >
-                                    <Label>
-                                      {questionNumber}. {question.content}
-                                    </Label>
-                                    <RadioGroup
-                                      value={answer || undefined}
-                                      onValueChange={(value) =>
-                                        handleAnswerChange(
-                                          taskIndex,
-                                          questionIndex,
-                                          value,
-                                        )
-                                      }
-                                      className="flex gap-4"
-                                      disabled={!!submission}
-                                    >
-                                      {options.map((option, optionIndex) => (
-                                        <div
-                                          key={optionIndex}
-                                          className="flex items-center space-x-2"
-                                        >
-                                          <RadioGroupItem
-                                            value={option}
-                                            id={`${question.order}-${optionIndex}`}
-                                          />
-                                          <Label
-                                            htmlFor={`${question.order}-${optionIndex}`}
-                                            className="font-normal"
+                                    <div className="space-y-3">
+                                      <Label>
+                                        {questionNumber}. {question.content}
+                                      </Label>
+                                      <RadioGroup
+                                        value={answer || undefined}
+                                        onValueChange={(value) =>
+                                          handleAnswerChange(
+                                            taskIndex,
+                                            questionIndex,
+                                            value,
+                                          )
+                                        }
+                                        className="flex gap-4"
+                                        disabled={!!submission}
+                                      >
+                                        {options.map((option, optionIndex) => (
+                                          <div
+                                            key={optionIndex}
+                                            className="flex items-center space-x-2"
                                           >
-                                            {option}
-                                          </Label>
-                                        </div>
-                                      ))}
-                                    </RadioGroup>
+                                            <RadioGroupItem
+                                              value={option}
+                                              id={`${question.order}-${optionIndex}`}
+                                            />
+                                            <Label
+                                              htmlFor={`${question.order}-${optionIndex}`}
+                                              className="font-normal"
+                                            >
+                                              {option}
+                                            </Label>
+                                          </div>
+                                        ))}
+                                      </RadioGroup>
+                                    </div>
                                   </div>
                                 );
                               },
@@ -272,12 +311,10 @@ function DoReadingExercise({
                               <CompletionTaskSubmission
                                 task={task}
                                 answers={answers}
-                                onAnswerChangeAction={handleAnswerChange}
+                                onAnswerChange={handleAnswerChange}
                                 taskIndex={taskIndex}
                                 isSubmitted={!!submission}
-                                questionBefore={
-                                  getQuestionNumber(tasks, taskIndex, 0) - 1
-                                }
+                                allQuestions={allQuestions}
                               />
                             );
                           default:
@@ -291,7 +328,32 @@ function DoReadingExercise({
             </ScrollArea>
           </Panel>
         </PanelGroup>
-        <div className="h-[65px] flex flex-row justify-end items-center px-4 border-t">
+        <div className="h-[65px] flex flex-row justify-between items-center px-4 border-t">
+          <div className="flex gap-2 flex-wrap">
+            {allQuestions.map(
+              ({ taskIndex, questionIndex, questionNumber }) => {
+                const isAnswered =
+                  !!answers.tasks[taskIndex]?.questions[questionIndex]?.answer;
+                return (
+                  <Button
+                    key={questionNumber}
+                    variant={
+                      questionNumber === selectedQuestionNumber
+                        ? "default"
+                        : isAnswered
+                          ? "secondary"
+                          : "outline"
+                    }
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => scrollToQuestion(questionNumber)}
+                  >
+                    {questionNumber}
+                  </Button>
+                );
+              },
+            )}
+          </div>
           {!submission && (
             <Button type="submit" size="icon" disabled={isPending}>
               <CheckIcon className="h-4 w-4" />

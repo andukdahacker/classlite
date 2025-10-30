@@ -5,7 +5,11 @@ import { Gap } from "@/lib/core/components/editor/extensions/gap";
 import Link from "@tiptap/extension-link";
 import { TableKit } from "@tiptap/extension-table";
 import TextAlign from "@tiptap/extension-text-align";
-import { ReactNodeViewRenderer, useEditor } from "@tiptap/react";
+import {
+  NodeViewWrapper,
+  ReactNodeViewRenderer,
+  useEditor,
+} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
   ReadingCompletionTask,
@@ -18,23 +22,28 @@ import { CompletionDragAndDropSubmission } from "./completion-dnd-submission";
 interface CompletionTaskSubmissionProps {
   task: ReadingCompletionTask;
   answers: ReadingSubmissionContent;
-  onAnswerChangeAction: (
+  onAnswerChange: (
     taskIndex: number,
     questionIndex: number,
     answer: string | null,
   ) => void;
   taskIndex: number;
   isSubmitted: boolean;
-  questionBefore: number;
+  allQuestions: {
+    taskIndex: number;
+    questionIndex: number;
+    questionNumber: number;
+    order: number;
+  }[];
 }
 
 export function CompletionTaskSubmission({
   task,
   answers,
-  onAnswerChangeAction: onAnswerChange,
+  onAnswerChange,
   taskIndex,
   isSubmitted,
-  questionBefore,
+  allQuestions,
 }: CompletionTaskSubmissionProps) {
   const instructionEditor = useEditor({
     extensions: [
@@ -54,25 +63,36 @@ export function CompletionTaskSubmission({
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Gap.extend({
         addNodeView() {
-          return ReactNodeViewRenderer((props: any) => (
-            <GapInputSubmission
-              order={props.node.attrs.order}
-              value={
-                answers.tasks[taskIndex]?.questions.find(
-                  (q) => q.order === props.node.attrs.order,
-                )?.answer || ""
-              }
-              onChange={(order, value) => {
-                const questionIndex = task.questions.findIndex(
-                  (q) => q.order === order,
-                );
-                if (questionIndex !== -1) {
-                  onAnswerChange(taskIndex, questionIndex, value);
-                }
-              }}
-              isSubmitted={isSubmitted}
-            />
-          ));
+          return ReactNodeViewRenderer((props: any) => {
+            const question = allQuestions.find(
+              (q) =>
+                q.taskIndex === taskIndex && q.order === props.node.attrs.order,
+            );
+            return (
+              <NodeViewWrapper
+                id={`question-${question?.questionNumber}`}
+                className="inline-block"
+              >
+                <GapInputSubmission
+                  order={props.node.attrs.order}
+                  value={
+                    answers.tasks[taskIndex]?.questions.find(
+                      (q) => q.order === props.node.attrs.order,
+                    )?.answer || ""
+                  }
+                  onChange={(order, value) => {
+                    const questionIndex = task.questions.findIndex(
+                      (q) => q.order === order,
+                    );
+                    if (questionIndex !== -1) {
+                      onAnswerChange(taskIndex, questionIndex, value);
+                    }
+                  }}
+                  isSubmitted={isSubmitted}
+                />
+              </NodeViewWrapper>
+            );
+          });
         },
       }),
       TableKit,
@@ -87,10 +107,10 @@ export function CompletionTaskSubmission({
       <CompletionDragAndDropSubmission
         task={task}
         answers={answers}
-        onAnswerChangeAction={onAnswerChange}
+        onAnswerChange={onAnswerChange}
         taskIndex={taskIndex}
         isSubmitted={isSubmitted}
-        questionBefore={questionBefore}
+        allQuestions={allQuestions}
       />
     );
   }
