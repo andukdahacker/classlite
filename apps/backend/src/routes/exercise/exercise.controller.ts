@@ -17,7 +17,7 @@ import {
   UploadWritingImageInput,
   UploadWritingImageResponse,
 } from "@workspace/types";
-import { Prisma } from "../../generated/prisma/client/index.js";
+import { Prisma } from "../../generated/prisma/client/client.js";
 import S3Service from "../../services/s3_service.js";
 import ExerciseService from "./exercise.service.js";
 

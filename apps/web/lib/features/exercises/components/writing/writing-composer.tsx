@@ -12,9 +12,7 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@workspace/ui/components/radio-group";
-import { Textarea } from "@workspace/ui/components/textarea";
 import { CheckIcon, Eye, Loader2Icon, Upload, X } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
 import useDeleteWritingFile from "../../hooks/use-delete-writing-file";
@@ -26,10 +24,6 @@ function WritingComposer() {
   const {
     name,
     setName,
-    description,
-    setDescription,
-    content,
-    setContent,
     exercise,
     type,
     setType,
@@ -37,8 +31,6 @@ function WritingComposer() {
     setWritingFile,
     title,
     setTitle,
-    duration,
-    setDuration,
   } = useContext(WritingComposerContext);
 
   const router = useRouter();
@@ -48,9 +40,9 @@ function WritingComposer() {
       StarterKit,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
-    content,
+    content: title,
     onUpdate: ({ editor }) => {
-      setContent(editor.getJSON());
+      setTitle(editor.getJSON());
     },
     immediatelyRender: false,
   });
@@ -74,13 +66,6 @@ function WritingComposer() {
     <div className="flex flex-col gap-4 justify-center items-center p-4 pb-20 md:pb-4">
       <div className="rounded-md border p-4 flex flex-col gap-4 w-full max-w-2xl">
         <Input value={name} onChange={(event) => setName(event.target.value)} />
-
-        <Textarea
-          placeholder="Describe this exercise..."
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          rows={3}
-        />
       </div>
 
       <div className="rounded-md border p-4 flex flex-col gap-4 w-full max-w-2xl">
@@ -164,14 +149,14 @@ function WritingComposer() {
           </div>
         )}
 
-        <Input
+        {/*<Input
           placeholder="Duration in minutes (optional)"
           type="number"
           value={duration ?? ""}
           onChange={(event) =>
             setDuration(event.target.value ? Number(event.target.value) : null)
           }
-        />
+        />*/}
 
         <div className="flex justify-between flex-row">
           <span className="font-bold">Writing Prompt</span>
@@ -191,8 +176,6 @@ function WritingComposer() {
                     type,
                     file: writingFile,
                     title,
-                    duration,
-                    content,
                   },
                   name,
                 },
@@ -216,8 +199,6 @@ function WritingComposer() {
                   type,
                   file: writingFile,
                   title,
-                  duration,
-                  content,
                 },
                 name,
               })

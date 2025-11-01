@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import {
   CreateAssignmentsInput,
   DeleteAssignmentsInput,
@@ -7,6 +6,7 @@ import {
   GetAssignmentsByUserInput,
   UpdateAssignmentInput,
 } from "@workspace/types";
+import { PrismaClient } from "../../generated/prisma/client/client.js";
 
 class AssignmentService {
   constructor(private readonly db: PrismaClient) {}

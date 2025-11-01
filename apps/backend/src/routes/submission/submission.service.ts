@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import {
   CreateSubmissionInput,
   GetSubmissionInput,
@@ -7,6 +6,7 @@ import {
   ReadingSubmissionGrade,
   UpdateSubmissionInput,
 } from "@workspace/types";
+import { PrismaClient } from "../../generated/prisma/client/client.js";
 
 class SubmissionService {
   constructor(private readonly db: PrismaClient) {}

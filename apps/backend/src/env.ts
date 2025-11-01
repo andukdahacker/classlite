@@ -10,6 +10,7 @@ type Env = {
   S3_SECRET_KEY: string;
   S3_BUCKET_NAME: string;
   S3_CLOUDFRONT_DOMAIN: string;
+  RESEND_API_KEY: string;
 };
 
 export default Env;

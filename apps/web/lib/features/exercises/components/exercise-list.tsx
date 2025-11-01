@@ -258,6 +258,7 @@ function ExerciseTable() {
 
                           <DropdownMenuItem
                             onSelect={() => {
+                              console.log("here", e);
                               if (!e?.id || !e?.name) return;
                               setSelectedExercise({ id: e.id, name: e.name });
                               setAssignDialogOpen(true);

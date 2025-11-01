@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Invitation to ClassLite</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+    }
+    .container {
+      width: 80%;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      color: #0056b3;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 10px;
+    }
+    strong {
+      color: #0056b3;
+    }
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to ClassLite, {{firstName}}!</h1>
+    <p>You have been invited to join ClassLite. Here are your login details:</p>
+    <ul>
+      <li><strong>Email:</strong> {{email}}</li>
+      <li><strong>Password:</strong> {{password}}</li>
+    </ul>
+    <p>You can log in at <a href="https://classlite.app">https://classlite.app</a>.</p>
+    <p>Thanks,</p>
+    <p>The ClassLite Team</p>
+  </div>
+</body>
+</html>

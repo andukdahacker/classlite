@@ -41,6 +41,7 @@ interface WritingCommentViewProps {
   onCancel: () => void;
   isDraft: boolean;
   editor: Editor | null;
+  isReviewing?: boolean;
 }
 
 function WritingCommentView({
@@ -53,6 +54,7 @@ function WritingCommentView({
   onCommentSuccess,
   isDraft,
   editor,
+  isReviewing = false,
 }: WritingCommentViewProps) {
   const [value, setValue] = useState(comment.comment);
   const [isEditing, setIsEditing] = useState(false);
@@ -144,7 +146,7 @@ function WritingCommentView({
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
               <p className="font-semibold text-sm">{comment.author}</p>
-              {!isDraft && (
+              {!isDraft && isReviewing && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">

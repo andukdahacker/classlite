@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../src/generated/prisma/client"
 }
 
@@ -79,6 +79,7 @@ model Exercise {
   center     Center?      @relation(fields: [centerId], references: [id], onDelete: Cascade)
   assigments Assignment[]
   isPublic   Boolean      @default(false)
+  timeLimit  Int?
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 }

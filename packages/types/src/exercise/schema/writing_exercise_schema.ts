@@ -19,7 +19,6 @@ export const WritingExerciseSchema = Type.Object(
     ),
     type: WritingExerciseTypeSchema,
     title: Type.Any(),
-    duration: Nullable(Type.Number()),
   },
   { $id: "WritingExercise" },
 );

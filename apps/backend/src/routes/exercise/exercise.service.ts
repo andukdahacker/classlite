@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import {
   CreateExerciseInput,
   DeleteExerciseInput,
@@ -6,17 +5,19 @@ import {
   GetExerciseListInput,
   UpdateExerciseInput,
 } from "@workspace/types";
+import { PrismaClient } from "../../generated/prisma/client/client.js";
 
 class ExerciseService {
   constructor(private readonly db: PrismaClient) {}
 
   async createExercise(input: CreateExerciseInput, centerId: string) {
-    const { name, content, type } = input;
+    const { name, content, type, timeLimit } = input;
     const exercise = await this.db.exercise.create({
       data: {
         name,
         content,
         type,
+        timeLimit,
         center: {
           connect: {
             id: centerId,
@@ -29,7 +30,7 @@ class ExerciseService {
   }
 
   async updateExercise(input: UpdateExerciseInput) {
-    const { id, content, name } = input;
+    const { id, content, name, timeLimit } = input;
     const exercise = await this.db.exercise.update({
       where: {
         id,
@@ -37,6 +38,7 @@ class ExerciseService {
       data: {
         name,
         content,
+        timeLimit,
       },
     });
 

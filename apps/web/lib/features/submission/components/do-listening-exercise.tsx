@@ -111,9 +111,9 @@ function DoListeningExercise({
   };
 
   const { mutate: createSubmission, isPending } = useCreateSubmission({
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success("Submission successful!");
-      router.push("/dashboard/assignments");
+      router.push("/dashboard/assignments" + "/" + data.assignmentId);
     },
   });
 

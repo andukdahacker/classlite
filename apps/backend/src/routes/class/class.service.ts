@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import {
   CreateClassInput,
   DeleteClassInput,
@@ -8,6 +7,7 @@ import {
   GetClassMemberInput,
   UpdateClassInput,
 } from "@workspace/types";
+import { PrismaClient } from "../../generated/prisma/client/client.js";
 
 class ClassService {
   constructor(private readonly db: PrismaClient) {}

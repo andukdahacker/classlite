@@ -32,6 +32,7 @@ const build = async () => {
         "FIREBASE_PROJECT_ID",
         "FIREBASE_CLIENT_EMAIL",
         "FIREBASE_PRIVATE_KEY",
+        "RESEND_API_KEY",
       ],
       properties: {
         NODE_ENV: {
@@ -65,6 +66,9 @@ const build = async () => {
           type: "string",
         },
         S3_CLOUDFRONT_DOMAIN: {
+          type: "string",
+        },
+        RESEND_API_KEY: {
           type: "string",
         },
       },

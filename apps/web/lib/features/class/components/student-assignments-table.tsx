@@ -30,7 +30,9 @@ type StudentAssignmentData = {
   submissionId: string | null;
 };
 
-export function StudentAssignmentsTable({ assignments }: StudentAssignmentsTableProps) {
+export function StudentAssignmentsTable({
+  assignments,
+}: StudentAssignmentsTableProps) {
   const router = useRouter();
 
   const data: StudentAssignmentData[] = useMemo(() => {
@@ -58,8 +60,11 @@ export function StudentAssignmentsTable({ assignments }: StudentAssignmentsTable
         <DataTableColumnHeader column={column} title="Status" />
       ),
       cell: ({ row }) => {
-        const status = row.getValue("status") as StudentAssignmentData["status"];
-        let variant: "default" | "secondary" | "destructive" | "outline" = "secondary";
+        const status = row.getValue(
+          "status",
+        ) as StudentAssignmentData["status"];
+        let variant: "default" | "secondary" | "destructive" | "outline" =
+          "secondary";
         if (status === "SUBMITTED") variant = "default";
         if (status === "REVIEWED") variant = "outline";
 
@@ -102,24 +107,29 @@ export function StudentAssignmentsTable({ assignments }: StudentAssignmentsTable
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onSelect={() =>
-                                  router.push(`/dashboard/assignments/${assignmentId}`)
-                                }
-                              >
-                                <EyeIcon className="mr-2 h-4 w-4" />
-                                View details
-                              </DropdownMenuItem>
-                              {row.original.status === "ASSIGNED" && (
-                                <DropdownMenuItem
-                                  onSelect={() =>
-                                    router.push(`/dashboard/assignments/${assignmentId}/do-exercise`)
-                                  }
-                                >
-                                  <PlayIcon className="mr-2 h-4 w-4" />
-                                  Do exercise
-                                </DropdownMenuItem>
-                              )}            </DropdownMenuContent>
+              {row.original.status != "ASSIGNED" && (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    router.push(`/dashboard/assignments/${assignmentId}`)
+                  }
+                >
+                  <EyeIcon className="mr-2 h-4 w-4" />
+                  View details
+                </DropdownMenuItem>
+              )}
+              {row.original.status === "ASSIGNED" && (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    router.push(
+                      `/dashboard/assignments/${assignmentId}/do-exercise`,
+                    )
+                  }
+                >
+                  <PlayIcon className="mr-2 h-4 w-4" />
+                  Do exercise
+                </DropdownMenuItem>
+              )}{" "}
+            </DropdownMenuContent>
           </DropdownMenu>
         );
       },

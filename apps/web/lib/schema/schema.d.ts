@@ -964,6 +964,7 @@ export interface paths {
                                             content: unknown;
                                             /** @default null */
                                             centerId: string | null;
+                                            duration?: number;
                                             createdAt: unknown;
                                             updatedAt: unknown;
                                         };
@@ -1113,6 +1114,7 @@ export interface paths {
                                         content: unknown;
                                         /** @default null */
                                         centerId: string | null;
+                                        duration?: number;
                                         createdAt: unknown;
                                         updatedAt: unknown;
                                     };
@@ -1381,6 +1383,7 @@ export interface paths {
                                         content: unknown;
                                         /** @default null */
                                         centerId: string | null;
+                                        duration?: number;
                                         createdAt: unknown;
                                         updatedAt: unknown;
                                     };
@@ -1434,6 +1437,7 @@ export interface paths {
                         id: string;
                         name?: string;
                         description?: string;
+                        timeLimit?: number;
                         content: unknown;
                     };
                 };
@@ -1453,6 +1457,7 @@ export interface paths {
                                 content: unknown;
                                 /** @default null */
                                 centerId: string | null;
+                                duration?: number;
                                 createdAt: unknown;
                                 updatedAt: unknown;
                             };
@@ -1488,6 +1493,7 @@ export interface paths {
                         name: string;
                         content: unknown;
                         type: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                        timeLimit?: number;
                     };
                 };
             };
@@ -1507,6 +1513,7 @@ export interface paths {
                                     content: unknown;
                                     /** @default null */
                                     centerId: string | null;
+                                    duration?: number;
                                     createdAt: unknown;
                                     updatedAt: unknown;
                                 };
@@ -1626,6 +1633,7 @@ export interface paths {
                                     content: unknown;
                                     /** @default null */
                                     centerId: string | null;
+                                    duration?: number;
                                     createdAt: unknown;
                                     updatedAt: unknown;
                                 };
@@ -1730,6 +1738,7 @@ export interface paths {
                                     content: unknown;
                                     /** @default null */
                                     centerId: string | null;
+                                    duration?: number;
                                     createdAt: unknown;
                                     updatedAt: unknown;
                                 }[];
@@ -1805,6 +1814,7 @@ export interface paths {
                                 content: unknown;
                                 /** @default null */
                                 centerId: string | null;
+                                duration?: number;
                                 createdAt: unknown;
                                 updatedAt: unknown;
                             };
@@ -1873,6 +1883,7 @@ export interface paths {
                                 content: unknown;
                                 /** @default null */
                                 centerId: string | null;
+                                duration?: number;
                                 createdAt: unknown;
                                 updatedAt: unknown;
                             };
@@ -2278,6 +2289,7 @@ export interface paths {
                                         content: unknown;
                                         /** @default null */
                                         centerId: string | null;
+                                        duration?: number;
                                         createdAt: unknown;
                                         updatedAt: unknown;
                                     };
@@ -2359,6 +2371,7 @@ export interface paths {
                                     content: unknown;
                                     /** @default null */
                                     centerId: string | null;
+                                    duration?: number;
                                     createdAt: unknown;
                                     updatedAt: unknown;
                                 };
@@ -2467,6 +2480,7 @@ export interface paths {
                                     content: unknown;
                                     /** @default null */
                                     centerId: string | null;
+                                    duration?: number;
                                     createdAt: unknown;
                                     updatedAt: unknown;
                                 };
@@ -2669,6 +2683,7 @@ export interface paths {
                                     content: unknown;
                                     /** @default null */
                                     centerId: string | null;
+                                    duration?: number;
                                     createdAt: unknown;
                                     updatedAt: unknown;
                                 };
@@ -3246,8 +3261,6 @@ export interface components {
             /** WritingExerciseType */
             type: "Task 1" | "Task 2";
             title: unknown;
-            /** @default null */
-            duration: number | null;
         };
         /** WritingExerciseType */
         WritingExerciseType: "Task 1" | "Task 2";
@@ -3261,6 +3274,7 @@ export interface components {
             content: unknown;
             /** @default null */
             centerId: string | null;
+            duration?: number;
             createdAt: unknown;
             updatedAt: unknown;
         };
@@ -3277,12 +3291,14 @@ export interface components {
             name: string;
             content: unknown;
             type: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+            timeLimit?: number;
         };
         /** UpdateExerciseInput */
         UpdateExerciseInput: {
             id: string;
             name?: string;
             description?: string;
+            timeLimit?: number;
             content: unknown;
         };
         /** CreateExerciseResponseSchema */
@@ -3295,6 +3311,7 @@ export interface components {
                     content: unknown;
                     /** @default null */
                     centerId: string | null;
+                    duration?: number;
                     createdAt: unknown;
                     updatedAt: unknown;
                 };

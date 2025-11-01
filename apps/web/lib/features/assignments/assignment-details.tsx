@@ -4,8 +4,10 @@ import { Loader2Icon } from "lucide-react";
 import { useContext } from "react";
 import { AuthContext } from "../auth/components/auth-context";
 import useGetAssignment from "./hooks/use-get-assignment";
-import { ReviewAssignment } from "./review-assignment";
+import { ListeningExerciseSubmissionDetails } from "./listening-exercise-submission-details";
+import { ReadingExerciseSubmissionDetails } from "./reading-exercise-submission-details";
 import { ViewAssignedAssignment } from "./view-assigned-assignments";
+import { WritingExerciseSubmissionDetails } from "./writing-exercise-submission-details";
 
 interface AssignmentDetailsProps {
   id: string;
@@ -35,13 +37,32 @@ function AssignmentDetails({ id }: AssignmentDetailsProps) {
         );
       case "SUBMITTED":
       case "REVIEWED":
-        return (
-          <ReviewAssignment
-            assignment={data.assignment}
-            exercise={data.exercise}
-            submission={data.submission!}
-          />
-        );
+        switch (data.exercise.type) {
+          case "READING":
+            return (
+              <ReadingExerciseSubmissionDetails
+                exercise={data.exercise}
+                submission={data.submission!}
+                isReviewing
+              />
+            );
+          case "LISTENING":
+            return (
+              <ListeningExerciseSubmissionDetails
+                exercise={data.exercise}
+                submission={data.submission!}
+                isReviewing
+              />
+            );
+          case "WRITING":
+            return (
+              <WritingExerciseSubmissionDetails
+                exercise={data.exercise}
+                submission={data.submission!}
+                isReviewing
+              />
+            );
+        }
     }
   }
 
@@ -49,15 +70,81 @@ function AssignmentDetails({ id }: AssignmentDetailsProps) {
     case "ADMIN": {
       switch (data.assignment.status) {
         case "ASSIGNED":
+          return (
+            <ViewAssignedAssignment
+              assignment={data.assignment}
+              exercise={data.exercise}
+              student={data.student}
+            />
+          );
         case "SUBMITTED":
         case "REVIEWED":
+          switch (data.exercise.type) {
+            case "READING":
+              return (
+                <ReadingExerciseSubmissionDetails
+                  exercise={data.exercise}
+                  submission={data.submission!}
+                  isReviewing
+                />
+              );
+            case "LISTENING":
+              return (
+                <ListeningExerciseSubmissionDetails
+                  exercise={data.exercise}
+                  submission={data.submission!}
+                  isReviewing
+                />
+              );
+            case "WRITING":
+              return (
+                <WritingExerciseSubmissionDetails
+                  exercise={data.exercise as any}
+                  submission={data.submission!}
+                  isReviewing
+                />
+              );
+          }
       }
     }
     case "TEACHER": {
       switch (data.assignment.status) {
         case "ASSIGNED":
+          return (
+            <ViewAssignedAssignment
+              assignment={data.assignment}
+              exercise={data.exercise}
+              student={data.student}
+            />
+          );
         case "SUBMITTED":
         case "REVIEWED":
+          switch (data.exercise.type) {
+            case "READING":
+              return (
+                <ReadingExerciseSubmissionDetails
+                  exercise={data.exercise}
+                  submission={data.submission!}
+                  isReviewing
+                />
+              );
+            case "LISTENING":
+              return (
+                <ListeningExerciseSubmissionDetails
+                  exercise={data.exercise}
+                  submission={data.submission!}
+                  isReviewing
+                />
+              );
+            case "WRITING":
+              return (
+                <WritingExerciseSubmissionDetails
+                  exercise={data.exercise}
+                  submission={data.submission!}
+                  isReviewing
+                />
+              );
+          }
       }
     }
     case "STUDENT": {
@@ -65,6 +152,29 @@ function AssignmentDetails({ id }: AssignmentDetailsProps) {
         case "ASSIGNED":
         case "SUBMITTED":
         case "REVIEWED":
+          switch (data.exercise.type) {
+            case "READING":
+              return (
+                <ReadingExerciseSubmissionDetails
+                  exercise={data.exercise}
+                  submission={data.submission!}
+                />
+              );
+            case "LISTENING":
+              return (
+                <ListeningExerciseSubmissionDetails
+                  exercise={data.exercise}
+                  submission={data.submission!}
+                />
+              );
+            case "WRITING":
+              return (
+                <WritingExerciseSubmissionDetails
+                  exercise={data.exercise}
+                  submission={data.submission!}
+                />
+              );
+          }
       }
     }
   }

@@ -10,27 +10,28 @@ import { useEditor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import {
-  Submission,
-  WritingComment,
-  WritingExercise,
-  WritingSubmissionContent,
-  WritingSubmissionFeedback,
-  WritingSubmissionGrade,
+    Exercise,
+    Submission,
+    WritingComment,
+    WritingExercise,
+    WritingSubmissionContent,
+    WritingSubmissionFeedback,
+    WritingSubmissionGrade,
 } from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
 } from "@workspace/ui/components/card";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
 } from "@workspace/ui/components/tabs";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { useEffect, useState } from "react";
@@ -40,7 +41,7 @@ import useUpdateSubmission from "../submission/hooks/use-update-submission";
 import WritingCommentView from "./components/writing-comment";
 
 interface ReviewWritingExerciseProps {
-  exercise: WritingExercise;
+  exercise: Exercise;
   submission: Submission;
 }
 
@@ -52,7 +53,7 @@ function ReviewWritingExercise({
   exercise,
   submission,
 }: ReviewWritingExerciseProps) {
-  const writingExercise = exercise;
+  const writingExercise = exercise.content as WritingExercise;
   const submissionContent = submission.content as WritingSubmissionContent;
   const submissionFeedback =
     submission.feedback as WritingSubmissionFeedback | null;

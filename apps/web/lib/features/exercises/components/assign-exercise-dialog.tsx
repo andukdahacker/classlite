@@ -6,6 +6,7 @@ import {
   AccordionTrigger,
 } from "@workspace/ui/components/accordion";
 import { Button } from "@workspace/ui/components/button";
+import { Calendar } from "@workspace/ui/components/calendar";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import {
   Dialog,
@@ -15,11 +16,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog";
+import { Label } from "@workspace/ui/components/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
+import { cn } from "@workspace/ui/lib/utils";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { useContext, useState } from "react";
 import { useCreateAssignments } from "../../assignments/hooks/use-create-assignment";
 import { AuthContext } from "../../auth/components/auth-context";
 import { useGetCenterClass } from "../../class/hooks/use-get-center-class";
+import useGetClassListByUser from "../../class/hooks/use-get-class-by-user";
 
 interface AssignExerciseDialogProps {
   open: boolean;
@@ -36,14 +47,16 @@ function AssignExerciseDialog({
   exerciseId,
   exerciseTitle,
 }: AssignExerciseDialogProps) {
-  const { center } = useContext(AuthContext);
-  if (!center) return null;
-  const { data: classes, isPending: isPendingGetCenterClass } =
-    useGetCenterClass(center.id);
+  const { center, user } = useContext(AuthContext);
+
+  const { data: classes, isPending: isPendingGetCenterClass } = center
+    ? useGetCenterClass(center.id)
+    : useGetClassListByUser(user!.id);
 
   const [selectedStudents, setSelectedStudents] = useState<StudentSelection[]>(
     [],
   );
+  const [dueDate, setDueDate] = useState<Date | undefined>();
 
   const handleClassCheckboxChange = (checked: boolean, classId: string) => {
     const classInfo = classes?.find((c) => c.class.id === classId);
@@ -117,6 +130,7 @@ function AssignExerciseDialog({
       exerciseId,
       title: exerciseTitle,
       students: selectedStudents,
+      dueDate,
     };
     createAssignments(input);
   };
@@ -130,6 +144,35 @@ function AssignExerciseDialog({
             Select classes or individual students to assign this exercise to.
           </DialogDescription>
         </DialogHeader>
+        <div className="mb-2">
+          <Label className="mb-2" htmlFor="dueDate">
+            Due Date
+          </Label>
+          <Popover modal={true}>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full md:w-[300px] justify-start text-left font-normal",
+                  !dueDate && "text-muted-foreground",
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 w-auto" align="start">
+              <Calendar
+                mode="single"
+                selected={dueDate}
+                onSelect={setDueDate}
+                hidden={{
+                  before: new Date(),
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
         <ScrollArea className="h-72 rounded-md border">
           <Accordion type="multiple" className="w-full pl-2 pr-2">
             {isPendingGetCenterClass ? (
@@ -137,20 +180,23 @@ function AssignExerciseDialog({
             ) : (
               classes?.map((c) => (
                 <AccordionItem value={c.class.id} key={c.class.id}>
-                    <div className="flex items-center w-full border-b">
-                        <div className="p-4">
-                            <Checkbox
-                                checked={isClassSelected(c.class.id)}
-                                onCheckedChange={(checked) =>
-                                handleClassCheckboxChange(Boolean(checked), c.class.id)
-                                }
-                            />
-                        </div>
-                        <AccordionTrigger className="flex-grow text-left justify-start">
-                            {c.class.name}
-                        </AccordionTrigger>
+                  <div className="flex items-center w-full border-b">
+                    <div className="p-4">
+                      <Checkbox
+                        checked={isClassSelected(c.class.id)}
+                        onCheckedChange={(checked) =>
+                          handleClassCheckboxChange(
+                            Boolean(checked),
+                            c.class.id,
+                          )
+                        }
+                      />
                     </div>
-                    <AccordionContent>
+                    <AccordionTrigger className="flex-grow text-left justify-start">
+                      {c.class.name}
+                    </AccordionTrigger>
+                  </div>
+                  <AccordionContent>
                     {c.members.map((member) => (
                       <div
                         key={member.id}

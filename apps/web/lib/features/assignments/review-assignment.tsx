@@ -1,11 +1,5 @@
-import {
-  Assignment,
-  Exercise,
-  ListeningExercise,
-  ReadingExercise,
-  Submission,
-} from "@workspace/types";
-import { ReviewListeningExercise } from "./review-listening-exercise";
+import { Assignment, Exercise, Submission } from "@workspace/types";
+import { ListeningExerciseSubmissionDetails } from "./listening-exercise-submission-details";
 import { ReviewReadingExercise } from "./review-reading-exercise";
 import ReviewWritingExercise from "./review-writing-exercise";
 
@@ -23,24 +17,19 @@ function ReviewAssignment({
   switch (exercise.type) {
     case "READING":
       return (
-        <ReviewReadingExercise
-          exercise={exercise.content as ReadingExercise}
-          submission={submission}
-        />
+        <ReviewReadingExercise exercise={exercise} submission={submission} />
       );
     case "LISTENING":
       return (
-        <ReviewListeningExercise
-          exercise={exercise.content as ListeningExercise}
+        <ListeningExerciseSubmissionDetails
+          exercise={exercise}
           submission={submission}
+          isReviewing
         />
       );
     case "WRITING":
       return (
-        <ReviewWritingExercise
-          exercise={exercise.content as ListeningExercise}
-          submission={submission}
-        />
+        <ReviewWritingExercise exercise={exercise} submission={submission} />
       );
     case "SPEAKING":
   }

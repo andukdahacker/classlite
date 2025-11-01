@@ -6,6 +6,7 @@ export const CreateExerciseInputSchema = Type.Object(
     name: Type.String(),
     content: Type.Any(),
     type: ExerciseTypeSchema,
+    timeLimit: Type.Optional(Type.Number()),
   },
   { $id: "CreateExerciseInput" },
 );

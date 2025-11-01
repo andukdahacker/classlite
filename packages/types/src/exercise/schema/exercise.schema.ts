@@ -9,6 +9,7 @@ export const ExerciseSchema = Type.Object(
     type: ExerciseTypeSchema,
     content: Type.Any(),
     centerId: Nullable(Type.String()),
+    duration: Type.Optional(Type.Number()),
     createdAt: Type.Any(),
     updatedAt: Type.Any(),
   },

@@ -26,6 +26,7 @@ import { FastifyRequest } from "fastify/types/request.js";
 import Env from "../../env.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
+import EmailService from "../../services/email.service.js";
 import JwtService from "../../services/jwt.service.js";
 import UserController from "./user.controller.js";
 import UserService from "./user.service.js";
@@ -41,7 +42,17 @@ async function userRoutes(fastify: FastifyInstance, opts: any) {
   const env = fastify.getEnvs<Env>();
   const userService = new UserService(fastify.db);
   const jwtService = new JwtService(env.JWT_SECRET);
-  const userController = new UserController(userService, jwtService);
+  const emailService = new EmailService({
+    apiKey: env.RESEND_API_KEY,
+    templatesDir: "/templates",
+    logger: fastify.log,
+    nodeEnv: env.NODE_ENV,
+  });
+  const userController = new UserController(
+    userService,
+    jwtService,
+    emailService,
+  );
 
   fastify.post("/", {
     schema: {

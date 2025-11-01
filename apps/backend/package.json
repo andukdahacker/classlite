@@ -11,7 +11,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "prestart": "npx prisma migrate deploy",
-    "start": "node ./build/index.js"
+    "start": "node ./build/index.js",
+    "db:push": "prisma db push",
+    "generate": "prisma generate",
+    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",
@@ -23,17 +27,19 @@
     "@fastify/multipart": "^9.0.3",
     "@fastify/swagger": "^9.4.0",
     "@fastify/swagger-ui": "^5.2.0",
-    "@prisma/client": "^6.10.1",
+    "@prisma/client": "^6.18.0",
     "@sinclair/typebox": "^0.34.11",
+    "@workspace/types": "workspace:*",
     "argon2": "^0.41.1",
     "dayjs": "^1.11.13",
     "fastify": "5.1.0",
     "fastify-plugin": "^4.5.1",
     "firebase-admin": "^13.0.2",
+    "handlebars": "^4.7.8",
     "jsonwebtoken": "^9.0.2",
     "mime-types": "^2.1.35",
-    "uuid": "^11.1.0",
-    "@workspace/types": "workspace:*"
+    "resend": "^6.4.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",

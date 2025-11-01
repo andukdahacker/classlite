@@ -238,18 +238,6 @@ function ClassDetailsTeacher({ classId }: ClassDetailsProps) {
             </CardContent>
           </Card>
         </div>
-
-        <Card>
-          <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle>{klass.name}</CardTitle>
-              <p className="text-muted-foreground">{klass.description}</p>
-            </div>
-            <div className="flex gap-2 mt-4 md:mt-0">
-              <UpdateClassDialog klass={klass} />
-            </div>
-          </CardHeader>
-        </Card>
       </div>
       <Card>
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
