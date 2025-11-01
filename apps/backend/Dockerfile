@@ -14,7 +14,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm add turbo --global
+RUN --mount=type=cache,id=s/ac6b3e3f-6866-4463-ba79-3837cd7fb145-pnpm-store,target=/pnpm/store pnpm add turbo --global
 
 RUN turbo prune backend --docker
 
@@ -24,10 +24,10 @@ WORKDIR /app
 
 COPY --from=pruner /app/out/json .
 COPY --from=pruner /app/pnpm-lock.yaml .
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm i --frozen-lockfile
+RUN --mount=type=cache,id=s/ac6b3e3f-6866-4463-ba79-3837cd7fb145-pnpm-store,target=/pnpm/store pnpm i --frozen-lockfile
 
 COPY --from=pruner /app/out/full/ .
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm build --filter=backend
+RUN --mount=type=cache,id=s/ac6b3e3f-6866-4463-ba79-3837cd7fb145-pnpm-store,target=/pnpm/store pnpm build --filter=backend
 
 FROM base as runner
 
@@ -41,7 +41,7 @@ COPY --from=builder /app/package.json /app/package.json
 COPY --from=builder /app/pnpm-lock.yaml /app/pnpm-lock.yaml
 COPY --from=builder /app/pnpm-workspace.yaml /app/pnpm-workspace.yaml
 
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm i --prod --frozen-lockfile
+RUN --mount=type=cache,id=s/ac6b3e3f-6866-4463-ba79-3837cd7fb145-pnpm-store,target=/pnpm/store pnpm i --prod --frozen-lockfile
 
 EXPOSE 4000
 
