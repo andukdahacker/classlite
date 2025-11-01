@@ -7,7 +7,7 @@ import {
   GetClassMemberInput,
   UpdateClassInput,
 } from "@workspace/types";
-import { PrismaClient } from "../../generated/prisma/client/client.js";
+import { PrismaClient } from "../../generated/prisma/client/index.js";
 
 class ClassService {
   constructor(private readonly db: PrismaClient) {}

@@ -5,7 +5,7 @@ import {
   GetExerciseListInput,
   UpdateExerciseInput,
 } from "@workspace/types";
-import { PrismaClient } from "../../generated/prisma/client/client.js";
+import { PrismaClient } from "../../generated/prisma/client/index.js";
 
 class ExerciseService {
   constructor(private readonly db: PrismaClient) {}

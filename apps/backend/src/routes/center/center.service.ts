@@ -1,4 +1,4 @@
-import { PrismaClient } from "../../generated/prisma/client/client.js";
+import { PrismaClient } from "../../generated/prisma/client/index.js";
 
 class CenterService {
   constructor(private readonly prisma: PrismaClient) {}
