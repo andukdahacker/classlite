@@ -1,5 +1,5 @@
-import { User } from "@/lib/schema/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { User } from "@workspace/types";
 import { toast } from "sonner";
 import { updateUser } from "../network/update-user";
 

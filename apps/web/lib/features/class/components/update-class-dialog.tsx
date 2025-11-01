@@ -1,7 +1,7 @@
 "use client";
 
-import { Class } from "@/lib/schema/types";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Class } from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import {
   Dialog,

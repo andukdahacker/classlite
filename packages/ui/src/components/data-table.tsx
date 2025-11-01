@@ -20,21 +20,21 @@ import {
   ChevronsRight,
 } from "lucide-react";
 import { ReactNode, useState } from "react";
-import { Button } from "./button.js";
+import { Button } from "./button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "./dropdown-menu.js";
-import { Input } from "./input.js";
+} from "./dropdown-menu";
+import { Input } from "./input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./select.js";
+} from "./select";
 import {
   Table,
   TableBody,
@@ -42,7 +42,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "./table.js";
+} from "./table";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];

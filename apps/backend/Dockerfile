@@ -1,37 +1,48 @@
-FROM node:lts-alpine as build
+FROM node:lts-alpine as base
 
-RUN ln -s /usr/lib/libssl.so.3 /lib/libssl.so.3
-
-WORKDIR /app
-
-COPY package*.json ./
-COPY tsconfig*.json ./
-COPY ./prisma ./prisma
-
-RUN npm install
-RUN npx prisma generate
-
-COPY ./src ./src
-
-RUN npm run build
-
-FROM node:lts-alpine as production
-
-RUN ln -s /usr/lib/libssl.so.3 /lib/libssl.so.3
-
-ARG PORT
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+RUN apk update
+RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY ./prisma ./prisma
-COPY --from=build /app/build ./build
+FROM base as pruner
 
-RUN npm install --only=production
-RUN npx prisma generate
+WORKDIR /app
 
-ENV NODE_ENV=production
+COPY . .
 
-EXPOSE ${PORT}
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm add turbo --global
 
-CMD [ "npm", "start" ]
+RUN turbo prune backend --docker
+
+FROM base as builder
+
+WORKDIR /app
+
+COPY --from=pruner /app/out/json .
+COPY --from=pruner /app/pnpm-lock.yaml .
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm i --frozen-lockfile
+
+COPY --from=pruner /app/out/full/ .
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm build --filter=backend
+
+FROM base as runner
+
+WORKDIR /app
+
+COPY --from=builder /app/apps/backend/dist /app/apps/backend/dist
+COPY --from=builder /app/apps/backend/prisma /app/apps/backend/prisma
+COPY --from=builder /app/apps/backend/package.json /app/apps/backend/package.json
+COPY --from=builder /app/packages/ /app/packages/
+COPY --from=builder /app/package.json /app/package.json
+COPY --from=builder /app/pnpm-lock.yaml /app/pnpm-lock.yaml
+COPY --from=builder /app/pnpm-workspace.yaml /app/pnpm-workspace.yaml
+
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm i --prod --frozen-lockfile
+
+EXPOSE 4000
+
+CMD ["pnpm", "--filter=backend", "start"]

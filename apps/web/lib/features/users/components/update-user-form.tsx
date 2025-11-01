@@ -1,4 +1,4 @@
-import { User } from "@/lib/schema/types";
+import { User } from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import {
   Form,

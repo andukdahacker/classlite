@@ -16,7 +16,7 @@ import {
   ChevronsRight,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { Button } from "./button.js";
+import { Button } from "./button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,

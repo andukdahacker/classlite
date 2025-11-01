@@ -11,11 +11,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "prestart": "npx prisma migrate deploy",
-    "start": "node ./build/index.js",
+    "start": "node ./dist/index.js",
     "db:push": "prisma db push",
-    "generate": "prisma generate",
-    "postinstall": "prisma generate",
-    "prisma:generate": "prisma generate"
+    "generate": "prisma generate"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",

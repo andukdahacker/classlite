@@ -1,4 +1,3 @@
-import { Content } from "@tiptap/react";
 import {
   Exercise,
   WritingExercise,
@@ -18,8 +17,6 @@ function WritingComposerProvider({
   writingExercise,
 }: PropsWithChildren<WritingComposerProviderProps>) {
   const [name, setName] = useState(exercise?.name ?? "");
-  const [description, setDescription] = useState("");
-  const [content, setContent] = useState<Content>(writingExercise?.title ?? "");
   const [type, setType] = useState<WritingExerciseType>(
     writingExercise?.type ?? "Task 1",
   );
@@ -27,19 +24,12 @@ function WritingComposerProvider({
     WritingExercise["file"] | null
   >(writingExercise?.file ?? null);
   const [title, setTitle] = useState(writingExercise?.title ?? "");
-  const [duration, setDuration] = useState<number | null>(
-    writingExercise?.duration ?? null,
-  );
 
   return (
     <WritingComposerContext.Provider
       value={{
         name,
         setName,
-        description,
-        setDescription,
-        content,
-        setContent,
         exercise,
         type,
         setType,
@@ -47,8 +37,6 @@ function WritingComposerProvider({
         setWritingFile,
         title,
         setTitle,
-        duration,
-        setDuration,
       }}
     >
       {children}
