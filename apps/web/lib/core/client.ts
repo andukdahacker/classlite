@@ -36,7 +36,7 @@ const authMiddleware: Middleware = {
 export class UnauthorizedError extends Error {}
 
 export const client = createClient<paths>({
-  baseUrl: "http://localhost:4000",
+  baseUrl: "https://classlite-backend-production.up.railway.app",
   credentials: "include",
 });
 
