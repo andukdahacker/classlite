@@ -11,7 +11,9 @@ export function useSignInWithGoogle() {
     onSuccess: (value) => {
       localStorage.setItem("token", value.token);
       console.log("value", value);
-      router.replace("/dashboard");
+      setTimeout(() => {
+        router.replace("/dashboard");
+      }, 100);
       console.log("here");
     },
     onError: (error) => {
