@@ -24,7 +24,7 @@ WORKDIR /app
 
 COPY --from=pruner /app/out/json .
 COPY --from=pruner /app/pnpm-lock.yaml .
-RUN --mount=type=cache,id=s/ac6b3e3f-6866-4463-ba79-3837cd7fb145-pnpm-store,target=/pnpm/store pnpm i --frozen-lockfile
+RUN --mount=type=cache,id=s/ac6b3e3f-6866-4463-ba79-3837cd7fb145-pnpm-store,target=/pnpm/store pnpm i
 
 COPY --from=pruner /app/out/full/ .
 RUN --mount=type=cache,id=s/ac6b3e3f-6866-4463-ba79-3837cd7fb145-pnpm-store,target=/pnpm/store pnpm --filter=backend generate
