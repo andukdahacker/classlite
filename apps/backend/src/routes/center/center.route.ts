@@ -67,6 +67,7 @@ async function centerRoutes(fastify: FastifyInstance, opts: any) {
           httpOnly: true,
           sameSite: "none",
           secure: true,
+          partitioned: true,
           path: "/",
           maxAge: 60 * 60 * 24 * 365,
         })
