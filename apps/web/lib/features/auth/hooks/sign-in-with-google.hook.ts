@@ -10,8 +10,9 @@ export function useSignInWithGoogle() {
     mutationFn: signInWithGoogle,
     onSuccess: (value) => {
       localStorage.setItem("token", value.token);
-
+      console.log("value", value);
       router.replace("/dashboard");
+      console.log("here");
     },
     onError: (error) => {
       if (error instanceof FirebaseError) {
