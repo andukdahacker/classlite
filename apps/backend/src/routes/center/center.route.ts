@@ -64,9 +64,8 @@ async function centerRoutes(fastify: FastifyInstance, opts: any) {
 
       return reply
         .setCookie("token", result.data.token, {
-          domain: "https://ielts-nook-web.vercel.app",
           httpOnly: true,
-          sameSite: "none",
+          sameSite: "lax",
           secure: true,
           path: "/",
           maxAge: 60 * 60 * 24 * 365,

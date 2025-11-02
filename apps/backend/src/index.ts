@@ -79,7 +79,7 @@ const build = async () => {
     origin: [
       "http://localhost:3000",
       "http://localhost:5174",
-      "https://ielts-nook-web.vercel.app",
+      "https://classlite.app",
     ],
     credentials: true,
   });
