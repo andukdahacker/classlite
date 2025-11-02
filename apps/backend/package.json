@@ -39,7 +39,8 @@
     "jsonwebtoken": "^9.0.2",
     "mime-types": "^2.1.35",
     "resend": "^6.4.0",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "prisma": "^6.10.1"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",
@@ -49,7 +50,6 @@
     "@workspace/typescript-config": "workspace:*",
     "nodemon": "^3.1.7",
     "prettier": "^3.5.3",
-    "prisma": "^6.10.1",
     "ts-node": "^10.9.2",
     "tsc-watch": "^7.1.1",
     "typescript": "^5.7.3"
