@@ -15,7 +15,8 @@ import { Input } from "@workspace/ui/components/input";
 import { cn } from "@workspace/ui/lib/utils";
 import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import useSignInCenter from "../hooks/sign-in-center.hook";
@@ -53,8 +54,11 @@ export function LoginForm({
   const { mutate: signInAsUser, isPending: signInAsUserLoading } =
     useSignInUser();
 
-  const { mutate: signInWithGoogle, isPending: signInWithGoogleLoading } =
-    useSignInWithGoogle();
+  const {
+    mutate: signInWithGoogle,
+    isPending: signInWithGoogleLoading,
+    isSuccess,
+  } = useSignInWithGoogle();
 
   const [loginAsCenter, setLoginAsCenter] = useState(false);
 
@@ -69,6 +73,14 @@ export function LoginForm({
   const handleGoogleSignIn = () => {
     signInWithGoogle();
   };
+
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isSuccess) {
+      router.replace("/dashboard");
+    }
+  });
 
   return (
     <Form {...form}>
