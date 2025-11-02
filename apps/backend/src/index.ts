@@ -76,7 +76,11 @@ const build = async () => {
   });
 
   app.register(cors, {
-    origin: ["http://localhost:3000", "http://localhost:5174"],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5174",
+      "https://ielts-nook-web.vercel.app",
+    ],
     credentials: true,
   });
 
