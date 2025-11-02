@@ -64,11 +64,10 @@ async function centerRoutes(fastify: FastifyInstance, opts: any) {
 
       return reply
         .setCookie("token", result.data.token, {
-          domain: "ielts-nook.firebaseapp.com",
+          domain: "ielts-nook-web.vercel.app",
           httpOnly: true,
           sameSite: "none",
           secure: true,
-          partitioned: true,
           path: "/",
           maxAge: 60 * 60 * 24 * 365,
         })
