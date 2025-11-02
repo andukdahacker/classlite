@@ -102,6 +102,10 @@ async function centerRoutes(fastify: FastifyInstance, opts: any) {
     handler: async (_request: FastifyRequest, reply: FastifyReply) => {
       return reply
         .clearCookie("token", {
+          domain: "classlite.app",
+          httpOnly: true,
+          sameSite: "none",
+          secure: true,
           path: "/",
         })
         .send({ message: "Sign out successfully" });
