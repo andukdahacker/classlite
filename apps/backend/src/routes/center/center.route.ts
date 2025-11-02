@@ -65,7 +65,7 @@ async function centerRoutes(fastify: FastifyInstance, opts: any) {
       return reply
         .setCookie("token", result.data.token, {
           httpOnly: true,
-          sameSite: "lax",
+          sameSite: "none",
           path: "/",
           maxAge: 60 * 60 * 24 * 365,
         })
