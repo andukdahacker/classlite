@@ -1,6 +1,8 @@
 import { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
 import { PrismaClient } from "../generated/prisma/client/index.js";
+import Env from "../env.js";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -10,8 +12,13 @@ declare module "fastify" {
 
 async function prismaPlugin(fastify: FastifyInstance, options: any) {
   if (!fastify.hasDecorator("db")) {
+    const env = fastify.getEnvs<Env>();
+    const adapter = new PrismaPg({
+      connectionString: env.DATABASE_URL,
+    });
     const client = new PrismaClient({
       log: ["error", "warn"],
+      adapter,
     });
 
     fastify.log.info("Prisma connection established");

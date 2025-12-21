@@ -41,6 +41,9 @@ const build = async () => {
         PORT: {
           type: "number",
         },
+        DATABASE_URL: {
+          type: "string",
+        },
         JWT_SECRET: {
           type: "string",
         },

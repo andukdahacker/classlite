@@ -1,8 +1,8 @@
-import { firebaseAuth } from "@/lib/core/firebase";
 import { useMutation } from "@tanstack/react-query";
 import { signOut } from "firebase/auth";
 import { toast } from "sonner";
 import { signOutCenter } from "../network/sign-out-center";
+import { firebaseAuth } from "@/core/firebase";
 
 function useSignOutCenter() {
   const mutation = useMutation({

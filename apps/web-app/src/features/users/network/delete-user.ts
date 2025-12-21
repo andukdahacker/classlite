@@ -1,4 +1,4 @@
-import client from "@/core/client";
+import { client } from "@/core/client";
 
 async function deleteUser(userId: string) {
   const result = await client.DELETE("/api/user/{userId}", {

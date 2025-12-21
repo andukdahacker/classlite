@@ -1,4 +1,4 @@
-import client from "@/lib/core/client";
+import { client } from "@/core/client";
 
 async function signOutCenter() {
   const result = await client.POST("/api/center/sign-out");

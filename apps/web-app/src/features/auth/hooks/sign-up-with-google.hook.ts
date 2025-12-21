@@ -1,17 +1,17 @@
 import { useMutation } from "@tanstack/react-query";
 import { FirebaseError } from "firebase/app";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { signUpWithGoogle } from "../network/sign-up-with-google";
+import { useNavigate } from "react-router";
 
 export function useSignUpWithGoogle() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const mutation = useMutation({
     mutationFn: signUpWithGoogle,
     onSuccess: (value) => {
       localStorage.setItem("token", value.token);
 
-      router.replace("/dashboard");
+      navigate("/dashboard");
     },
     onError: (error) => {
       if (error instanceof FirebaseError) {

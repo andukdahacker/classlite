@@ -1,5 +1,5 @@
-import client from "@/lib/core/client";
-import { firebaseAuth } from "@/lib/core/firebase";
+import { client } from "@/core/client";
+import { firebaseAuth } from "@/core/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 export async function signInWithGoogle() {

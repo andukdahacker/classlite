@@ -9,7 +9,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { AuthContext } from "@/lib/features/auth/components/auth-context";
+import { AuthContext } from "../../../features/auth/components/auth-context";
 import {
   Avatar,
   AvatarFallback,
@@ -24,7 +24,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
 import {
   DropdownMenu,
@@ -135,7 +134,9 @@ export function NavUser({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Are you sure you want to log out?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               You will be redirected to the login page.
             </AlertDialogDescription>

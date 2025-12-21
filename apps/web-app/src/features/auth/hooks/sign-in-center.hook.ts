@@ -1,11 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
 import { FirebaseError } from "firebase/app";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import signInCenter from "../network/sign-in-center";
+import { useNavigate } from "react-router";
 
 function useSignInCenter() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const mutation = useMutation({
     mutationFn: signInCenter,
     onSuccess: (value) => {
@@ -14,7 +14,7 @@ function useSignInCenter() {
         "Sign in successfully. Great to have you back " + value.center.name,
       );
 
-      router.replace("/dashboard");
+      navigate("/dashboard");
     },
     onError: (error) => {
       if (error instanceof FirebaseError) {

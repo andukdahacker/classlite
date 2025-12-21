@@ -1,7 +1,7 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import client from "../../../core/client";
-import { firebaseAuth } from "../../../core/firebase";
-import { SignUpFormSchema } from "../components/sign-up-form";
+import type { SignUpFormSchema } from "../components/sign-up-form";
+import client from "@/core/client";
+import { firebaseAuth } from "@/core/firebase";
 
 async function register(input: SignUpFormSchema) {
   const userCredentials = await createUserWithEmailAndPassword(

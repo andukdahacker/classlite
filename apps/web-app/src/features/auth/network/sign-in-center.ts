@@ -1,7 +1,7 @@
 import { signInWithEmailAndPassword } from "firebase/auth";
-import client from "../../../core/client";
-import { firebaseAuth } from "../../../core/firebase";
-import { LoginFormSchema } from "../components/login-form";
+import type { LoginFormSchema } from "../components/login-form";
+import client from "@/core/client";
+import { firebaseAuth } from "@/core/firebase";
 
 async function signInCenter(input: LoginFormSchema) {
   const { email, password } = input;

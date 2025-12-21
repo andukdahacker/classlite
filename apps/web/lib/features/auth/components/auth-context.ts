@@ -1,6 +1,6 @@
 "use client";
 
-import { Center, User } from "@workspace/types";
+import type { Center, User } from "@workspace/types";
 import React from "react";
 
 interface AuthContextProps {

@@ -1,18 +1,17 @@
 import { useMutation } from "@tanstack/react-query";
 import { FirebaseError } from "firebase/app";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { signInWithGoogle } from "../network/sign-in-with-google";
+import { useNavigate } from "react-router";
 
 export function useSignInWithGoogle() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const mutation = useMutation({
     mutationFn: signInWithGoogle,
     onSuccess: (value) => {
       localStorage.setItem("token", value.token);
-      console.log("value", value);
       setTimeout(() => {
-        router.replace("/dashboard");
+        navigate("/dashboard");
       }, 100);
       console.log("here");
     },

@@ -1,10 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import signInUser from "../network/sign-in-user";
+import { useNavigate } from "react-router";
 
 function useSignInUser() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const mutation = useMutation({
     mutationFn: signInUser,
     onSuccess: (value) => {
@@ -12,7 +12,7 @@ function useSignInUser() {
       toast(
         "Sign in successfully. Great to have you back " + value.user.firstName,
       );
-      router.push("/dashboard");
+      navigate("/dashboard");
     },
     onError: (error) => {
       toast.error("Failed to sign in due to error: " + error.message);

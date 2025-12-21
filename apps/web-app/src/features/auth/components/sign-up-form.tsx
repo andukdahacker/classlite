@@ -12,11 +12,11 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import { cn } from "@workspace/ui/lib/utils";
 import { Loader2Icon } from "lucide-react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import useRegister from "../hooks/register.hook";
 import { useSignUpWithGoogle } from "../hooks/sign-up-with-google.hook";
+import { Link } from "react-router";
 
 const signUpFormSchema = z.object({
   email: z
@@ -134,7 +134,7 @@ export function SignUpForm({
         </div>
         <div className="text-center text-sm">
           Already have an account?{" "}
-          <Link href={"/sign-in"}>
+          <Link to={"/sign-in"}>
             <span className="underline underline-offset-4">Sign in</span>
           </Link>
         </div>

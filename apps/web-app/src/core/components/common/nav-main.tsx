@@ -1,15 +1,15 @@
 "use client";
 
-import { AuthContext } from "@/lib/features/auth/components/auth-context";
+import { AuthContext } from "../../../features/auth/components/auth-context";
 import {
   SidebarGroup,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@workspace/ui/components/sidebar";
-import Link from "next/link";
+import { Link } from "react-router";
 import React from "react";
-import { NavItem } from "./app-sidebar";
+import type { NavItem } from "./app-sidebar";
 
 export function NavMain({ items }: { items: NavItem[] }) {
   const { center, user } = React.useContext(AuthContext);
@@ -26,7 +26,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
           return (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild>
-                <Link href={item.url}>
+                <Link to={item.url}>
                   {item.icon}
                   <span>{item.title}</span>
                 </Link>

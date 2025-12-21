@@ -1,5 +1,5 @@
-import client from "../../../core/client";
-import { LoginFormSchema } from "../components/login-form";
+import client from "@/core/client";
+import type { LoginFormSchema } from "../components/login-form";
 
 async function signInUser(input: LoginFormSchema) {
   const result = await client.POST("/api/user/signIn", {

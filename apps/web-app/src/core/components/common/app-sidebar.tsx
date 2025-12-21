@@ -9,10 +9,9 @@ import {
 } from "lucide-react";
 import * as React from "react";
 
-import { NavMain } from "@/components/nav-main";
-import { NavUser } from "@/components/nav-user";
-import { AuthContext } from "@/lib/features/auth/components/auth-context";
-import { UserRole } from "@workspace/types";
+import { NavMain } from "./nav-main";
+import { NavUser } from "./nav-user";
+import { AuthContext } from "../../../features/auth/components/auth-context";
 import {
   Sidebar,
   SidebarContent,
@@ -23,6 +22,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@workspace/ui/components/sidebar";
+import type { UserRole } from "@workspace/types";
 
 // This is sample data.
 
@@ -60,7 +60,7 @@ const navItems: NavItem[] = [
   },
 ] as const;
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { center, user } = React.useContext(AuthContext);
   const isCenter = center !== undefined;
 
@@ -106,3 +106,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     </Sidebar>
   );
 }
+
+export { AppSidebar };

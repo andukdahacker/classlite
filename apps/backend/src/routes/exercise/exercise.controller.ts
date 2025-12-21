@@ -17,9 +17,9 @@ import {
   UploadWritingImageResponse,
 } from "@workspace/types";
 import { Prisma } from "../../generated/prisma/client/client.js";
-import { JsonObject } from "../../generated/prisma/client/runtime/library.js";
 import S3Service from "../../services/s3_service.js";
 import ExerciseService from "./exercise.service.js";
+import { JsonObject } from "@prisma/client/runtime/client";
 
 class ExerciseController {
   constructor(

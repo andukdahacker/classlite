@@ -14,14 +14,13 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import { cn } from "@workspace/ui/lib/utils";
 import { Loader2Icon } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import useSignInCenter from "../hooks/sign-in-center.hook";
 import useSignInUser from "../hooks/sign-in-user.hook";
 import { useSignInWithGoogle } from "../hooks/sign-in-with-google.hook";
+import { Link, useNavigate } from "react-router";
 
 const loginFormSchema = z.object({
   email: z.email(),
@@ -74,11 +73,11 @@ export function LoginForm({
     signInWithGoogle();
   };
 
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isSuccess) {
-      router.replace("/dashboard");
+      navigate("/dashboard");
     }
   });
 
@@ -146,7 +145,7 @@ export function LoginForm({
               <span className="text-sm">Login as center</span>
             </div>
             <Link
-              href={"/forgot-password"}
+              to={"/forgot-password"}
               className="ml-auto text-sm underline-offset-4 hover:underline"
             >
               Forgot your password?
@@ -187,7 +186,7 @@ export function LoginForm({
         </div>
         <div className="text-center text-sm">
           Don&apos;t have an account?{" "}
-          <Link href={"/sign-up"}>
+          <Link to={"/sign-up"}>
             <span className="underline underline-offset-4">Sign up</span>
           </Link>
         </div>
