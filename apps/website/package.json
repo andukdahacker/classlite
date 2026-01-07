@@ -16,8 +16,13 @@
   "license": "ISC",
   "packageManager": "pnpm@10.4.1",
   "dependencies": {
+    "@astrojs/react": "^4.4.2",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@workspace/ui": "workspace:*",
     "astro": "^5.16.4",
-    "@workspace/ui": "workspace:*"
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
     "@astrojs/ts-plugin": "^1.10.6"
