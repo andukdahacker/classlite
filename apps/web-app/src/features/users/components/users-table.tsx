@@ -211,7 +211,7 @@ function UsersTable() {
 
   return (
     <>
-      <Card>
+      <Card className="m-4">
         <CardHeader>
           <CardTitle>Users</CardTitle>
           <CardDescription>

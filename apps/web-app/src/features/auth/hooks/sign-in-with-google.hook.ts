@@ -13,7 +13,6 @@ export function useSignInWithGoogle() {
       setTimeout(() => {
         navigate("/dashboard");
       }, 100);
-      console.log("here");
     },
     onError: (error) => {
       if (error instanceof FirebaseError) {

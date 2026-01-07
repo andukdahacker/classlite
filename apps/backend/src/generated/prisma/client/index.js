@@ -39,12 +39,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 7.1.0
- * Query Engine version: ab635e6b9d606fa5c8fb8b1a7f909c3c3c1c98ba
+ * Prisma Client JS version: 7.2.0
+ * Query Engine version: 0c8ef2ce45c83248ab3df073180d5eda9e8be7a3
  */
 Prisma.prismaVersion = {
-  client: "7.1.0",
-  engine: "ab635e6b9d606fa5c8fb8b1a7f909c3c3c1c98ba"
+  client: "7.2.0",
+  engine: "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3"
 }
 
 Prisma.PrismaClientKnownRequestError = PrismaClientKnownRequestError;
@@ -227,8 +227,8 @@ exports.Prisma.ModelName = {
  */
 const config = {
   "previewFeatures": [],
-  "clientVersion": "7.1.0",
-  "engineVersion": "ab635e6b9d606fa5c8fb8b1a7f909c3c3c1c98ba",
+  "clientVersion": "7.2.0",
+  "engineVersion": "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3",
   "activeProvider": "postgresql",
   "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../src/generated/prisma/client\"\n  binaryTargets = [\"native\", \"linux-musl-openssl-3.0.x\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel Center {\n  id        String     @id @default(cuid())\n  email     String     @unique\n  name      String\n  users     User[]\n  classes   Class[]\n  exercises Exercise[]\n  createdAt DateTime   @default(now())\n  updatedAt DateTime   @updatedAt\n}\n\nmodel User {\n  id          String        @id @default(cuid())\n  email       String        @unique\n  password    String\n  username    String?\n  firstName   String?\n  lastName    String?\n  phoneNumber String?\n  centerId    String\n  center      Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)\n  role        UserRole\n  classes     ClassMember[]\n  createdAt   DateTime      @default(now())\n  updatedAt   DateTime      @updatedAt\n}\n\nenum UserRole {\n  ADMIN\n  TEACHER\n  STUDENT\n}\n\nmodel Class {\n  id           String        @id @default(cuid())\n  name         String\n  description  String?\n  classMembers ClassMember[]\n  centerId     String\n  center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)\n  createdAt    DateTime      @default(now())\n  updatedAt    DateTime      @updatedAt\n}\n\nmodel ClassMember {\n  classId     String\n  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)\n  userId      String\n  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)\n  assignments Assignment[]\n  createdAt   DateTime     @default(now())\n  updatedAt   DateTime     @updatedAt\n\n  @@id([classId, userId])\n}\n\nmodel Exercise {\n  id         String       @id @default(cuid())\n  name       String\n  type       ExerciseType\n  content    Json\n  centerId   String?\n  center     Center?      @relation(fields: [centerId], references: [id], onDelete: Cascade)\n  assigments Assignment[]\n  isPublic   Boolean      @default(false)\n  timeLimit  Int?\n  createdAt  DateTime     @default(now())\n  updatedAt  DateTime     @updatedAt\n}\n\nenum ExerciseType {\n  READING\n  LISTENING\n  WRITING\n  SPEAKING\n}\n\nmodel Assignment {\n  id                 String           @id @default(cuid())\n  title              String\n  dueDate            DateTime?\n  classMember        ClassMember      @relation(fields: [classMemberClassId, classMemberUserId], references: [classId, userId], onDelete: Cascade)\n  classMemberClassId String\n  classMemberUserId  String\n  exerciseId         String\n  exercise           Exercise         @relation(fields: [exerciseId], references: [id], onDelete: Cascade)\n  submission         Submission?\n  status             AssignmentStatus @default(ASSIGNED)\n  createdAt          DateTime         @default(now())\n  updatedAt          DateTime         @updatedAt\n}\n\nenum AssignmentStatus {\n  ASSIGNED\n  SUBMITTED\n  REVIEWED\n}\n\nmodel Submission {\n  id           String     @id @default(cuid())\n  assignmentId String     @unique\n  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)\n  content      Json\n  grade        Json?\n  feedback     Json?\n  createdAt    DateTime   @default(now())\n  updatedAt    DateTime   @updatedAt\n}\n"
 }

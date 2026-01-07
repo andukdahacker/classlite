@@ -18,9 +18,6 @@ import CenterController from "./center.controller.js";
 import CenterService from "./center.service.js";
 
 async function centerRoutes(fastify: FastifyInstance, opts: any) {
-  fastify.addSchema(CenterSchema);
-  fastify.addSchema(RegisterCenterInputSchema);
-  fastify.addSchema(SignInCenterInputSchema);
   const env = fastify.getEnvs<Env>();
   const centerService = new CenterService(fastify.db);
   const jwtService = new JwtService(env.JWT_SECRET);
@@ -64,10 +61,10 @@ async function centerRoutes(fastify: FastifyInstance, opts: any) {
 
       return reply
         .setCookie("token", result.data.token, {
-          domain: "classlite.app",
+          domain: env.NODE_ENV == "production" ? "classlite.app" : undefined,
           httpOnly: true,
-          sameSite: "none",
-          secure: true,
+          sameSite: env.NODE_ENV == "production" ? "none" : "lax",
+          secure: env.NODE_ENV == "production" ? true : false,
           path: "/",
           maxAge: 60 * 60 * 24 * 365,
         })
@@ -102,10 +99,10 @@ async function centerRoutes(fastify: FastifyInstance, opts: any) {
     handler: async (_request: FastifyRequest, reply: FastifyReply) => {
       return reply
         .clearCookie("token", {
-          domain: "classlite.app",
+          domain: env.NODE_ENV == "production" ? "classlite.app" : undefined,
           httpOnly: true,
-          sameSite: "none",
-          secure: true,
+          sameSite: env.NODE_ENV == "production" ? "none" : "lax",
+          secure: env.NODE_ENV == "production" ? true : false,
           path: "/",
         })
         .send({ message: "Sign out successfully" });

@@ -78,12 +78,13 @@ const build = async () => {
     },
   });
 
+  const env = app.getEnvs<Env>();
+
   app.register(cors, {
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5174",
-      "https://classlite.app",
-    ],
+    origin:
+      env.NODE_ENV == "production"
+        ? ["https://classlite.app"]
+        : ["http://localhost:5173", "https://classlite.app"],
     credentials: true,
   });
 
@@ -149,8 +150,6 @@ const build = async () => {
     },
     transformSpecificationClone: true,
   });
-
-  const env = app.getEnvs<Env>();
 
   app.register(prismaPlugin);
 

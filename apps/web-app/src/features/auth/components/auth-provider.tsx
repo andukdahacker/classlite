@@ -15,6 +15,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   const logOut = async () => {
     try {
       await mutateAsync();
+      localStorage.removeItem("token");
       navigate("/sign-in");
     } catch {}
   };

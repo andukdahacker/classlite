@@ -20,7 +20,9 @@ const authMiddleware: Middleware = {
 export class UnauthorizedError extends Error {}
 
 export const client = createClient<paths>({
-  baseUrl: "https://api.classlite.app",
+  baseUrl: import.meta.env.PROD
+    ? "https://api.classlite.app"
+    : "http://localhost:4000",
   credentials: "include",
 });
 

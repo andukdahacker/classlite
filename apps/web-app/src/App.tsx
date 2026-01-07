@@ -1,10 +1,4 @@
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-  useNavigate,
-} from "react-router";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 
 import { UsersTable } from "./features/users/components/users-table";
 import DashboardLayout from "./features/dashboard/layout";
@@ -13,6 +7,7 @@ import SignUpPage from "./features/auth/views/signup-page";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { UnauthorizedError } from "./core/client";
 import { toast } from "sonner";
+import { ThemeProvider } from "./core/components/common/theme-provider";
 
 function App() {
   const queryClient = new QueryClient({
@@ -29,16 +24,18 @@ function App() {
   });
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route index path="/sign-in" element={<LogInPage />} />
-          <Route path="/sign-up" element={<SignUpPage />} />
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index path="users" element={<UsersTable />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/sign-in" replace />} />
-        </Routes>
-      </BrowserRouter>
+      <ThemeProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route index path="/sign-in" element={<LogInPage />} />
+            <Route path="/sign-up" element={<SignUpPage />} />
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index path="users" element={<UsersTable />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/sign-in" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
