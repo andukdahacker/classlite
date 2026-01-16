@@ -93,134 +93,9 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
-exports.Prisma.CenterScalarFieldEnum = {
-  id: 'id',
-  email: 'email',
-  name: 'name',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.UserScalarFieldEnum = {
-  id: 'id',
-  email: 'email',
-  password: 'password',
-  username: 'username',
-  firstName: 'firstName',
-  lastName: 'lastName',
-  phoneNumber: 'phoneNumber',
-  centerId: 'centerId',
-  role: 'role',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.ClassScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  description: 'description',
-  centerId: 'centerId',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.ClassMemberScalarFieldEnum = {
-  classId: 'classId',
-  userId: 'userId',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.ExerciseScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  type: 'type',
-  content: 'content',
-  centerId: 'centerId',
-  isPublic: 'isPublic',
-  timeLimit: 'timeLimit',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.AssignmentScalarFieldEnum = {
-  id: 'id',
-  title: 'title',
-  dueDate: 'dueDate',
-  classMemberClassId: 'classMemberClassId',
-  classMemberUserId: 'classMemberUserId',
-  exerciseId: 'exerciseId',
-  status: 'status',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.SubmissionScalarFieldEnum = {
-  id: 'id',
-  assignmentId: 'assignmentId',
-  content: 'content',
-  grade: 'grade',
-  feedback: 'feedback',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.SortOrder = {
-  asc: 'asc',
-  desc: 'desc'
-};
-
-exports.Prisma.JsonNullValueInput = {
-  JsonNull: Prisma.JsonNull
-};
-
-exports.Prisma.NullableJsonNullValueInput = {
-  DbNull: Prisma.DbNull,
-  JsonNull: Prisma.JsonNull
-};
-
-exports.Prisma.QueryMode = {
-  default: 'default',
-  insensitive: 'insensitive'
-};
-
-exports.Prisma.NullsOrder = {
-  first: 'first',
-  last: 'last'
-};
-
-exports.Prisma.JsonNullValueFilter = {
-  DbNull: Prisma.DbNull,
-  JsonNull: Prisma.JsonNull,
-  AnyNull: Prisma.AnyNull
-};
-exports.UserRole = exports.$Enums.UserRole = {
-  ADMIN: 'ADMIN',
-  TEACHER: 'TEACHER',
-  STUDENT: 'STUDENT'
-};
-
-exports.ExerciseType = exports.$Enums.ExerciseType = {
-  READING: 'READING',
-  LISTENING: 'LISTENING',
-  WRITING: 'WRITING',
-  SPEAKING: 'SPEAKING'
-};
-
-exports.AssignmentStatus = exports.$Enums.AssignmentStatus = {
-  ASSIGNED: 'ASSIGNED',
-  SUBMITTED: 'SUBMITTED',
-  REVIEWED: 'REVIEWED'
-};
 
 exports.Prisma.ModelName = {
-  Center: 'Center',
-  User: 'User',
-  Class: 'Class',
-  ClassMember: 'ClassMember',
-  Exercise: 'Exercise',
-  Assignment: 'Assignment',
-  Submission: 'Submission'
+
 };
 /**
  * Create the Client
@@ -230,10 +105,10 @@ const config = {
   "clientVersion": "7.2.0",
   "engineVersion": "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3",
   "activeProvider": "postgresql",
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../src/generated/prisma/client\"\n  binaryTargets = [\"native\", \"linux-musl-openssl-3.0.x\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel Center {\n  id        String     @id @default(cuid())\n  email     String     @unique\n  name      String\n  users     User[]\n  classes   Class[]\n  exercises Exercise[]\n  createdAt DateTime   @default(now())\n  updatedAt DateTime   @updatedAt\n}\n\nmodel User {\n  id          String        @id @default(cuid())\n  email       String        @unique\n  password    String\n  username    String?\n  firstName   String?\n  lastName    String?\n  phoneNumber String?\n  centerId    String\n  center      Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)\n  role        UserRole\n  classes     ClassMember[]\n  createdAt   DateTime      @default(now())\n  updatedAt   DateTime      @updatedAt\n}\n\nenum UserRole {\n  ADMIN\n  TEACHER\n  STUDENT\n}\n\nmodel Class {\n  id           String        @id @default(cuid())\n  name         String\n  description  String?\n  classMembers ClassMember[]\n  centerId     String\n  center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)\n  createdAt    DateTime      @default(now())\n  updatedAt    DateTime      @updatedAt\n}\n\nmodel ClassMember {\n  classId     String\n  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)\n  userId      String\n  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)\n  assignments Assignment[]\n  createdAt   DateTime     @default(now())\n  updatedAt   DateTime     @updatedAt\n\n  @@id([classId, userId])\n}\n\nmodel Exercise {\n  id         String       @id @default(cuid())\n  name       String\n  type       ExerciseType\n  content    Json\n  centerId   String?\n  center     Center?      @relation(fields: [centerId], references: [id], onDelete: Cascade)\n  assigments Assignment[]\n  isPublic   Boolean      @default(false)\n  timeLimit  Int?\n  createdAt  DateTime     @default(now())\n  updatedAt  DateTime     @updatedAt\n}\n\nenum ExerciseType {\n  READING\n  LISTENING\n  WRITING\n  SPEAKING\n}\n\nmodel Assignment {\n  id                 String           @id @default(cuid())\n  title              String\n  dueDate            DateTime?\n  classMember        ClassMember      @relation(fields: [classMemberClassId, classMemberUserId], references: [classId, userId], onDelete: Cascade)\n  classMemberClassId String\n  classMemberUserId  String\n  exerciseId         String\n  exercise           Exercise         @relation(fields: [exerciseId], references: [id], onDelete: Cascade)\n  submission         Submission?\n  status             AssignmentStatus @default(ASSIGNED)\n  createdAt          DateTime         @default(now())\n  updatedAt          DateTime         @updatedAt\n}\n\nenum AssignmentStatus {\n  ASSIGNED\n  SUBMITTED\n  REVIEWED\n}\n\nmodel Submission {\n  id           String     @id @default(cuid())\n  assignmentId String     @unique\n  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)\n  content      Json\n  grade        Json?\n  feedback     Json?\n  createdAt    DateTime   @default(now())\n  updatedAt    DateTime   @updatedAt\n}\n"
+  "inlineSchema": "generator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../src/generated/prisma/client\"\n  binaryTargets = [\"native\", \"linux-musl-openssl-3.0.x\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n"
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"Center\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"users\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"CenterToUser\"},{\"name\":\"classes\",\"kind\":\"object\",\"type\":\"Class\",\"relationName\":\"CenterToClass\"},{\"name\":\"exercises\",\"kind\":\"object\",\"type\":\"Exercise\",\"relationName\":\"CenterToExercise\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"password\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"username\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"firstName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"lastName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"phoneNumber\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"centerId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"center\",\"kind\":\"object\",\"type\":\"Center\",\"relationName\":\"CenterToUser\"},{\"name\":\"role\",\"kind\":\"enum\",\"type\":\"UserRole\"},{\"name\":\"classes\",\"kind\":\"object\",\"type\":\"ClassMember\",\"relationName\":\"ClassMemberToUser\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"Class\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"classMembers\",\"kind\":\"object\",\"type\":\"ClassMember\",\"relationName\":\"ClassToClassMember\"},{\"name\":\"centerId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"center\",\"kind\":\"object\",\"type\":\"Center\",\"relationName\":\"CenterToClass\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"ClassMember\":{\"fields\":[{\"name\":\"classId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"class\",\"kind\":\"object\",\"type\":\"Class\",\"relationName\":\"ClassToClassMember\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"ClassMemberToUser\"},{\"name\":\"assignments\",\"kind\":\"object\",\"type\":\"Assignment\",\"relationName\":\"AssignmentToClassMember\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"Exercise\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"type\",\"kind\":\"enum\",\"type\":\"ExerciseType\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"centerId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"center\",\"kind\":\"object\",\"type\":\"Center\",\"relationName\":\"CenterToExercise\"},{\"name\":\"assigments\",\"kind\":\"object\",\"type\":\"Assignment\",\"relationName\":\"AssignmentToExercise\"},{\"name\":\"isPublic\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"timeLimit\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"Assignment\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"dueDate\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"classMember\",\"kind\":\"object\",\"type\":\"ClassMember\",\"relationName\":\"AssignmentToClassMember\"},{\"name\":\"classMemberClassId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"classMemberUserId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"exerciseId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"exercise\",\"kind\":\"object\",\"type\":\"Exercise\",\"relationName\":\"AssignmentToExercise\"},{\"name\":\"submission\",\"kind\":\"object\",\"type\":\"Submission\",\"relationName\":\"AssignmentToSubmission\"},{\"name\":\"status\",\"kind\":\"enum\",\"type\":\"AssignmentStatus\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"Submission\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"assignmentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"assignment\",\"kind\":\"object\",\"type\":\"Assignment\",\"relationName\":\"AssignmentToSubmission\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"grade\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"feedback\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{},\"enums\":{},\"types\":{}}")
 defineDmmfProperty(exports.Prisma, config.runtimeDataModel)
 config.compilerWasm = {
       getRuntime: async () => require('./query_compiler_bg.js'),

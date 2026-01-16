@@ -9,9 +9,6 @@ import { IncomingMessage, Server, ServerResponse } from "http";
 import Env from "./env.js";
 import firebasePlugin from "./plugins/firebase.plugin.js";
 import prismaPlugin from "./plugins/prisma.plugin.js";
-import s3Plugin from "./plugins/s3.plugin.js";
-import routes from "./routes/routes.js";
-import JwtService from "./services/jwt.service.js";
 
 const build = async () => {
   console.log("Starting server...", process.env.NODE_ENV);
@@ -27,12 +24,10 @@ const build = async () => {
     schema: {
       type: "object",
       required: [
-        "NODE_ENV",
         "PORT",
         "FIREBASE_PROJECT_ID",
         "FIREBASE_CLIENT_EMAIL",
         "FIREBASE_PRIVATE_KEY",
-        "RESEND_API_KEY",
       ],
       properties: {
         NODE_ENV: {
@@ -55,25 +50,7 @@ const build = async () => {
         },
         FIREBASE_PRIVATE_KEY: {
           type: "string",
-        },
-        S3_REGION: {
-          type: "string",
-        },
-        S3_ACCESS_KEY: {
-          type: "string",
-        },
-        S3_SECRET_KEY: {
-          type: "string",
-        },
-        S3_BUCKET_NAME: {
-          type: "string",
-        },
-        S3_CLOUDFRONT_DOMAIN: {
-          type: "string",
-        },
-        RESEND_API_KEY: {
-          type: "string",
-        },
+        }
       },
     },
   });
@@ -91,19 +68,6 @@ const build = async () => {
   app.register(helmet);
 
   app.register(swagger, {
-    refResolver: {
-      buildLocalReference: (json, baseUri, fragment, i) => {
-        if (!json.title && json.$id) {
-          json.title = json.$id;
-        }
-        // Fallback if no $id is present
-        if (!json.$id) {
-          return `def-${i}`;
-        }
-
-        return `${json.$id}`;
-      },
-    },
     openapi: {
       openapi: "3.0.0",
       info: {
@@ -164,14 +128,6 @@ const build = async () => {
   });
 
   await app.register(fastifyCookie);
-
-  app.register(s3Plugin);
-
-  app.register(routes, { prefix: "/api" });
-
-  app.addHook("onRequest", async (request, _reply) => {
-    request.jwtService = new JwtService(env.JWT_SECRET);
-  });
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);

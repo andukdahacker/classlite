@@ -1,11 +1,12 @@
 
 # Project Overview
 
-This is a monorepo for a full-stack application. It includes a Next.js web application, a Fastify backend, and shared packages for UI components and types. The project is managed using pnpm and Turbo.
+This is a monorepo for a full-stack application. It includes a React web application, a Astro static site application, a Fastify backend, and shared packages for UI components and types. The project is managed using pnpm and Turbo.
 
 ## Technologies
 
-- **Frontend:** Next.js, React, TypeScript, Tailwind CSS, shadcn/ui
+- **Frontend:** React, TypeScript, Tailwind CSS, shadcn/ui
+- **Website:** Astro, TypeScript, Tailwind CSS
 - **Backend:** Fastify, Prisma, TypeScript
 - **Monorepo:** pnpm, Turbo
 
@@ -13,7 +14,8 @@ This is a monorepo for a full-stack application. It includes a Next.js web appli
 
 The monorepo is organized into the following workspaces:
 
-- `apps/web`: The Next.js frontend application.
+- `apps/webapp`: The React frontend application.
+- `apps/website`: The Astro static site application.
 - `apps/backend`: The Fastify backend application.
 - `packages/ui`: A shared UI component library based on shadcn/ui.
 - `packages/types`: Shared TypeScript types for the frontend and backend.
