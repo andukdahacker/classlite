@@ -27,6 +27,10 @@ classification:
   domain: edtech
   complexity: medium
   projectContext: brownfield
+lastEdited: "2026-01-17"
+editHistory:
+  - date: "2026-01-17"
+    changes: "Updated Executive Summary, User Journeys, Functional Requirements, and NFRs based on UX Design Specification (High-Velocity Pedagogy, Offline-Proofing, Grading Workbench details)."
 ---
 
 # Product Requirements Document - classlite
@@ -36,13 +40,15 @@ classification:
 
 ## Executive Summary
 
-**ClassLite** is a B2B SaaS Learning Management System tailored for small to medium-sized IELTS centers in Vietnam. It solves the operational friction of fragmented tools (spreadsheets, Docs) by providing a unified "Lite" platform for scheduling, roster management, and AI-assisted grading.
+**ClassLite** is a B2B SaaS Learning Management System tailored for small to medium-sized IELTS centers in Vietnam. It streamlines operations by unifying administrative logistics (scheduling, rosters) and pedagogical delivery (AI-assisted grading, exercise building) into a single "Lite" platform.
 
-**Core Value Proposition:**
+The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the grading drudgery through an AI-assisted workbench ("Review -> Adjust -> Approve"), ClassLite empowers expert teachers to double their feedback speed without sacrificing quality. For owners, it offers **"Glanceable Intelligence"**—immediate visibility into center health ("Done by 5 PM" philosophy) without complex reporting tools.
 
-- **For Owners:** Visibility into student health and center operations without manual data aggregation.
-- **For Teachers:** 50% reduction in grading time via an AI Grading Workbench that drafts feedback for teacher review.
-- **Differentiation:** "Methodology Guardian" (AI Style Cloning) allows centers to scale their unique teaching method, preventing the "generic AI" quality drop.
+### Target Users
+
+- **Teaching Owner:** Requires **"Clarity & Calm"**. Needs instant "Traffic Light" visibility into student performance and business health to make data-driven decisions without manual spreadsheets.
+- **Expert Teacher:** Values **"Respect & Support"**. Needs a "Grading Workbench" that acts as a humble assistant, drafting feedback and scores that they can validate in seconds ("3-Minute Loop") while retaining full editorial control.
+- **Student:** Needs to feel **"Safe & Seen"**. Requires a friction-free, offline-first mobile interface ("Login-Free feeling") to submit work reliably from anywhere, even with unstable internet.
 
 ---
 
@@ -113,35 +119,34 @@ classification:
 
 ## User Journeys
 
-### Journey 1: The "Sunday Night Setup" (Admin / Owner)
+### Journey 1: The "3-Minute Grading Loop" (Teacher)
 
-**Persona:** Minh, Center Owner.
-**Goal:** Setup weekly logistics and ensure staffing.
+**Goal:** Reduce grading time per essay from 15 mins to < 3 mins while increasing feedback quality.
+- **Trigger:** Teacher opens "Grading Workbench" (Deep link or Dashboard).
+- **Step 1 (Auto-Load):** System auto-loads the first "Ready" submission in < 500ms.
+- **Step 2 (Review):** Teacher sees split-screen view: Student Essay (Left) vs AI Analysis (Right). AI highlights grammar errors and suggests band scores.
+- **Step 3 (Verify):** Teacher hovers over AI comments; "Evidence Anchors" visually connect comments to text. Teacher swipes to reject bad suggestions or clicks to accept/edit.
+- **Step 4 (Completion):** Teacher clicks "Approve & Next". "Stamp" animation plays. Next submission slides in automatically.
+- **Validation:** Teacher feels in "Flow". No manual file opening/closing.
 
-1.  **Scene:** Sunday, 9 PM. Minh logs in.
-2.  **Roster:** Invites new student "Linh" via email and assigns her to "IELTS 6.0".
-3.  **Scheduling:** Drags "Speaking Club" to Room B to resolve a visual conflict with Room A.
-4.  **Health Check:** Checks Dashboard, sees "Tuan" is Red (missing homework), and messages Tuan's teacher.
+### Journey 2: The "3 Clicks to Rescue" (Owner)
 
-### Journey 2: The "Skeptical Grader" (Expert Teacher)
+**Goal:** Identify and save at-risk students before they churn.
+- **Trigger:** Owner sees "Red Light" indicator on Dashboard.
+- **Step 1 (Scan):** Click Red indicator. Student Profile Overlay opens (no page reload).
+- **Step 2 (Diagnose):** Root cause displayed immediately (e.g., "Missed 3 Homeworks").
+- **Step 3 (Act):** Click "Message Parent". System opens Zalo deep-link with pre-filled "Concern Template".
+- **Validation:** Intervention logged. Owner feels "in control".
 
-**Persona:** Sarah, Senior Teacher (8 years exp).
-**Goal:** Grade 15 essays efficiently without compromising quality.
+### Journey 3: The "Offline-Proof" Submission (Student)
 
-1.  **Scene:** Sarah has 1 hour between classes. Opens Grading Workbench.
-2.  **AI Assessment:** View's Bao's essay. AI has marked grammar errors and suggested Band 6.5.
-3.  **Expert Touch:** Sarah accepts grammar fixes but lowers score to 6.0 because the argument logic is weak. Adds a custom comment: _"Your logic contradicts paragraph 2."_
-4.  **Outcome:** Finishes grading in 45 mins (vs 2 hours).
-
-### Journey 3: The "Last Minute Submission" (Student)
-
-**Persona:** Bao, Student.
-**Goal:** Submit homework on the bus before class.
-
-1.  **Scene:** On the bus, 20 mins before class.
-2.  **Access:** Opens ClassLite mobile web. Sees "Due Soon" alert.
-3.  **Submission:** Pastes essay text into the mobile-responsive editor.
-4.  **Success:** Hits submit. Data auto-saves even on shaky 4G.
+**Goal:** Submit homework reliably regardless of network quality.
+- **Trigger:** Student finishes typing/uploading photo on mobile web.
+- **Step 1 (Attempt):** Student clicks "Submit". Network check fails (Offline).
+- **Step 2 (Safeguard):** UI shows "Saved Locally" banner with "Do Not Close Tab" warning. Amber status icon rotates.
+- **Step 3 (Sync):** Student walks to better signal. Background worker detects connection.
+- **Step 4 (Success):** Data uploads automatically. Green "Success" checkmark appears.
+- **Validation:** Zero data loss. Student trusts the platform.
 
 ---
 
@@ -176,18 +181,20 @@ classification:
 ### 4. Grading Workbench
 
 - **FR18**: Students can submit assignments via mobile-responsive interface (text or image).
-- **FR19**: System must auto-save student work-in-progress.
+- **FR19**: System must auto-save student work-in-progress to LocalStorage every 3 seconds (Offline-Proof).
 - **FR20**: System must trigger AI analysis on submission (Auto-grade Reading/Listening; Suggest scores for Writing/Speaking).
-- **FR21**: Teachers can view the Grading Workbench (Submission + AI Suggestions).
-- **FR22**: Teachers can edit/override AI scores and corrections.
-- **FR23**: Teachers can add custom rich-text comments.
-- **FR24**: Teachers can publish grades to students.
+- **FR21**: The system shall provide a split-screen interface (Student Work / AI Analysis) for grading.
+- **FR22**: The system shall display "Evidence Anchors" (visual lines) connecting AI comments to specific text ranges on hover.
+- **FR23**: The system shall allow teachers to "One-Click Accept" AI suggestions (score + grammar fix).
+- **FR24**: The system shall support "Range-Aware" comments that gracefully detach or re-attach if the underlying text is edited.
+- **FR24b**: The system shall allow teachers to "Reject" AI suggestions, removing them from the final feedback.
+- **FR24c**: The system shall auto-advance to the next submission upon approval (with an optional "Breather" pause after 5 items).
 
 ### 5. Student Success
 
-- **FR25**: Center Owners can view "Student Health Dashboard" (At-risk flags).
-- **FR26**: Center Owners can filter performance by Class/Teacher.
-- **FR27**: Students can view their personal Gradebook.
+- **FR25**: Center Owners can view "Student Health Dashboard" (At-risk flags via Traffic Light system).
+- **FR26**: Center Owners can click a flag to open the Student Profile Overlay (no page reload).
+- **FR27**: Center Owners can initiate interventions via Zalo Deep Links with pre-filled templates.
 
 ### 6. Innovation Features (Phase 1.5)
 
@@ -195,6 +202,8 @@ classification:
 - **FR29 (Zalo)**: Parents can manage Zalo notification preferences.
 - **FR30 (Guardian)**: Center Owners can upload "Golden Sample" feedback to tune AI style.
 - **FR31 (Guardian)**: System must prioritize Golden Samples when generating AI feedback for that tenant.
+- **FR32 (Offline)**: The system shall detect offline status and display a persistent "Do Not Close" warning banner during submission attempts.
+- **FR33 (Offline)**: The system shall queue failed submissions and auto-retry upon network reconnection (Background Sync).
 
 ---
 
@@ -232,18 +241,21 @@ classification:
 
 ### Performance & Reliability
 
-- **NFR1**: Page loads **< 3s** on standard 4G mobile networks.
-- **NFR2**: AI Grading suggestions appear **< 10s** after submission.
-- **NFR3**: Input latency **< 50ms** in Editor.
-- **NFR4**: **99.9% uptime** during peak hours (5 PM - 10 PM GMT+7).
-- **NFR5**: Student work auto-saved every **30s**.
+- **NFR1**: The Grading Workbench shall load the next submission in **< 500ms** (perceived instant) for 95th percentile of users (utilizing pre-fetching).
+- **NFR2**: The Dashboard shall render "Traffic Light" status widgets in **< 1 second**.
+- **NFR3**: AI Grading suggestions appear **< 10s** after submission.
+- **NFR4**: **99.9% uptime** during business hours (8 AM - 10 PM GMT+7).
+- **NFR5**: Student work auto-saved every **3s** to LocalStorage.
 
 ### Security
 
 - **NFR6 (Isolation)**: API rejects cross-tenant resource access (403 Forbidden).
 - **NFR7**: Sensitive data (grades, PII) encrypted at rest.
 
-### Usability
+### Usability & Accessibility
 
 - **NFR8 (Mobile First)**: 100% of Student/Teacher flows functional on 375px+ viewports.
 - **NFR9 (i18n)**: UI supports **English** and **Vietnamese** from launch.
+- **NFR10 (WCAG)**: The system shall comply with **WCAG 2.1 Level AA** standards.
+- **NFR11 (Keyboard)**: Critical workflows (Grading Loop) shall be fully operable via **Keyboard Navigation** (Tab, Enter, Shortcuts).
+- **NFR12 (Focus)**: Input fields in the Grading Workbench shall support "Click-to-Edit" behavior with prominent `:focus-visible` indicators.

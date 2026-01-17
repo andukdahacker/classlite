@@ -1,6 +1,10 @@
 workflow_status:
   product-brief: "_bmad-output/planning-artifacts/product-brief-classlite-2026-01-16.md"
-last_updated: "2026-01-16T19:30:00+07:00"
+  prd: "_bmad-output/planning-artifacts/prd.md"
+  create-ux-design: "_bmad-output/planning-artifacts/ux-design-specification.md"
+last_updated: "2026-01-17T17:23:19+07:00"
 metadata:
   completed_workflows:
     - product-brief
+    - prd
+    - create-ux-design
