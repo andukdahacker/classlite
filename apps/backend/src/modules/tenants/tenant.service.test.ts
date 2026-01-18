@@ -25,6 +25,7 @@ const mockPrisma = {
 const mockFirebaseAuth = {
   getUserByEmail: vi.fn(),
   createUser: vi.fn(),
+  deleteUser: vi.fn().mockResolvedValue(undefined),
   setCustomUserClaims: vi.fn(),
   generatePasswordResetLink: vi.fn(),
 };
@@ -143,6 +144,10 @@ describe("TenantService", () => {
     // Act & Assert
     await expect(tenantService.createTenant(input)).rejects.toThrow(
       "Database error",
+    );
+
+    expect(mockFirebaseAuth.deleteUser).toHaveBeenCalledWith(
+      "firebase-uid-123",
     );
   });
 });
