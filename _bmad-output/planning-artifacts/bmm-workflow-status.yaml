@@ -1,10 +1,24 @@
+# Workflow Status - Classlite
+project: classlite
+project_type: saas_b2b
+field_type: brownfield
+workflow_path: _bmad/bmm/workflows/workflow-status/paths/method-brownfield.yaml
+
 workflow_status:
   product-brief: "_bmad-output/planning-artifacts/product-brief-classlite-2026-01-16.md"
   prd: "_bmad-output/planning-artifacts/prd.md"
   create-ux-design: "_bmad-output/planning-artifacts/ux-design-specification.md"
-last_updated: "2026-01-17T17:23:19+07:00"
+  create-architecture: "_bmad-output/planning-artifacts/architecture.md"
+  create-epics-and-stories: "_bmad-output/planning-artifacts/epics.md"
+  implementation-readiness: "_bmad-output/planning-artifacts/implementation-readiness-report-2026-01-18.md"
+
+last_updated: "2026-01-18T00:00:00Z"
+
 metadata:
   completed_workflows:
     - product-brief
     - prd
     - create-ux-design
+    - create-architecture
+    - create-epics-and-stories
+    - implementation-readiness
