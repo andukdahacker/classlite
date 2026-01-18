@@ -1,0 +1,29 @@
+{
+  "name": "@workspace/db",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && cp -r src/generated dist/",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "lint": "eslint . --max-warnings 0",
+    "clean": "rm -rf dist .turbo node_modules"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.2"
+  },
+  "devDependencies": {
+    "prisma": "^5.10.2",
+    "@workspace/typescript-config": "workspace:*",
+    "@workspace/eslint-config": "workspace:*",
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.24"
+  },
+  "exports": {
+    ".": {
+      "default": "./dist/index.js"
+    }
+  }
+}

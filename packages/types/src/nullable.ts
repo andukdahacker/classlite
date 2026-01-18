@@ -1,4 +1,4 @@
-import { TSchema, Type } from "@sinclair/typebox";
+import { z } from "zod";
 
-export const Nullable = <T extends TSchema>(schema: T) =>
-  Type.Union([schema, Type.Null()], { default: null });
+export const nullable = <T extends z.ZodTypeAny>(schema: T) =>
+  schema.nullable();

@@ -1,0 +1,112 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src/generated/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String?
+  avatarUrl String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authAccounts AuthAccount[]
+  memberships  CenterMembership[]
+}
+
+model AuthAccount {
+  id             String       @id @default(cuid())
+  userId         String
+  provider       AuthProvider
+  providerUserId String
+  email          String?
+
+  createdAt      DateTime     @default(now())
+  
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@unique([provider, email])
+}
+
+enum AuthProvider {
+  FIREBASE
+}
+
+model Center {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships CenterMembership[]
+}
+
+model CenterMembership {
+  id        String           @id @default(cuid())
+  centerId  String
+  userId    String
+  role      CenterRole
+  status    MembershipStatus @default(ACTIVE)
+
+  createdAt DateTime         @default(now())
+
+  center                Center                 @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membershipPermissions MembershipPermission[]
+
+  @@unique([centerId, userId])
+}
+
+enum CenterRole {
+  OWNER
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+model Permission {
+  id             String           @id @default(cuid())
+  key            String           @unique // e.g., "center.update", "user.invite"
+  name           String
+  
+  rolePermissions RolePermission[]
+  membershipPermissions MembershipPermission[]
+}
+
+model RolePermission {
+  role         CenterRole
+  permissionId String
+  
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@id([role, permissionId])
+}
+
+model MembershipPermission {
+  id           String   @id @default(cuid())
+  membershipId String
+  permissionId String
+  allowed      Boolean
+  
+  membership   CenterMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  permission   Permission       @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@unique([membershipId, permissionId])
+}

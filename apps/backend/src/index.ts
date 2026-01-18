@@ -4,11 +4,19 @@ import fastifyEnv from "@fastify/env";
 import helmet from "@fastify/helmet";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
+import {
+  jsonSchemaTransform,
+  serializerCompiler,
+  validatorCompiler,
+  ZodTypeProvider,
+} from "fastify-type-provider-zod";
 import Fastify, { FastifyInstance } from "fastify";
 import { IncomingMessage, Server, ServerResponse } from "http";
 import Env from "./env.js";
 import firebasePlugin from "./plugins/firebase.plugin.js";
 import prismaPlugin from "./plugins/prisma.plugin.js";
+import resendPlugin from "./plugins/resend.plugin.js";
+import { tenantRoutes } from "./modules/tenants/tenant.routes.js";
 
 const build = async () => {
   console.log("Starting server...", process.env.NODE_ENV);
@@ -17,7 +25,10 @@ const build = async () => {
     {
       logger: true,
     },
-  );
+  ).withTypeProvider<ZodTypeProvider>();
+
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
 
   await app.register(fastifyEnv, {
     dotenv: true,
@@ -28,6 +39,7 @@ const build = async () => {
         "FIREBASE_PROJECT_ID",
         "FIREBASE_CLIENT_EMAIL",
         "FIREBASE_PRIVATE_KEY",
+        "PLATFORM_ADMIN_API_KEY",
       ],
       properties: {
         NODE_ENV: {
@@ -50,7 +62,16 @@ const build = async () => {
         },
         FIREBASE_PRIVATE_KEY: {
           type: "string",
-        }
+        },
+        RESEND_API_KEY: {
+          type: "string",
+        },
+        PLATFORM_ADMIN_API_KEY: {
+          type: "string",
+        },
+        EMAIL_FROM: {
+          type: "string",
+        },
       },
     },
   });
@@ -91,6 +112,7 @@ const build = async () => {
         },
       },
     },
+    transform: jsonSchemaTransform,
   });
 
   app.register(swaggerUi, {
@@ -115,8 +137,6 @@ const build = async () => {
     transformSpecificationClone: true,
   });
 
-  app.register(prismaPlugin);
-
   app.register(firebasePlugin, {
     credential: {
       projectId: env.FIREBASE_PROJECT_ID,
@@ -127,7 +147,16 @@ const build = async () => {
     },
   });
 
+  app.register(prismaPlugin);
+
+  app.register(resendPlugin, {
+    apiKey: env.RESEND_API_KEY,
+  });
+
   await app.register(fastifyCookie);
+
+  // Register routes
+  await app.register(tenantRoutes, { prefix: "/api/v1/tenants" });
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);

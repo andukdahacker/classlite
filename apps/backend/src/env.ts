@@ -6,6 +6,9 @@ type Env = {
   FIREBASE_PROJECT_ID: string;
   FIREBASE_PRIVATE_KEY: string;
   FIREBASE_CLIENT_EMAIL: string;
+  RESEND_API_KEY: string;
+  PLATFORM_ADMIN_API_KEY: string;
+  EMAIL_FROM?: string;
 };
 
 export default Env;

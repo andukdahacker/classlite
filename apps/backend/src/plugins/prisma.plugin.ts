@@ -1,42 +1,23 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
-import { PrismaClient } from "../generated/prisma/client/index.js";
-import Env from "../env.js";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@workspace/db";
 
 declare module "fastify" {
   interface FastifyInstance {
-    db: PrismaClient;
+    prisma: PrismaClient;
   }
 }
 
-async function prismaPlugin(fastify: FastifyInstance, options: any) {
-  if (!fastify.hasDecorator("db")) {
-    const env = fastify.getEnvs<Env>();
-    const adapter = new PrismaPg({
-      connectionString: env.DATABASE_URL,
-    });
-    const client = new PrismaClient({
-      log: ["error", "warn"],
-      adapter,
-    });
+const prismaPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+  const prisma = new PrismaClient();
 
-    fastify.log.info("Prisma connection established");
+  await prisma.$connect();
 
-    fastify.decorate("db", client);
-    fastify.addHook("onClose", async (server) => {
-      try {
-        await server.db.$disconnect();
-        fastify.log.info("Prisma connection closed");
-      } catch (e) {
-        fastify.log.error(e);
-        await server.db.$disconnect();
-        process.exit(1);
-      }
-    });
-  } else {
-    throw new Error("Prisma already registered");
-  }
-}
+  fastify.decorate("prisma", prisma);
+
+  fastify.addHook("onClose", async (server) => {
+    await server.prisma.$disconnect();
+  });
+};
 
 export default fp(prismaPlugin);
