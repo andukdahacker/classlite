@@ -1,4 +1,4 @@
-import { PrismaClient } from "@workspace/db";
+import { MembershipStatus, PrismaClient } from "@workspace/db";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthService } from "./auth.service.js";
 
@@ -11,8 +11,13 @@ const mockPrisma = {
     findUnique: vi.fn(),
     create: vi.fn(),
   },
+  center: {
+    findUnique: vi.fn(),
+    create: vi.fn(),
+  },
   centerMembership: {
     findFirst: vi.fn(),
+    create: vi.fn(),
   },
   $transaction: vi.fn((callback) => callback(mockPrisma)),
 } as unknown as PrismaClient;
@@ -20,6 +25,8 @@ const mockPrisma = {
 const mockFirebaseAuth = {
   verifyIdToken: vi.fn(),
   setCustomUserClaims: vi.fn(),
+  createUser: vi.fn(),
+  deleteUser: vi.fn(),
 };
 
 describe("AuthService", () => {
@@ -150,6 +157,76 @@ describe("AuthService", () => {
           role: "owner",
         },
       );
+    });
+  });
+
+  describe("centerSignup", () => {
+    it("should create center, firebase user, and DB records", async () => {
+      // Arrange
+      const input = {
+        centerName: "Test Center",
+        centerSlug: "test-center",
+        ownerEmail: "owner@example.com",
+        ownerName: "Owner Name",
+        password: "password123",
+      };
+
+      const firebaseUid = "fb-uid-123";
+      (mockPrisma.center.findUnique as any).mockResolvedValue(null);
+      (mockPrisma.user.findUnique as any).mockResolvedValue(null);
+      mockFirebaseAuth.createUser.mockResolvedValue({ uid: firebaseUid });
+      (mockPrisma.center.create as any).mockResolvedValue({ id: "center-id" });
+      (mockPrisma.user.create as any).mockResolvedValue({
+        id: "user-id",
+        email: input.ownerEmail,
+        name: input.ownerName,
+      });
+
+      // Act
+      const result = await authService.centerSignup(input);
+
+      // Assert
+      expect(mockFirebaseAuth.createUser).toHaveBeenCalledWith({
+        email: input.ownerEmail,
+        password: input.password,
+        displayName: input.ownerName,
+      });
+      expect(mockPrisma.center.create).toHaveBeenCalledWith({
+        data: { name: input.centerName, slug: input.centerSlug },
+      });
+      expect(mockPrisma.authAccount.create).toHaveBeenCalled();
+      expect(mockPrisma.centerMembership.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          role: "OWNER",
+          status: MembershipStatus.ACTIVE,
+        }),
+      });
+      expect(mockFirebaseAuth.setCustomUserClaims).toHaveBeenCalledWith(
+        firebaseUid,
+        {
+          center_id: "center-id",
+          role: "owner",
+        },
+      );
+      expect(result.user.role).toBe("OWNER");
+    });
+
+    it("should cleanup firebase user if DB transaction fails", async () => {
+      // Arrange
+      const input = {
+        centerName: "Test Center",
+        centerSlug: "test-center",
+        ownerEmail: "owner@example.com",
+        ownerName: "Owner Name",
+        password: "password123",
+      };
+
+      mockFirebaseAuth.createUser.mockResolvedValue({ uid: "fb-uid" });
+      (mockPrisma.center.create as any).mockRejectedValue(new Error("DB Fail"));
+
+      // Act & Assert
+      await expect(authService.centerSignup(input)).rejects.toThrow("DB Fail");
+      expect(mockFirebaseAuth.deleteUser).toHaveBeenCalledWith("fb-uid");
     });
   });
 });

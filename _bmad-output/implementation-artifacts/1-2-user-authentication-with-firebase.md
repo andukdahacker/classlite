@@ -13,35 +13,43 @@ so that I can securely access the platform.
 ## Acceptance Criteria
 
 1. **Frontend Authentication:** Users can sign in using Google OAuth or Email/Password via Firebase Client SDK. [Source: epics.md#Story 1.2]
-2. **Token Verification:** The frontend sends the Firebase ID Token to the backend `POST /api/v1/auth/login` for verification.
-3. **Identity Sync:** Backend verifies the token using Firebase Admin SDK and syncs user identity with the local database.
-4. **Custom Claims Injection:** Backend retrieves `center_id` and `role` from the database and sets them as Firebase Custom Claims if missing or outdated. [Source: architecture.md#Authentication & Security]
-5. **Role-Based Redirection:** Upon successful login, the frontend redirects users to their specific dashboard based on their role:
+2. **Public Center Signup:** New users can sign up as Center Owners. This creates a new Center and links the user as its `OWNER` without requiring platform admin approval.
+3. **Token Verification:** The frontend sends the Firebase ID Token to the backend `POST /api/v1/auth/login` for verification.
+4. **Identity Sync:** Backend verifies the token using Firebase Admin SDK and syncs user identity with the local database.
+5. **Custom Claims Injection:** Backend retrieves `center_id` and `role` from the database and sets them as Firebase Custom Claims if missing or outdated. [Source: architecture.md#Authentication & Security]
+6. **Role-Based Redirection:** Upon successful login or signup, the frontend redirects users to their specific dashboard based on their role:
    - `OWNER` -> `/dashboard/owner`
    - `TEACHER` -> `/dashboard/teacher`
    - `STUDENT` -> `/dashboard/student`
-6. **Auth Middleware:** Implement a Fastify middleware to verify the ID token on protected routes and attach the payload to `request.jwtPayload`. [Source: AGENTS.md#Middleware]
+7. **Auth Middleware:** Implement a Fastify middleware to verify the ID token on protected routes and attach the payload to `request.jwtPayload`. [Source: AGENTS.md#Middleware]
 
 ## Tasks / Subtasks
 
-- [ ] **Infrastructure & Configuration** (AC: 1, 2)
-  - [ ] Configure Firebase Client SDK in `apps/webapp`
-  - [ ] Configure Firebase Admin SDK in `apps/backend` (Ensure `FIREBASE_*` env vars are used)
-- [ ] **Shared Types & Validation** (AC: 2)
-  - [ ] Define `LoginRequestSchema` and `AuthResponseSchema` in `packages/types/src/auth/`
-- [ ] **Backend Implementation** (AC: 2, 3, 4, 6)
-  - [ ] Create `apps/backend/src/modules/auth/` (controller, service, routes)
-  - [ ] Implement `login` endpoint that verifies ID token and returns user context
-  - [ ] Implement `syncCustomClaims` logic in auth service
-  - [ ] Create `apps/backend/src/middlewares/auth.middleware.ts` to protect routes
-- [ ] **Frontend Implementation** (AC: 1, 5)
-  - [ ] Create `apps/webapp/src/features/auth/`
-  - [ ] Implement `useAuth` hook using Firebase `onAuthStateChanged`
-  - [ ] Build Login page with Google and Email/Password options
-  - [ ] Implement protected route wrapper and role-based redirection logic
-- [ ] **Testing**
-  - [ ] Add unit tests for `AuthService` (verifying token and claims logic)
-  - [ ] Add E2E tests for login flow using Playwright
+- [x] **Infrastructure & Configuration** (AC: 1, 3)
+  - [x] Configure Firebase Client SDK in `apps/webapp`
+  - [x] Configure Firebase Admin SDK in `apps/backend` (Ensure `FIREBASE_*` env vars are used)
+- [x] **Shared Types & Validation** (AC: 2, 3)
+  - [x] Define `LoginRequestSchema` and `AuthResponseSchema` in `packages/types/src/auth/`
+  - [x] Define `CenterSignupSchema` in `packages/types/src/auth/` (Name, Slug, Email, Password)
+- [x] **Backend Implementation** (AC: 2, 3, 4, 5, 7)
+  - [x] Create `apps/backend/src/modules/auth/` (controller, service, routes)
+  - [x] Implement `POST /api/v1/auth/signup/center` endpoint:
+    - [x] Create Center record
+    - [x] Create Firebase User with password
+    - [x] Set custom claims `{ center_id, role: 'OWNER' }`
+    - [x] Create local User and Membership records
+  - [x] Implement `POST /api/v1/auth/login` endpoint that verifies ID token and returns user context
+  - [x] Implement `syncCustomClaims` logic in auth service
+  - [x] Create `apps/backend/src/middlewares/auth.middleware.ts` to protect routes
+- [x] **Frontend Implementation** (AC: 1, 2, 6)
+  - [x] Create `apps/webapp/src/features/auth/`
+  - [x] Implement `useAuth` hook using Firebase `onAuthStateChanged`
+  - [x] Build Login page with Google and Email/Password options
+  - [x] Build Center Signup page (Name, Slug, Email, Password)
+  - [x] Implement protected route wrapper and role-based redirection logic
+- [x] **Testing**
+  - [x] Add unit tests for `AuthService` (verifying token, claims, and signup logic)
+  - [ ] Add E2E tests for login and center signup flows using Playwright
 
 ## Dev Notes
 
@@ -66,12 +74,44 @@ so that I can securely access the platform.
 
 ## Dev Agent Record
 
-### Agent Model Used
+### Implementation Plan
 
-Claude 3.5 Sonnet (Simulated)
+1.  **Shared Types**: Added `CenterSignupRequestSchema` to `packages/types/src/auth/dto.ts` to support self-service center registration.
+2.  **Backend Service**: Enhanced `AuthService` with `centerSignup` method. This method creates a Firebase user, creates a new `Center` in the DB, links the user as `OWNER`, and sets custom claims for multi-tenancy.
+3.  **Backend API**: Added `POST /api/v1/auth/signup/center` endpoint and updated `auth.routes.ts`.
+4.  **Frontend API**: Implemented `signupCenter` in `auth.api.ts` and created the `useSignupCenterMutation` hook.
+5.  **UI Components**: Built `SignupCenterForm` and `SignupCenterPage` to allow users to register centers directly.
+6.  **Routing**: Integrated the signup page into `App.tsx` and linked it from the login page.
 
-### Debug Log References
+### Completion Notes
 
-### Completion Notes List
+- Users can now sign up as Center Owners directly.
+- Multi-tenancy isolation is established during signup via custom claims (`center_id`).
+- Backend ensures atomic registration (DB + Firebase) with cleanup on failure.
+- Verified with passing unit tests for `AuthService`.
 
-### File List
+## File List
+
+- `packages/types/src/auth/dto.ts` (Modified)
+- `apps/backend/src/modules/auth/auth.service.ts` (Modified)
+- `apps/backend/src/modules/auth/auth.controller.ts` (Modified)
+- `apps/backend/src/modules/auth/auth.routes.ts` (Modified)
+- `apps/backend/src/modules/auth/auth.service.test.ts` (Modified)
+- `apps/webapp/src/features/auth/auth.api.ts` (Modified)
+- `apps/webapp/src/features/auth/auth.hooks.ts` (Modified)
+- `apps/webapp/src/features/auth/components/signup-center-form.tsx` (New)
+- `apps/webapp/src/features/auth/signup-center-page.tsx` (New)
+- `apps/webapp/src/features/auth/login-page.tsx` (Modified)
+- `apps/webapp/src/App.tsx` (Modified)
+- `_bmad-output/implementation-artifacts/1-2-user-authentication-with-firebase.md` (Modified)
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (Modified)
+
+## Change Log
+
+- **2026-01-19:** Implemented self-service center signup flow.
+  - Added signup endpoint and service logic.
+  - Added frontend registration page and form.
+  - Updated custom claims sync for new owners.
+  - Added unit tests for registration logic.
+
+## Status: review

@@ -14,7 +14,8 @@
     "prestart": "prisma migrate deploy",
     "start": "node ./dist/index.js",
     "db:push": "prisma db push",
-    "generate": "prisma generate"
+    "generate": "prisma generate",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",

@@ -39,7 +39,7 @@ development_status:
   # Epic 1
   epic-1: in-progress
   1-1-tenant-provisioning-system: done
-  1-2-user-authentication-with-firebase: done
+  1-2-user-authentication-with-firebase: review
   1-0-design-system-foundation: done
   1-3-role-based-access-control-rbac: backlog
   1-4-multi-tenant-data-isolation: backlog

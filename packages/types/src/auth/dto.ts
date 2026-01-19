@@ -30,3 +30,19 @@ export type AuthResponseData = z.infer<typeof AuthResponseDataSchema>;
 export const AuthResponseSchema = createResponseSchema(AuthResponseDataSchema);
 
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
+
+export const CenterSignupRequestSchema = z.object({
+  centerName: z.string().min(1, "Center name is required"),
+  centerSlug: z
+    .string()
+    .min(3, "Slug must be at least 3 characters")
+    .regex(
+      /^[a-z0-9-]+$/,
+      "Slug must contain only lowercase letters, numbers, and dashes",
+    ),
+  ownerEmail: z.email("Invalid email address"),
+  ownerName: z.string().min(1, "Owner name is required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+export type CenterSignupRequest = z.infer<typeof CenterSignupRequestSchema>;

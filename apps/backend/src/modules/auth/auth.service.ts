@@ -1,12 +1,106 @@
 import { CenterRole, MembershipStatus, PrismaClient } from "@workspace/db";
 import { Auth } from "firebase-admin/auth";
-import { AuthResponseData, AuthUser } from "@workspace/types";
+import {
+  AuthResponseData,
+  AuthUser,
+  CenterSignupRequest,
+} from "@workspace/types";
 
 export class AuthService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly firebaseAuth: Auth,
   ) {}
+
+  async centerSignup(input: CenterSignupRequest): Promise<AuthResponseData> {
+    const { centerName, centerSlug, ownerEmail, ownerName, password } = input;
+
+    // 1. Validate Uniqueness
+    const existingCenter = await this.prisma.center.findUnique({
+      where: { slug: centerSlug },
+    });
+    if (existingCenter) {
+      throw new Error("CONFLICT: Center slug already exists");
+    }
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: ownerEmail },
+    });
+    if (existingUser) {
+      throw new Error("CONFLICT: Email already registered");
+    }
+
+    // 2. Create Firebase User
+    let firebaseUser;
+    try {
+      firebaseUser = await this.firebaseAuth.createUser({
+        email: ownerEmail,
+        password: password,
+        displayName: ownerName,
+      });
+    } catch (error: any) {
+      if (error.code === "auth/email-already-exists") {
+        throw new Error("CONFLICT: Email already registered in Firebase");
+      }
+      throw error;
+    }
+
+    try {
+      // 3. Create Center, User, and Membership in DB
+      const result = await this.prisma.$transaction(async (tx) => {
+        const center = await tx.center.create({
+          data: {
+            name: centerName,
+            slug: centerSlug,
+          },
+        });
+
+        const user = await tx.user.create({
+          data: {
+            email: ownerEmail,
+            name: ownerName,
+          },
+        });
+
+        await tx.authAccount.create({
+          data: {
+            userId: user.id,
+            provider: "FIREBASE",
+            providerUserId: firebaseUser.uid,
+            email: ownerEmail,
+          },
+        });
+
+        const membership = await tx.centerMembership.create({
+          data: {
+            centerId: center.id,
+            userId: user.id,
+            role: "OWNER",
+            status: MembershipStatus.ACTIVE,
+          },
+        });
+
+        return {
+          user: {
+            id: user.id,
+            email: user.email!,
+            name: user.name,
+            role: "OWNER" as const,
+            centerId: center.id,
+          },
+        };
+      });
+
+      // 4. Set Custom Claims
+      await this.syncCustomClaims(firebaseUser.uid, result.user);
+
+      return result;
+    } catch (error) {
+      // Cleanup Firebase User if DB transaction fails
+      await this.firebaseAuth.deleteUser(firebaseUser.uid);
+      throw error;
+    }
+  }
 
   async login(idToken: string): Promise<AuthResponseData> {
     // 1. Verify Token

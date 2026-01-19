@@ -8,6 +8,7 @@ import { AuthProvider } from "./features/auth/auth-context";
 import { ProtectedRoute } from "./features/auth/protected-route";
 import { RoleRedirect } from "./features/auth/role-redirect";
 import { LoginPage } from "./features/auth/login-page";
+import { SignupCenterPage } from "./features/auth/signup-center-page";
 
 function App() {
   const queryClient = new QueryClient({
@@ -35,6 +36,7 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/sign-in" element={<LoginPage />} />
+              <Route path="/sign-up/center" element={<SignupCenterPage />} />
 
               {/* Role-based redirection at root */}
               <Route path="/" element={<RoleRedirect />} />

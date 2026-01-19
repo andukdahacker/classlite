@@ -191,15 +191,15 @@ So that new customers can have their own isolated environment.
 ### Story 1.2: User Authentication with Firebase
 
 As a User,
-I want to log in using Google OAuth or Email/Password,
-So that I can securely access the platform.
+I want to log in using Google OAuth or Email/Password, and as a new Center Owner, I want to sign up my center directly,
+So that I can securely access the platform and start managing my school immediately.
 
 **Acceptance Criteria:**
 
-**Given** a user on the login page
-**When** they authenticate via Firebase (Google or Email)
-**Then** the system verifies their identity
-**And** retrieves their custom claims (`center_id`, `role`) from the backend
+**Given** a user on the login or signup page
+**When** they authenticate via Firebase (Google or Email) or complete the Center Signup form
+**Then** the system verifies their identity and creates the Center/Owner records if necessary
+**And** retrieves/sets their custom claims (`center_id`, `role`)
 **And** redirects them to their role-specific dashboard (Owner, Teacher, or Student)
 
 ### Story 1.3: Role-Based Access Control (RBAC)
