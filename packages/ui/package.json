@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "build": "pnpm dlx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/index.css",
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
