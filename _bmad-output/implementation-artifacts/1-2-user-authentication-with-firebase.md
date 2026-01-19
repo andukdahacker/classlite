@@ -72,6 +72,33 @@ so that I can securely access the platform.
 - [Source: epics.md#Story 1.2] - Original story definition.
 - [Source: AGENTS.md#Middleware] - Auth middleware requirements.
 
+## Senior Developer Review (AI)
+
+**Review Date:** 2026-01-19
+**Reviewer:** Adversarial Senior Dev Agent
+**Outcome:** 🔴 Changes Requested
+
+### Summary of Findings
+
+The implementation successfully added the center signup flow but contains several architectural "slop" points, brittle cleanup logic, and inconsistent role casing between systems.
+
+### Action Items
+
+- [x] [AI-Review][HIGH] **Brittle Atomic Cleanup**: In `AuthService.centerSignup`, the `deleteUser` cleanup call is outside the DB transaction. If the process crashes after `createUser` but before the transaction finishes, a "zombie" Firebase user will exist without a DB record.
+- [x] [AI-Review][HIGH] **Inconsistent Role Casing**: `syncCustomClaims` uses `role.toLowerCase()` while `auth.middleware.ts` converts back to uppercase. This is a maintenance trap. The system should use consistent casing (Uppercase as per DB/Types) everywhere.
+- [x] [AI-Review][MEDIUM] **Type Casting Slop**: `AuthService.login` uses `(membership?.role as unknown as any)`. This bypasses type safety and should be fixed with a proper enum mapping or type narrowing.
+- [x] [AI-Review][MEDIUM] **UX Validation Gap**: The `SignupCenterForm` lacks real-time validation or auto-generation for the `centerSlug`, which must follow a specific regex.
+- [x] [AI-Review][MEDIUM] **Incomplete File List**: The File List in the story missed several modified metadata and implementation files.
+- [x] [AI-Review][LOW] **API Key Security**: The `authMiddleware` assumes `firebaseAuth` is registered on the server but doesn't explicitly check for its presence before calling `verifyIdToken`.
+
+### Severity Breakdown
+
+- **High:** 2
+- **Medium:** 3
+- **Low:** 1
+
+---
+
 ## Dev Agent Record
 
 ### Implementation Plan
@@ -85,6 +112,13 @@ so that I can securely access the platform.
 
 ### Completion Notes
 
+- **Code Review Fixes (2026-01-19):**
+  - Standardized **Uppercase roles** across `AuthService`, Custom Claims, and Middleware.
+  - Hardened **Atomic Cleanup** in `centerSignup` to prevent "zombie" users.
+  - Eliminated **Type Casting** slop in role mappings.
+  - Added **Auto-Slug Generation** and validation to `SignupCenterForm`.
+  - Added initialization check to `authMiddleware` for better error reporting.
+  - Synchronized all metadata and implementation files in the File List.
 - Users can now sign up as Center Owners directly.
 - Multi-tenancy isolation is established during signup via custom claims (`center_id`).
 - Backend ensures atomic registration (DB + Firebase) with cleanup on failure.
@@ -97,6 +131,7 @@ so that I can securely access the platform.
 - `apps/backend/src/modules/auth/auth.controller.ts` (Modified)
 - `apps/backend/src/modules/auth/auth.routes.ts` (Modified)
 - `apps/backend/src/modules/auth/auth.service.test.ts` (Modified)
+- `apps/backend/src/middlewares/auth.middleware.ts` (Modified)
 - `apps/webapp/src/features/auth/auth.api.ts` (Modified)
 - `apps/webapp/src/features/auth/auth.hooks.ts` (Modified)
 - `apps/webapp/src/features/auth/components/signup-center-form.tsx` (New)
@@ -113,5 +148,9 @@ so that I can securely access the platform.
   - Added frontend registration page and form.
   - Updated custom claims sync for new owners.
   - Added unit tests for registration logic.
+- **2026-01-19:** Post-Review Fixes.
+  - Standardized role casing and improved type safety.
+  - Hardened atomic cleanup and middleware.
+  - Added auto-slug generation.
 
-## Status: review
+## Status: done

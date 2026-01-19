@@ -154,7 +154,7 @@ describe("AuthService", () => {
         decodedToken.uid,
         {
           center_id: membership.centerId,
-          role: "owner",
+          role: "OWNER",
         },
       );
     });
@@ -205,7 +205,7 @@ describe("AuthService", () => {
         firebaseUid,
         {
           center_id: "center-id",
-          role: "owner",
+          role: "OWNER",
         },
       );
       expect(result.user.role).toBe("OWNER");

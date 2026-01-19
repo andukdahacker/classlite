@@ -1,3 +1,4 @@
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -42,6 +43,15 @@ export function SignupCenterForm() {
       toast.error(error.message || "Signup failed");
     }
   };
+
+  const centerName = form.watch("centerName");
+  React.useEffect(() => {
+    const slug = centerName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "");
+    form.setValue("centerSlug", slug, { shouldValidate: true });
+  }, [centerName, form]);
 
   return (
     <Form {...form}>

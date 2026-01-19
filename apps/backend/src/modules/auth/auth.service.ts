@@ -1,9 +1,10 @@
-import { CenterRole, MembershipStatus, PrismaClient } from "@workspace/db";
+import { MembershipStatus, PrismaClient } from "@workspace/db";
 import { Auth } from "firebase-admin/auth";
 import {
   AuthResponseData,
   AuthUser,
   CenterSignupRequest,
+  UserRole,
 } from "@workspace/types";
 
 export class AuthService {
@@ -71,7 +72,7 @@ export class AuthService {
           },
         });
 
-        const membership = await tx.centerMembership.create({
+        await tx.centerMembership.create({
           data: {
             centerId: center.id,
             userId: user.id,
@@ -96,8 +97,10 @@ export class AuthService {
 
       return result;
     } catch (error) {
-      // Cleanup Firebase User if DB transaction fails
-      await this.firebaseAuth.deleteUser(firebaseUser.uid);
+      // Cleanup Firebase User if DB transaction fails or claims sync fails
+      if (firebaseUser) {
+        await this.firebaseAuth.deleteUser(firebaseUser.uid);
+      }
       throw error;
     }
   }
@@ -172,7 +175,7 @@ export class AuthService {
           id: user.id,
           email: user.email!,
           name: user.name,
-          role: (membership?.role as unknown as any) || "STUDENT",
+          role: (membership?.role as UserRole) ?? "STUDENT",
           centerId: membership?.centerId || null,
         },
       };
@@ -188,7 +191,7 @@ export class AuthService {
     if (user.centerId) {
       await this.firebaseAuth.setCustomUserClaims(uid, {
         center_id: user.centerId,
-        role: user.role.toLowerCase(),
+        role: user.role,
       });
     }
   }
