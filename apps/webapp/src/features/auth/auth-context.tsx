@@ -26,7 +26,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   const { data: user } = useAuthUserQuery();
-  const loginMutation = useLoginMutation();
+  const { mutateAsync: login, isPending: isLoggingIn } = useLoginMutation();
+
+  // Use a ref to keep the stable reference of the login function
+  // to prevent infinite loops in useEffect
+  const loginRef = React.useRef(login);
+  useEffect(() => {
+    loginRef.current = login;
+  }, [login]);
 
   const logout = async () => {
     await firebaseAuth.signOut();
@@ -41,7 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (fbUser) {
         try {
           const token = await fbUser.getIdToken();
-          await loginMutation.mutateAsync(token);
+          await loginRef.current(token);
         } catch (error) {
           console.error("Session sync failed:", error);
         }
@@ -53,14 +60,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     return unsubscribe;
-  }, [loginMutation, queryClient]);
+  }, [queryClient]);
 
   return (
     <AuthContext.Provider
       value={{
         user: user ?? null,
         firebaseUser,
-        loading: loading || loginMutation.isPending,
+        loading: loading || isLoggingIn,
         logout,
       }}
     >

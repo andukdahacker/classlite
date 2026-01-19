@@ -10,8 +10,18 @@ export const AUTH_QUERY_KEYS = {
  * Hook to access the current authenticated user from the cache
  */
 export const useAuthUserQuery = () => {
+  const queryClient = useQueryClient();
   return useQuery<AuthUser | null>({
     queryKey: AUTH_QUERY_KEYS.user,
+    queryFn: () => {
+      const user = queryClient.getQueryData<AuthUser>(AUTH_QUERY_KEYS.user);
+
+      if (!user) {
+        return null;
+      }
+
+      return user;
+    },
     // Auth state is primarily managed by the login mutation and onAuthStateChanged
     staleTime: Infinity,
     gcTime: Infinity,

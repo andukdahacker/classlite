@@ -83,11 +83,24 @@ const build = async () => {
     origin:
       env.NODE_ENV == "production"
         ? ["https://classlite.app"]
-        : ["http://localhost:5173", "https://classlite.app"],
+        : [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:4321",
+            "http://127.0.0.1:4321",
+          ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Platform-Admin-Api-Key",
+    ],
   });
 
-  app.register(helmet);
+  app.register(helmet, {
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  });
 
   app.register(swagger, {
     openapi: {
