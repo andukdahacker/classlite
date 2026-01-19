@@ -19,8 +19,8 @@ This document provides the complete epic and story breakdown for classlite, deco
 
 ### Functional Requirements
 
-FR1: Users can sign up and login using Google OAuth or Email/Password.
-FR2: Platform Admins can provision new Center tenants (`center_id`).
+FR1: Users can sign up centers directly (Self-Service) and login using Google OAuth or Email/Password.
+FR2: Platform Admins can manually provision new Center tenants (`center_id`).
 FR3: Center Owners can invite users (Teachers, Students) via email.
 FR4: System must restrict access based on Role (Owner, Teacher, Student).
 FR5: System must enforce logical data isolation (users access only their `center_id` data).

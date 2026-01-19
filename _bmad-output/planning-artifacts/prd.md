@@ -122,6 +122,7 @@ The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the gradin
 ### Journey 1: The "3-Minute Grading Loop" (Teacher)
 
 **Goal:** Reduce grading time per essay from 15 mins to < 3 mins while increasing feedback quality.
+
 - **Trigger:** Teacher opens "Grading Workbench" (Deep link or Dashboard).
 - **Step 1 (Auto-Load):** System auto-loads the first "Ready" submission in < 500ms.
 - **Step 2 (Review):** Teacher sees split-screen view: Student Essay (Left) vs AI Analysis (Right). AI highlights grammar errors and suggests band scores.
@@ -132,6 +133,7 @@ The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the gradin
 ### Journey 2: The "3 Clicks to Rescue" (Owner)
 
 **Goal:** Identify and save at-risk students before they churn.
+
 - **Trigger:** Owner sees "Red Light" indicator on Dashboard.
 - **Step 1 (Scan):** Click Red indicator. Student Profile Overlay opens (no page reload).
 - **Step 2 (Diagnose):** Root cause displayed immediately (e.g., "Missed 3 Homeworks").
@@ -141,6 +143,7 @@ The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the gradin
 ### Journey 3: The "Offline-Proof" Submission (Student)
 
 **Goal:** Submit homework reliably regardless of network quality.
+
 - **Trigger:** Student finishes typing/uploading photo on mobile web.
 - **Step 1 (Attempt):** Student clicks "Submit". Network check fails (Offline).
 - **Step 2 (Safeguard):** UI shows "Saved Locally" banner with "Do Not Close Tab" warning. Amber status icon rotates.
@@ -154,8 +157,8 @@ The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the gradin
 
 ### 1. Authentication & Center Management
 
-- **FR1**: Users can sign up and login using Google OAuth or Email/Password.
-- **FR2**: Platform Admins can provision new Center tenants (`center_id`).
+- **FR1**: Users can sign up their own center (Self-Service) or login using Google OAuth or Email/Password.
+- **FR2**: Platform Admins can manually provision new Center tenants (`center_id`) for enterprise or managed accounts.
 - **FR3**: Center Owners can invite users (Teachers, Students) via email.
 - **FR4**: System must restrict access based on Role (Owner, Teacher, Student).
 - **FR5**: System must enforce logical data isolation (users access only their `center_id` data).
