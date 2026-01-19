@@ -78,6 +78,8 @@ describe("TenantService", () => {
       id: "center-id-123",
       name: input.name,
       slug: input.slug,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     // Act

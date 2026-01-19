@@ -10,7 +10,7 @@ export const CreateTenantSchema = z.object({
       /^[a-z0-9-]+$/,
       "Slug must contain only lowercase letters, numbers, and dashes",
     ),
-  ownerEmail: z.string().email("Invalid owner email address"),
+  ownerEmail: z.email("Invalid owner email address"),
   ownerName: z.string().min(1, "Owner name is required"),
 });
 

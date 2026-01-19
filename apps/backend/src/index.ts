@@ -4,19 +4,20 @@ import fastifyEnv from "@fastify/env";
 import helmet from "@fastify/helmet";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
+import Fastify, { FastifyInstance } from "fastify";
 import {
   jsonSchemaTransform,
   serializerCompiler,
   validatorCompiler,
   ZodTypeProvider,
 } from "fastify-type-provider-zod";
-import Fastify, { FastifyInstance } from "fastify";
 import { IncomingMessage, Server, ServerResponse } from "http";
 import Env from "./env.js";
+import { authRoutes } from "./modules/auth/auth.routes.js";
+import { tenantRoutes } from "./modules/tenants/tenant.routes.js";
 import firebasePlugin from "./plugins/firebase.plugin.js";
 import prismaPlugin from "./plugins/prisma.plugin.js";
 import resendPlugin from "./plugins/resend.plugin.js";
-import { tenantRoutes } from "./modules/tenants/tenant.routes.js";
 
 const build = async () => {
   console.log("Starting server...", process.env.NODE_ENV);
@@ -92,8 +93,8 @@ const build = async () => {
     openapi: {
       openapi: "3.0.0",
       info: {
-        title: "IELTS Nook API",
-        description: "IELTS Nook API",
+        title: "ClassLite API",
+        description: "ClassLite API",
         version: "1.0.0",
       },
       servers: [
@@ -157,6 +158,7 @@ const build = async () => {
 
   // Register routes
   await app.register(tenantRoutes, { prefix: "/api/v1/tenants" });
+  await app.register(authRoutes, { prefix: "/api/v1/auth" });
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);

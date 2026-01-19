@@ -2,9 +2,11 @@ import {
   CreateTenantInput,
   CreateTenantSchema,
   TenantResponseSchema,
+  ErrorResponseSchema,
 } from "@workspace/types";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import Env from "../../env.js";
 import { TenantController } from "./tenant.controller.js";
 import { TenantService } from "./tenant.service.js";
@@ -23,19 +25,17 @@ export async function tenantRoutes(fastify: FastifyInstance) {
   );
   const tenantController = new TenantController(tenantService);
 
-  api.post<{ Body: CreateTenantInput }>("/", {
+  api.post("/", {
     schema: {
       body: CreateTenantSchema,
       response: {
         201: TenantResponseSchema,
+        401: ErrorResponseSchema,
+        500: ErrorResponseSchema,
       },
-      headers: {
-        type: "object",
-        properties: {
-          "x-platform-admin-key": { type: "string" },
-        },
-        required: ["x-platform-admin-key"],
-      },
+      headers: z.object({
+        "x-platform-admin-key": z.string(),
+      }),
     },
     preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
       const adminKey = request.headers["x-platform-admin-key"];

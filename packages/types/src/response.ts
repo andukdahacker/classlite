@@ -7,7 +7,9 @@ export const createResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) => {
   });
 };
 
-export type ApiResponse<T> = {
-  data: T | null;
-  message: string;
-};
+export const ErrorResponseSchema = z.object({
+  message: z.string(),
+  error: z.unknown().optional(),
+});
+
+export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
