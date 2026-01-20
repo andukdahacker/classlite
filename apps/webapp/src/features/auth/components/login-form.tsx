@@ -86,6 +86,9 @@ export function LoginForm() {
           )}
           Sign In
         </Button>
+        <p className="text-center text-xs text-muted-foreground">
+          For Teachers, Students, and Center Staff
+        </p>
       </form>
     </Form>
   );
