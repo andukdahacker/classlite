@@ -117,6 +117,27 @@ export function SignupCenterForm() {
             </FormItem>
           )}
         />
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={onGoogleSignup}
+          disabled={isPending || isGooglePending}
+        >
+          {isGooglePending ? "Connecting..." : "Continue with Google"}
+        </Button>
+
+        <div className="relative py-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or sign up with email
+            </span>
+          </div>
+        </div>
+
         <FormField
           control={form.control}
           name="ownerName"
@@ -169,28 +190,7 @@ export function SignupCenterForm() {
           className="w-full"
           disabled={isPending || isGooglePending}
         >
-          {isPending ? "Creating Center..." : "Register Center"}
-        </Button>
-
-        <div className="relative py-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={onGoogleSignup}
-          disabled={isPending || isGooglePending}
-        >
-          {isGooglePending ? "Connecting..." : "Continue with Google"}
+          {isPending ? "Creating Center..." : "Register with Email"}
         </Button>
       </form>
     </Form>
