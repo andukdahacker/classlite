@@ -46,3 +46,19 @@ export const CenterSignupRequestSchema = z.object({
 });
 
 export type CenterSignupRequest = z.infer<typeof CenterSignupRequestSchema>;
+
+export const CenterSignupWithGoogleRequestSchema = z.object({
+  idToken: z.string(),
+  centerName: z.string().min(1, "Center name is required"),
+  centerSlug: z
+    .string()
+    .min(3, "Slug must be at least 3 characters")
+    .regex(
+      /^[a-z0-9-]+$/,
+      "Slug must contain only lowercase letters, numbers, and dashes",
+    ),
+});
+
+export type CenterSignupWithGoogleRequest = z.infer<
+  typeof CenterSignupWithGoogleRequestSchema
+>;

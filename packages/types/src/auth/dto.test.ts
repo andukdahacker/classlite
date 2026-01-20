@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { LoginRequestSchema, AuthResponseSchema } from "./dto.js";
+import {
+  LoginRequestSchema,
+  AuthResponseSchema,
+  CenterSignupWithGoogleRequestSchema,
+} from "./dto.js";
 
 describe("Auth DTOs", () => {
   describe("LoginRequestSchema", () => {
@@ -14,6 +18,40 @@ describe("Auth DTOs", () => {
     it("should fail on missing idToken", () => {
       const invalidRequest = {};
       const result = LoginRequestSchema.safeParse(invalidRequest);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("CenterSignupWithGoogleRequestSchema", () => {
+    it("should validate a valid google center signup request", () => {
+      const validRequest = {
+        idToken: "google-id-token",
+        centerName: "Test Center",
+        centerSlug: "test-center",
+      };
+      const result =
+        CenterSignupWithGoogleRequestSchema.safeParse(validRequest);
+      expect(result.success).toBe(true);
+    });
+
+    it("should fail on missing idToken", () => {
+      const invalidRequest = {
+        centerName: "Test Center",
+        centerSlug: "test-center",
+      };
+      const result =
+        CenterSignupWithGoogleRequestSchema.safeParse(invalidRequest);
+      expect(result.success).toBe(false);
+    });
+
+    it("should fail on invalid slug", () => {
+      const invalidRequest = {
+        idToken: "google-id-token",
+        centerName: "Test Center",
+        centerSlug: "Test Center!", // Invalid characters
+      };
+      const result =
+        CenterSignupWithGoogleRequestSchema.safeParse(invalidRequest);
       expect(result.success).toBe(false);
     });
   });

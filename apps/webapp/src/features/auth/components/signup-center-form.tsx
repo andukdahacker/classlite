@@ -15,13 +15,20 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
-import { useSignupCenterMutation } from "../auth.hooks";
+import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { firebaseAuth } from "@/core/firebase";
+import {
+  useSignupCenterMutation,
+  useSignupCenterWithGoogleMutation,
+} from "../auth.hooks";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export function SignupCenterForm() {
   const navigate = useNavigate();
   const { mutateAsync: signup, isPending } = useSignupCenterMutation();
+  const { mutateAsync: signupWithGoogle, isPending: isGooglePending } =
+    useSignupCenterWithGoogleMutation();
 
   const form = useForm<CenterSignupRequest>({
     resolver: zodResolver(CenterSignupRequestSchema),
@@ -41,6 +48,34 @@ export function SignupCenterForm() {
       navigate("/dashboard/owner");
     } catch (error: any) {
       toast.error(error.message || "Signup failed");
+    }
+  };
+
+  const onGoogleSignup = async () => {
+    // Validate only center fields
+    const isCenterValid = await form.trigger(["centerName", "centerSlug"]);
+    if (!isCenterValid) {
+      toast.error("Please provide valid center details first");
+      return;
+    }
+
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(firebaseAuth, provider);
+      const idToken = await result.user.getIdToken();
+
+      await signupWithGoogle({
+        idToken,
+        centerName: form.getValues("centerName"),
+        centerSlug: form.getValues("centerSlug"),
+      });
+
+      toast.success("Center registered successfully with Google!");
+      navigate("/dashboard/owner");
+    } catch (error: any) {
+      // Force sign out if registration fails so user state doesn't get stuck
+      await signOut(firebaseAuth);
+      toast.error(error.message || "Google signup failed");
     }
   };
 
@@ -129,8 +164,33 @@ export function SignupCenterForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={isPending}>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isPending || isGooglePending}
+        >
           {isPending ? "Creating Center..." : "Register Center"}
+        </Button>
+
+        <div className="relative py-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={onGoogleSignup}
+          disabled={isPending || isGooglePending}
+        >
+          {isGooglePending ? "Connecting..." : "Continue with Google"}
         </Button>
       </form>
     </Form>

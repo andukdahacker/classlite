@@ -6,10 +6,12 @@ const mockPrisma = {
   user: {
     findUnique: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
   },
   authAccount: {
     findUnique: vi.fn(),
     create: vi.fn(),
+    upsert: vi.fn(),
   },
   center: {
     findUnique: vi.fn(),
@@ -227,6 +229,128 @@ describe("AuthService", () => {
       // Act & Assert
       await expect(authService.centerSignup(input)).rejects.toThrow("DB Fail");
       expect(mockFirebaseAuth.deleteUser).toHaveBeenCalledWith("fb-uid");
+    });
+  });
+
+  describe("centerSignupWithGoogle", () => {
+    it("should verify token and create center/membership for new user", async () => {
+      // Arrange
+      const input = {
+        idToken: "google-token",
+        centerName: "Google Center",
+        centerSlug: "google-center",
+      };
+      const decodedToken = {
+        uid: "google-uid",
+        email: "google@example.com",
+        name: "Google User",
+        picture: "http://avatar.com",
+      };
+
+      mockFirebaseAuth.verifyIdToken.mockResolvedValue(decodedToken);
+      (mockPrisma.center.findUnique as any).mockResolvedValue(null);
+      (mockPrisma.user.findUnique as any).mockResolvedValue(null);
+      (mockPrisma.user.create as any).mockResolvedValue({
+        id: "user-id",
+        email: decodedToken.email,
+        name: decodedToken.name,
+      });
+      (mockPrisma.center.create as any).mockResolvedValue({ id: "center-id" });
+
+      // Act
+      const result = await authService.centerSignupWithGoogle(input);
+
+      // Assert
+      expect(mockFirebaseAuth.verifyIdToken).toHaveBeenCalledWith(
+        input.idToken,
+      );
+      expect(mockPrisma.center.create).toHaveBeenCalledWith({
+        data: { name: input.centerName, slug: input.centerSlug },
+      });
+      expect(mockPrisma.authAccount.upsert).toHaveBeenCalled();
+      expect(mockPrisma.centerMembership.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          centerId: "center-id",
+          userId: "user-id",
+          role: "OWNER",
+        }),
+      });
+      expect(mockFirebaseAuth.setCustomUserClaims).toHaveBeenCalledWith(
+        decodedToken.uid,
+        {
+          center_id: "center-id",
+          role: "OWNER",
+        },
+      );
+      expect(result.user.role).toBe("OWNER");
+    });
+
+    it("should throw error if user already belongs to a center", async () => {
+      // Arrange
+      const input = {
+        idToken: "google-token",
+        centerName: "Google Center",
+        centerSlug: "google-center",
+      };
+      const decodedToken = {
+        uid: "google-uid",
+        email: "google@example.com",
+      };
+
+      mockFirebaseAuth.verifyIdToken.mockResolvedValue(decodedToken);
+      (mockPrisma.center.findUnique as any).mockResolvedValue(null);
+      (mockPrisma.user.findUnique as any).mockResolvedValue({
+        id: "existing-user",
+        memberships: [{ id: "membership-1", status: MembershipStatus.ACTIVE }],
+      });
+
+      // Act & Assert
+      await expect(authService.centerSignupWithGoogle(input)).rejects.toThrow(
+        "CONFLICT: User already belongs to a center",
+      );
+    });
+
+    it("should link to existing user if they have no active center membership", async () => {
+      // Arrange
+      const input = {
+        idToken: "google-token",
+        centerName: "Google Center",
+        centerSlug: "google-center",
+      };
+      const decodedToken = {
+        uid: "google-uid",
+        email: "google@example.com",
+        name: "Google User",
+        picture: "http://avatar.com",
+      };
+
+      mockFirebaseAuth.verifyIdToken.mockResolvedValue(decodedToken);
+      (mockPrisma.center.findUnique as any).mockResolvedValue(null);
+      (mockPrisma.user.findUnique as any).mockResolvedValue({
+        id: "existing-user",
+        email: decodedToken.email,
+        memberships: [], // No active memberships
+      });
+      (mockPrisma.user.update as any).mockResolvedValue({
+        id: "existing-user",
+        email: decodedToken.email,
+        name: decodedToken.name,
+      });
+      (mockPrisma.center.create as any).mockResolvedValue({ id: "center-id" });
+
+      // Act
+      const result = await authService.centerSignupWithGoogle(input);
+
+      // Assert
+      expect(mockPrisma.user.create).not.toHaveBeenCalled();
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: "existing-user" },
+        data: {
+          name: decodedToken.name,
+          avatarUrl: decodedToken.picture,
+        },
+      });
+      expect(result.user.id).toBe("existing-user");
     });
   });
 });

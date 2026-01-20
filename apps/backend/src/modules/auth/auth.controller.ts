@@ -1,6 +1,10 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { AuthService } from "./auth.service.js";
-import { CenterSignupRequest, LoginRequest } from "@workspace/types";
+import {
+  CenterSignupRequest,
+  CenterSignupWithGoogleRequest,
+  LoginRequest,
+} from "@workspace/types";
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -14,6 +18,28 @@ export class AuthController {
       return reply.status(201).send({
         data: result,
         message: "Center registered successfully",
+      });
+    } catch (error: any) {
+      request.log.error(error);
+      const statusCode = error.message.startsWith("CONFLICT") ? 409 : 400;
+      return reply.status(statusCode).send({
+        data: null,
+        message: error.message || "Registration failed",
+      });
+    }
+  }
+
+  async centerSignupWithGoogle(
+    request: FastifyRequest<{ Body: CenterSignupWithGoogleRequest }>,
+    reply: FastifyReply,
+  ) {
+    try {
+      const result = await this.authService.centerSignupWithGoogle(
+        request.body,
+      );
+      return reply.status(201).send({
+        data: result,
+        message: "Center registered successfully with Google",
       });
     } catch (error: any) {
       request.log.error(error);

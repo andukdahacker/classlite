@@ -5,7 +5,6 @@ inputDocuments:
   - _bmad-output/planning-artifacts/product-brief-classlite-2026-01-16.md
   - _bmad-output/planning-artifacts/ux-design-specification.md
   - _bmad-output/planning-artifacts/prd-validation-report.md
-  - GEMINI.md
 workflowType: "architecture"
 project_name: "classlite"
 user_name: "Ducdo"

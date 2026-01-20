@@ -1,6 +1,14 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { loginWithToken, signupCenter } from "./auth.api.js";
-import type { AuthUser, CenterSignupRequest } from "@workspace/types";
+import {
+  loginWithToken,
+  signupCenter,
+  signupCenterWithGoogle,
+} from "./auth.api.js";
+import type {
+  AuthUser,
+  CenterSignupRequest,
+  CenterSignupWithGoogleRequest,
+} from "@workspace/types";
 
 export const AUTH_QUERY_KEYS = {
   user: ["auth-user"] as const,
@@ -51,6 +59,22 @@ export const useSignupCenterMutation = () => {
 
   return useMutation({
     mutationFn: (input: CenterSignupRequest) => signupCenter(input),
+    onSuccess: (user) => {
+      queryClient.setQueryData(AUTH_QUERY_KEYS.user, user);
+    },
+    networkMode: "offlineFirst",
+  });
+};
+
+/**
+ * Mutation to perform center signup with Google
+ */
+export const useSignupCenterWithGoogleMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CenterSignupWithGoogleRequest) =>
+      signupCenterWithGoogle(input),
     onSuccess: (user) => {
       queryClient.setQueryData(AUTH_QUERY_KEYS.user, user);
     },

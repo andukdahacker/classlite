@@ -4,6 +4,7 @@ import {
   AuthResponseData,
   AuthUser,
   CenterSignupRequest,
+  CenterSignupWithGoogleRequest,
   UserRole,
 } from "@workspace/types";
 
@@ -105,6 +106,138 @@ export class AuthService {
     }
   }
 
+  async centerSignupWithGoogle(
+    input: CenterSignupWithGoogleRequest,
+  ): Promise<AuthResponseData> {
+    const { idToken, centerName, centerSlug } = input;
+
+    // 1. Verify Token
+    const decodedToken = await this.firebaseAuth.verifyIdToken(idToken);
+    const { uid, email, name, picture } = decodedToken;
+
+    if (!email) {
+      throw new Error("UNAUTHORIZED: Email not provided by identity provider");
+    }
+
+    // 2. Validate Uniqueness
+    const existingCenter = await this.prisma.center.findUnique({
+      where: { slug: centerSlug },
+    });
+    if (existingCenter) {
+      throw new Error("CONFLICT: Center slug already exists");
+    }
+
+    // Check if user already belongs to a center
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        memberships: {
+          where: { status: MembershipStatus.ACTIVE },
+        },
+      },
+    });
+
+    if (existingUser && existingUser.memberships.length > 0) {
+      throw new Error("CONFLICT: User already belongs to a center");
+    }
+
+    // 3. Create Center, User (if not exists), AuthAccount, and Membership in DB
+    try {
+      const result = await this.prisma.$transaction(async (tx) => {
+        let finalUser: {
+          id: string;
+          email: string | null;
+          name: string | null;
+        };
+
+        if (existingUser) {
+          // Update user profile with latest info from Google
+          finalUser = await tx.user.update({
+            where: { id: existingUser.id },
+            data: {
+              name: name || existingUser.name,
+              avatarUrl: picture || existingUser.avatarUrl,
+            },
+          });
+        } else {
+          finalUser = await tx.user.create({
+            data: {
+              email,
+              name: name || null,
+              avatarUrl: picture || null,
+            },
+          });
+        }
+
+        const center = await tx.center.create({
+          data: {
+            name: centerName,
+            slug: centerSlug,
+          },
+        });
+
+        // Ensure AuthAccount exists
+        await tx.authAccount.upsert({
+          where: {
+            provider_providerUserId: {
+              provider: "FIREBASE",
+              providerUserId: uid,
+            },
+          },
+          create: {
+            userId: finalUser.id,
+            provider: "FIREBASE",
+            providerUserId: uid,
+            email,
+          },
+          update: {
+            userId: finalUser.id,
+            email,
+          },
+        });
+
+        await tx.centerMembership.create({
+          data: {
+            centerId: center.id,
+            userId: finalUser.id,
+            role: "OWNER",
+            status: MembershipStatus.ACTIVE,
+          },
+        });
+
+        if (!finalUser.email) {
+          throw new Error("INTERNAL_ERROR: User email is missing");
+        }
+
+        return {
+          user: {
+            id: finalUser.id,
+            email: finalUser.email,
+            name: finalUser.name,
+            role: "OWNER" as const,
+            centerId: center.id,
+          },
+        };
+      });
+
+      // 4. Set Custom Claims
+      await this.syncCustomClaims(uid, result.user);
+
+      return result;
+    } catch (error: any) {
+      if (error.code === "P2002") {
+        const target = error.meta?.target;
+        if (target?.includes("slug")) {
+          throw new Error("CONFLICT: Center slug already exists");
+        }
+        if (target?.includes("email")) {
+          throw new Error("CONFLICT: Email already registered");
+        }
+      }
+      throw error;
+    }
+  }
+
   async login(idToken: string): Promise<AuthResponseData> {
     // 1. Verify Token
     const decodedToken = await this.firebaseAuth.verifyIdToken(idToken);
@@ -188,11 +321,9 @@ export class AuthService {
   }
 
   private async syncCustomClaims(uid: string, user: AuthUser) {
-    if (user.centerId) {
-      await this.firebaseAuth.setCustomUserClaims(uid, {
-        center_id: user.centerId,
-        role: user.role,
-      });
-    }
+    await this.firebaseAuth.setCustomUserClaims(uid, {
+      center_id: user.centerId || null,
+      role: user.role,
+    });
   }
 }
