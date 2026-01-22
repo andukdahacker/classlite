@@ -10,17 +10,19 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "lint": "eslint . --max-warnings 0",
+    "test": "vitest run src",
     "clean": "rm -rf dist .turbo node_modules"
   },
   "dependencies": {
     "@prisma/client": "^7.1.0"
   },
   "devDependencies": {
-    "prisma": "^7.1.0",
-    "@workspace/typescript-config": "workspace:*",
+    "@types/node": "^20.11.24",
     "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "prisma": "^7.1.0",
     "typescript": "^5.3.3",
-    "@types/node": "^20.11.24"
+    "vitest": "^4.0.17"
   },
   "exports": {
     ".": {
