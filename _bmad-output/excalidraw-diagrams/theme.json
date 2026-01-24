@@ -1,0 +1,16 @@
+{
+  "name": "Electric Focus",
+  "background": "#ffffff",
+  "secondary_bg": "#EFF6FF",
+  "container": "#ffffff",
+  "border": "#e2e8f0",
+  "text": "#1E293B",
+  "primary": "#2563EB",
+  "accent": "#F59E0B",
+  "radius": "12px",
+  "status": {
+    "success": "#22c55e",
+    "warning": "#f59e0b",
+    "error": "#ef4444"
+  }
+}
