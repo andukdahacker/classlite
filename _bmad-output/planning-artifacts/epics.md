@@ -1,513 +1,431 @@
 ---
-status: "complete"
-completedAt: "2026-01-18"
-lastStep: 4
-
+stepsCompleted:
+  [
+    step-01-init,
+    step-02-discovery,
+    step-03-success,
+    step-04-journeys,
+    step-05-domain,
+    step-06-innovation,
+    step-07-project-type,
+    step-08-scoping,
+    step-09-functional,
+    step-10-nonfunctional,
+    step-11-polish,
+    step-12-complete,
+    step-13-epics-generation,
+    step-14-stories-refinement,
+  ]
+lastEdited: "2026-01-24"
 inputDocuments:
-  - _bmad-output/planning-artifacts/prd.md
-  - _bmad-output/planning-artifacts/architecture.md
-  - _bmad-output/planning-artifacts/ux-design-specification.md
+  [
+    "_bmad-output/planning-artifacts/prd.md",
+    "_bmad-output/planning-artifacts/information-architecture.md",
+    "_bmad-output/planning-artifacts/ux-design-specification.md",
+  ]
 ---
 
-# classlite - Epic Breakdown
-
-## Overview
-
-This document provides the complete epic and story breakdown for classlite, decomposing the requirements from the PRD, UX Design if it exists, and Architecture requirements into implementable stories.
-
-## Requirements Inventory
-
-### Functional Requirements
-
-FR1: Users can sign up centers directly (Self-Service) and login using Google OAuth or Email/Password.
-FR2: Platform Admins can manually provision new Center tenants (`center_id`).
-FR3: Center Owners can invite users (Teachers, Students) via email.
-FR4: System must restrict access based on Role (Owner, Teacher, Student).
-FR5: System must enforce logical data isolation (users access only their `center_id` data).
-FR6: Center Owners can configure center settings (Name, Logo, Timezone).
-FR7: Center Admins can manage Courses and Class Sessions.
-FR8: Center Admins can assign Teachers and Students to Classes.
-FR9: Users can view a visual Weekly Schedule of assigned classes.
-FR10: System must detect and warn of resource conflicts (Room/Teacher double-booking).
-FR11: Teachers can mark attendance (Present/Absent).
-FR12: System must notify participants of schedule changes.
-FR13: Teachers can create exercises using a Manual Builder (Rich Text, Multiple Choice, Fill-in-Blank).
-FR14: Teachers can upload PDF/Word docs to trigger AI exercise generation.
-FR15: Teachers can edit AI-generated content before publishing.
-FR16: Teachers can assign exercises with due dates.
-FR17: Students can view "Due Soon" assignments dashboard.
-FR18: Students can submit assignments via mobile-responsive interface (text or image).
-FR19: System must auto-save student work-in-progress to LocalStorage every 3 seconds (Offline-Proof).
-FR20: System must trigger AI analysis on submission (Auto-grade Reading/Listening; Suggest scores for Writing/Speaking).
-FR21: The system shall provide a split-screen interface (Student Work / AI Analysis) for grading.
-FR22: The system shall display "Evidence Anchors" (visual lines) connecting AI comments to specific text ranges on hover.
-FR23: The system shall allow teachers to "One-Click Accept" AI suggestions (score + grammar fix).
-FR24: The system shall support "Range-Aware" comments that gracefully detach or re-attach if the underlying text is edited.
-FR24b: The system shall allow teachers to "Reject" AI suggestions, removing them from the final feedback.
-FR24c: The system shall auto-advance to the next submission upon approval (with an optional "Breather" pause after 5 items).
-FR25: Center Owners can view "Student Health Dashboard" (At-risk flags via Traffic Light system).
-FR26: Center Owners can click a flag to open the Student Profile Overlay (no page reload).
-FR27: Center Owners can initiate interventions via Zalo Deep Links with pre-filled templates.
-FR28 (Zalo): System can send automated "Micro-win" notifications to linked parent Zalo accounts.
-FR29 (Zalo): Parents can manage Zalo notification preferences.
-FR30 (Guardian): Center Owners can upload "Golden Sample" feedback to tune AI style.
-FR31 (Guardian): System must prioritize Golden Samples when generating AI feedback for that tenant.
-FR32 (Offline): The system shall detect offline status and display a persistent "Do Not Close" warning banner during submission attempts.
-FR33 (Offline): The system shall queue failed submissions and auto-retry upon network reconnection (Background Sync).
-
-### NonFunctional Requirements
-
-NFR1: The Grading Workbench shall load the next submission in **< 500ms** (perceived instant) for 95th percentile of users (utilizing pre-fetching).
-NFR2: The Dashboard shall render "Traffic Light" status widgets in **< 1 second**.
-NFR3: AI Grading suggestions appear **< 10s** after submission.
-NFR4: **99.9% uptime** during business hours (8 AM - 10 PM GMT+7).
-NFR5: Student work auto-saved every **3s** to LocalStorage.
-NFR6 (Isolation): API rejects cross-tenant resource access (403 Forbidden).
-NFR7: Sensitive data (grades, PII) encrypted at rest.
-NFR8 (Mobile First): 100% of Student/Teacher flows functional on 375px+ viewports.
-NFR9 (i18n): UI supports **English** and **Vietnamese** from launch.
-NFR10 (WCAG): The system shall comply with **WCAG 2.1 Level AA** standards.
-NFR11 (Keyboard): Critical workflows (Grading Loop) shall be fully operable via **Keyboard Navigation** (Tab, Enter, Shortcuts).
-NFR12 (Focus): Input fields in the Grading Workbench shall support "Click-to-Edit" behavior with prominent `:focus-visible` indicators.
-
-### Additional Requirements
-
-- **Starter Template:** Custom Brownfield Scaffold (Fastify + React + Astro + Turbo).
-- **Multi-Tenancy:** Logical Isolation via Prisma Client Extensions (`center_id`).
-- **Auth:** Firebase Auth with Custom Claims (`center_id`, `role`).
-- **Offline Strategy:** TanStack Query `persistQueryClient` + `idb-keyval` for offline reads and queueing mutations.
-- **AI Orchestration:** Inngest for background jobs (avoid browser timeouts).
-- **Infrastructure:** Railway deployment (Docker/Node.js).
-- **Testing:** Vitest (Unit) + Playwright (E2E).
-- **API Response:** Standard wrapper `{ data: T, message: string }`.
-- **Controller Pattern:** Decoupled from framework; returns data/message objects, routes handle HTTP mapping.
-- **Validation:** Zod schemas in `packages/types`.
-- **Split-Screen Editor:** `GradingEditor` with `ProseMirror` (Left) and AI Card List (Right).
-- **Evidence Anchoring:** `ConnectionLine` SVG layer connecting AI comments to text ranges.
-- **Offline Indicator:** Visual states (Saving, Saved, Offline banner).
-- **Mobile First:** Student flows optimized for 375px+ devices.
-- **Keyboard Navigation:** Shortcuts for grading loop (`Cmd+Enter`, `Tab`).
-- **One-Click Accept:** Single click/keystroke to approve AI suggestions.
-- **Zalo Integration:** Deep links with Copy fallback for parent messaging.
-- **Performance:** Grading next-item load < 500ms via pre-fetching.
-
-### FR Coverage Map
-
-### FR Coverage Map
-
-FR1: Epic 1 - Authentication & Login
-FR2: Epic 1 - Tenant Provisioning
-FR3: Epic 1 - User Invitations
-FR4: Epic 1 - Role Based Access
-FR5: Epic 1 - Data Isolation
-FR6: Epic 1 - Center Configuration
-FR7: Epic 2 - Course Management
-FR8: Epic 2 - Class Roster Management
-FR9: Epic 2 - Visual Schedule
-FR10: Epic 2 - Conflict Detection
-FR11: Epic 2 - Attendance Tracking
-FR12: Epic 2 - Schedule Notifications
-FR13: Epic 3 - Manual Exercise Builder
-FR14: Epic 3 - AI Exercise Generation
-FR15: Epic 3 - Content Editing
-FR16: Epic 3 - Assignment Creation
-FR17: Epic 3 - Student Due Dashboard
-FR18: Epic 4 - Student Submission Interface
-FR19: Epic 4 - Offline Auto-save
-FR20: Epic 4 - AI Analysis Trigger
-FR21: Epic 4 - Split-Screen Workbench
-FR22: Epic 4 - Evidence Anchors
-FR23: Epic 4 - One-Click Accept
-FR24: Epic 4 - Range-Aware Comments
-FR24b: Epic 4 - Reject Suggestion
-FR24c: Epic 4 - Auto-Advance
-FR25: Epic 5 - Student Health Dashboard
-FR26: Epic 5 - Student Profile Overlay
-FR27: Epic 5 - Zalo Intervention
-FR28: Epic 6 - Zalo Micro-wins
-FR29: Epic 6 - Notification Preferences
-FR30: Epic 6 - Golden Sample Upload
-FR31: Epic 6 - AI Style Tuning
-FR32: Epic 4 - Offline Warning
-FR33: Epic 4 - Background Sync
+# Epics & User Stories - ClassLite
+
+This document defines the high-level Epics and granular User Stories for ClassLite, ensuring 100% coverage of functional and non-functional requirements.
+
+---
+
+## 1. Requirements Inventory
+
+### 1.1 Functional Requirements (FR)
+
+| ID       | Actor              | Action | Requirement                                                                   |
+| :------- | :----------------- | :----- | :---------------------------------------------------------------------------- |
+| **FR1**  | Visitor            | Can    | Sign up their own center or login via Google/Email.                           |
+| **FR2**  | Platform Admin     | Can    | Manually provision new tenants.                                               |
+| **FR3**  | Center Owner/Admin | Can    | Invite users via email with auto-expiring links.                              |
+| **FR4**  | System             | Shall  | Enforce RBAC based on Role (Owner, Admin, Teacher, Student).                  |
+| **FR5**  | System             | Shall  | Enforce logical data isolation via tenant identifiers.                        |
+| **FR6**  | Center Owner/Admin | Can    | Configure center settings (Name, Logo, Timezone).                             |
+| **FR7**  | Admin              | Can    | Manage Courses and Class Sessions (CRUD).                                     |
+| **FR8**  | Admin              | Can    | Assign Teachers and Students to Classes.                                      |
+| **FR9**  | User               | Can    | View a visual Weekly Schedule of assigned classes.                            |
+| **FR10** | System             | Shall  | Detect and warn of resource conflicts (Room/Teacher) during scheduling.       |
+| **FR11** | Teacher            | Can    | Mark student attendance (Present/Absent).                                     |
+| **FR12** | System             | Shall  | Notify participants of schedule changes within 30 seconds.                    |
+| **FR13** | Teacher            | Can    | Create exercises using a Manual Builder (Rich Text, MCQ, Fill-in-Blank).      |
+| **FR14** | Teacher            | Can    | Upload PDF/Word docs to trigger AI exercise generation.                       |
+| **FR15** | Teacher            | Can    | Edit AI-generated content before publishing.                                  |
+| **FR16** | Teacher            | Can    | Assign exercises to classes or individuals with due dates.                    |
+| **FR17** | Student            | Can    | View "Due Soon" assignments on their dashboard.                               |
+| **FR18** | Student            | Can    | Submit assignments via a mobile-responsive interface.                         |
+| **FR19** | System             | Shall  | Auto-save student work-in-progress every 3 seconds to local storage.          |
+| **FR20** | System             | Shall  | Trigger AI analysis within 5 seconds of submission.                           |
+| **FR21** | Teacher            | Can    | Use a split-screen interface (Student Work / AI Analysis) for grading.        |
+| **FR22** | Teacher            | Can    | View visual "Evidence Anchors" connecting AI comments to text evidence.       |
+| **FR23** | Teacher            | Can    | Apply AI suggestions (score + grammar fix) with one click.                    |
+| **FR24** | System             | Shall  | Maintain comment anchors if < 20% of text is modified; orphan if > 50%.       |
+| **FR25** | Teacher            | Can    | Reject AI suggestions, removing them from final feedback.                     |
+| **FR26** | System             | Shall  | Auto-advance to the next submission upon approval.                            |
+| **FR27** | Owner/Admin        | Can    | View "Student Health Dashboard" with Traffic Light (Red/Yellow/Green) status. |
+| **FR28** | Owner/Admin        | Can    | Open Student Profile Overlay from dashboard without page reload.              |
+| **FR29** | Owner/Admin        | Can    | Initiate interventions via Zalo Deep Links with pre-filled templates.         |
+| **FR30** | System             | Shall  | Send automated Zalo notifications for Personal Bests or streaks.              |
+| **FR31** | Parent/User        | Can    | Manage Zalo notification preferences.                                         |
+| **FR32** | Owner              | Can    | Upload "Golden Sample" feedback to tune AI pedagogical style.                 |
+| **FR33** | System             | Shall  | Utilize Few-Shot Prompting using Golden Samples for > 85% style alignment.    |
+| **FR34** | System             | Shall  | Display persistent "Do Not Close" warning banner during offline submissions.  |
+| **FR35** | System             | Shall  | Queue failed submissions and auto-retry upon network reconnection.            |
+| **FR36** | System             | Shall  | Screen content for compliance with local regulations (Decree 72/2013/ND-CP).  |
 
-## Epic List
+### 1.2 Non-Functional Requirements (NFR)
 
-## Epic List
+| ID        | Criterion      | Metric         | Method                | Context                                         |
+| :-------- | :------------- | :------------- | :-------------------- | :---------------------------------------------- |
+| **NFR1**  | Performance    | < 500ms        | P95 Response Time     | Grading Workbench auto-advance load.            |
+| **NFR2**  | Performance    | < 1 second     | UI Rendering Time     | Dashboard "Traffic Light" widget updates.       |
+| **NFR3**  | Availability   | 99.9%          | Uptime Monitoring     | Business hours (8 AM - 10 PM GMT+7).            |
+| **NFR4**  | Data Integrity | 3s Interval    | Background Sync       | Persistent client-side storage for submissions. |
+| **NFR5**  | Security       | 100% Isolation | Middleware Validation | Prevention of cross-tenant data access.         |
+| **NFR6**  | Privacy        | AES-256        | Encryption-at-rest    | Protection of sensitive PII and student grades. |
+| **NFR7**  | Accessibility  | 100% Compliant | Viewport Audit        | Responsiveness for viewports >= 375px.          |
+| **NFR8**  | i18n           | Dual-Language  | User Toggle           | Support for English and Vietnamese UI.          |
+| **NFR9**  | Accessibility  | WCAG 2.1 AA    | Accessibility Audit   | All public-facing interfaces and forms.         |
+| **NFR10** | Usability      | Keyboard-Only  | Workflow Audit        | Entire Grading Loop executable via keyboard.    |
+| **NFR11** | Usability      | High-Contrast  | Visual Audit          | Focus indicators on all interactive elements.   |
 
-### Epic 1: Center Establishment & Access Control
+---
 
-**Goal:** Establish secure, multi-tenant foundations where Owners can manage their digital school and users can access their specific roles.
-**Value:** Secure, isolated environments for each center to operate independently.
-**FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6
+## 2. FR Coverage Map
 
-### Epic 2: Class Management & Logistics
+| Epic       | Description                           | Functional Requirements Covered          |
+| :--------- | :------------------------------------ | :--------------------------------------- |
+| **Epic 1** | Tenant & User Management              | FR1, FR2, FR3, FR4, FR5, FR6             |
+| **Epic 2** | Logistics & Scheduling                | FR7, FR8, FR9, FR10, FR11, FR12          |
+| **Epic 3** | Exercise Builder & Content            | FR13, FR14, FR15, FR16, FR17             |
+| **Epic 4** | Student Submission & Offline-Proofing | FR18, FR19, FR34, FR35                   |
+| **Epic 5** | AI Grading Workbench                  | FR20, FR21, FR22, FR23, FR24, FR25, FR26 |
+| **Epic 6** | Student Health & Intervention         | FR27, FR28, FR29                         |
+| **Epic 7** | Zalo Integration & Notifications      | FR30, FR31                               |
+| **Epic 8** | Platform Compliance & Methodology     | FR32, FR33, FR36                         |
 
-**Goal:** Operationalize the schedule, ensuring teachers, students, and rooms are coordinated without conflicts.
-**Value:** Eliminates scheduling chaos and double-booking errors; provides clarity on "Where should I be?"
-**FRs covered:** FR7, FR8, FR9, FR10, FR11, FR12
+---
 
-### Epic 3: Curriculum & Assignment Creation
+## 3. Epic List
 
-**Goal:** Enable teachers to build and assign diverse learning materials (Manual + AI) that students can track.
-**Value:** Teachers can create content quickly (with AI help) and students have a clear "Due Soon" dashboard.
-**FRs covered:** FR13, FR14, FR15, FR16, FR17
+### Epic 1: Tenant & User Management
 
-### Epic 4: The Intelligent Grading Loop
+**Summary:** Provides the foundation for multi-tenancy, authentication, and access control. Ensures that center owners can setup their environment and manage their staff/students securely within isolated data boundaries.
 
-**Goal:** Transform the core pedagogical interaction—from frictionless student submission (offline-proof) to high-velocity AI-assisted teacher feedback.
-**Value:** Delivers the "3-Minute Grading Loop" (50% time reduction) and "Offline-Proof" reliability.
-**FRs covered:** FR18, FR19, FR20, FR21, FR22, FR23, FR24, FR24b, FR24c, FR32, FR33
+### Epic 2: Logistics & Scheduling
 
-### Epic 5: Retention Intelligence Dashboard
+**Summary:** Streamlines center operations through visual class management and scheduling. Includes automated conflict detection and real-time notifications to ensure logistical harmony.
 
-**Goal:** Provide Owners with "Glanceable Intelligence" on student health to prevent churn via immediate intervention.
-**Value:** Enables the "3 Clicks to Rescue" workflow to save at-risk students.
-**FRs covered:** FR25, FR26, FR27
+### Epic 3: Exercise Builder & Content
 
-### Epic 6: Ecosystem Innovation (Phase 1.5)
+**Summary:** Empowers teachers to create and distribute pedagogical materials. Features AI-assisted generation from document uploads to reduce content preparation time from hours to minutes.
 
-**Goal:** Deepen engagement through Zalo parent loops and personalized AI tuning (Golden Samples).
-**Value:** Differentiates the center with high-touch parent communication and personalized AI style.
-**FRs covered:** FR28, FR29, FR30, FR31
+### Epic 4: Student Submission & Offline-Proofing
 
-## Epic 1: Center Establishment & Access Control
+**Summary:** Delivers a bulletproof submission experience for students. Focuses on mobile responsiveness and robust offline-first safeguards to ensure zero data loss on unstable networks.
 
-**Goal:** Establish secure, multi-tenant foundations where Owners can manage their digital school and users can access their specific roles.
+### Epic 5: AI Grading Workbench
 
-### Story 1.1: Tenant Provisioning System
+**Summary:** The core "High-Velocity Pedagogy" feature. A specialized interface for rapid-fire grading where AI drafts feedback and teachers validate it through a highly optimized "Review -> Adjust -> Approve" loop.
 
-As a Platform Admin,
-I want to provision new Center tenants with a unique `center_id`,
-So that new customers can have their own isolated environment.
+### Epic 6: Student Health & Intervention
 
-**Acceptance Criteria:**
+**Summary:** Provides owners with "Glanceable Intelligence" via a Traffic Light dashboard. Enables 3-click interventions by connecting performance data to communication channels.
 
-**Given** a valid request with Center Name and Owner Email
-**When** the provisioning script or API is executed
-**Then** a new Center record is created in the database with a unique `center_id`
-**And** an Owner user is created and linked to this center
-**And** a default "Welcome" email is triggered to the Owner
+### Epic 7: Zalo Integration & Notifications
 
-### Story 1.2: User Authentication with Firebase
+**Summary:** Automates student and parent engagement through Vietnam's primary messaging platform. Focuses on positive reinforcement (streaks, personal bests) and preference management.
 
-As a User,
-I want to log in using Google OAuth or Email/Password, and as a new Center Owner, I want to sign up my center directly,
-So that I can securely access the platform and start managing my school immediately.
+### Epic 8: Platform Compliance & Methodology
 
-**Acceptance Criteria:**
+**Summary:** Ensures the platform adheres to local regulations (Decree 13, Decree 72) and maintains the center's specific teaching style through AI customization (Golden Samples).
 
-**Given** a user on the login or signup page
-**When** they authenticate via Firebase (Google or Email) or complete the Center Signup form
-**Then** the system verifies their identity and creates the Center/Owner records if necessary
-**And** retrieves/sets their custom claims (`center_id`, `role`)
-**And** redirects them to their role-specific dashboard (Owner, Teacher, or Student)
+---
 
-### Story 1.3: Role-Based Access Control (RBAC)
+## 4. User Stories
 
-As a Developer (System),
-I want to enforce role-based permissions at the API level,
-So that users can only access features authorized for their role.
+### Epic 1: Tenant & User Management
 
-**Acceptance Criteria:**
+#### Story 1.1: Multi-tenant Onboarding (FR1, FR2, FR5)
 
-**Given** an authenticated user with role 'Student'
-**When** they attempt to access an 'Owner' only API endpoint (e.g., `POST /api/centers`)
-**Then** the system returns a 403 Forbidden error
-**And** logs the unauthorized attempt
+**As a** new Teaching Owner,
+**I want to** register my center and receive a logically isolated environment,
+**So that** my data is never visible to other centers.
 
-### Story 1.4: Multi-Tenant Data Isolation
+- **AC1:** User can sign up via Email/Password or Google OAuth.
+- **AC2:** System creates a unique tenant identifier (centerId) for the new center.
+- **AC3:** All database queries and API requests are automatically scoped by centerId via middleware.
+- **AC4:** Unauthorized users receive 403 Forbidden when attempting to access a different center's data.
 
-As a Center Owner,
-I want my data to be completely isolated from other centers,
-So that I comply with privacy laws and prevent data leaks.
+#### Story 1.2: Center Branding & Identity (FR6)
 
-**Acceptance Criteria:**
+**As a** Center Owner,
+**I want to** configure my center's name, logo, and timezone,
+**So that** the platform reflects my brand to students and staff.
 
-**Given** an authenticated user from Center A
-**When** they query for a list of Users or Classes
-**Then** the system automatically filters the query by `center_id = 'Center A'` via the Prisma Extension
-**And** no data from Center B is ever returned
+- **AC1:** Owner can upload a logo (max 2MB, PNG/JPG).
+- **AC2:** UI updates primary CSS variables to match brand identity upon save.
+- **AC3:** Center name and logo appear in the navigation rail for all users of that tenant.
 
-### Story 1.5: User Invitation System
+#### Story 1.3: User Invitation & RBAC (FR3, FR4)
 
-As a Center Owner,
-I want to invite Teachers and Students via email,
-So that they can join my center without public signup.
+**As a** Center Admin,
+**I want to** invite staff and students via email with specific roles,
+**So that** they can access the platform with appropriate permissions.
 
-**Acceptance Criteria:**
+- **AC1:** Admin can send an invitation link to an email with a selected role (Teacher, Student, Admin).
+- **AC2:** Invitation links expire after 48 hours.
+- **AC3:** System restricts access to UI elements and API routes based on the assigned role.
+- **AC4:** Admin can deactivate a user, immediately revoking their access tokens.
 
-**Given** an Owner on the "Users" management page
-**When** they enter an email address and select a role (e.g., Teacher)
-**Then** an invitation email is sent to that address
-**And** a "Pending" user record is created in the database
-**And** the user can complete signup using that email to join the correct center
+#### Story 1.4: Universal UI Access Control (RBACWrapper)
 
-## Epic 2: Class Management & Logistics
+**As a** Developer,
+**I want to** use a universal RBAC wrapper for all UI components,
+**So that** access control is enforced consistently and maintenance is reduced.
 
-**Goal:** Operationalize the schedule, ensuring teachers, students, and rooms are coordinated without conflicts.
+- **AC1:** Implement a reusable higher-order component (RBACWrapper).
+- **AC2:** Component conditionally renders children based on `requiredPermission`.
+- **AC3:** Support "Disabled" or "Hidden" states for unauthorized roles.
 
-### Story 2.1: Course & Class Management
+---
 
-As a Center Owner,
-I want to create Courses and Class Sessions,
-So that I can structure my educational offerings.
+### Epic 2: Logistics & Scheduling
 
-**Acceptance Criteria:**
+#### Story 2.1: Course & Class Management (FR7, FR8)
 
-**Given** an Owner on the "Courses" page
-**When** they create a new Class (e.g., "IELTS Prep 101")
-**Then** they can define start/end dates and default times
-**And** the class appears in the system active list
+**As a** Center Admin,
+**I want to** define courses and create specific class rosters,
+**So that** I can organize students into learning cohorts.
 
-### Story 2.2: Roster Management
+- **AC1:** User can CRUD Courses (e.g., "IELTS Foundation") and Classes (e.g., "Class 10A").
+- **AC2:** User can assign a primary teacher and multiple students to a Class.
+- **AC3:** Rosters are searchable and filterable by name or enrollment status.
 
-As a Center Owner,
-I want to assign Teachers and Students to Classes,
-So that everyone knows who is teaching and learning.
+#### Story 2.2: Visual Weekly Scheduler (FR9, FR12)
 
-**Acceptance Criteria:**
+**As a** Teacher or Student,
+**I want to** see a visual calendar of my upcoming classes,
+**So that** I can plan my week without checking spreadsheets.
 
-**Given** a specific Class
-**When** the Owner selects "Edit Roster"
-**Then** they can search and add existing Teachers and Students to the class
-**And** assigned users immediately see this class in their dashboard
+- **AC1:** System displays a weekly grid view (Monday-Sunday) populated with assigned class sessions.
+- **AC2:** Clicking a session displays location (Room/Link), time, and roster size.
+- **AC3:** If a session time is updated, all participants receive an in-app notification in < 30 seconds.
 
-### Story 2.3: Visual Weekly Schedule
+#### Story 2.3: Conflict Detection (FR10)
 
-As a User,
-I want to view a weekly calendar of my assigned classes,
-So that I know where I need to be.
+**As a** Center Admin,
+**I want to** be warned if I double-book a teacher or room,
+**So that** I avoid logistical failures during class hours.
 
-**Acceptance Criteria:**
+- **AC1:** During session creation/edit, system checks for overlaps in the same room or for the same teacher.
+- **AC2:** A non-blocking visual warning banner appears if a conflict is detected.
+- **AC3:** System suggests the next available time slot or alternative room.
 
-**Given** an authenticated User (Teacher or Student)
-**When** they view the "Schedule" tab
-**Then** they see a calendar view of only their assigned sessions
-**And** clicking a session shows details (Room, Topic, Zoom Link)
+#### Story 2.4: Attendance Tracking (FR11)
 
-### Story 2.4: Schedule Conflict Detection
+**As a** Teacher,
+**I want to** mark attendance for my class sessions,
+**So that** student engagement records are kept up to date.
 
-As a Center Owner,
-I want to be warned if I double-book a room or teacher,
-So that I can avoid logistical chaos.
+- **AC1:** Teacher can toggle "Present", "Absent", or "Late" status for each student in a session.
+- **AC2:** Attendance data is saved immediately and reflects on the Student Health Dashboard.
 
-**Acceptance Criteria:**
+---
 
-**Given** a proposed schedule change (e.g., moving Class A to Monday 10am)
-**When** the Owner attempts to save
-**Then** the system checks for existing sessions for that Room or Teacher at that time
-**And** displays a warning if a conflict exists "Room 101 is already booked"
+### Epic 3: Exercise Builder & Content
 
-## Epic 3: Curriculum & Assignment Creation
+#### Story 3.1: Manual Exercise Builder (FR13, FR16)
 
-**Goal:** Enable teachers to build and assign diverse learning materials (Manual + AI) that students can track.
+**As a** Teacher,
+**I want to** build interactive exercises with various question types,
+**So that** I can assess student skills digitally.
 
-### Story 3.1: Manual Exercise Builder
+- **AC1:** User can add "Rich Text" blocks, "Multiple Choice Questions", and "Fill-in-the-Blank" inputs.
+- **AC2:** User can set correct answers for automated grading of Reading/Listening tasks.
+- **AC3:** Exercises can be assigned to a Class with a specific due date.
 
-As a Teacher,
-I want to create exercises manually (Rich Text, Multiple Choice),
-So that I can digitize my specific curriculum.
+#### Story 3.2: AI Content Architect (FR14, FR15)
 
-**Acceptance Criteria:**
+**As a** Teacher,
+**I want to** upload a PDF article and have the AI generate questions,
+**So that** I can save time on content preparation.
 
-**Given** a Teacher in the "Exercise Builder"
-**When** they add a "Multiple Choice" question block
-**Then** they can input the question text, options, and mark the correct answer
-**And** save the exercise to the Course library
+- **AC1:** User can upload a PDF/Word file (max 10MB).
+- **AC2:** System extracts text and generates 5-10 MCQ/True-False questions within 30 seconds.
+- **AC3:** Teacher can edit or delete AI-generated questions before they are assigned to students.
 
-### Story 3.2: AI Exercise Generation (PDF Upload)
+#### Story 3.3: Student Assignment Dashboard (FR17)
 
-As a Teacher,
-I want to upload a PDF worksheet and have AI convert it into a digital exercise,
-So that I save hours of manual data entry.
+**As a** Student,
+**I want to** see a list of my pending assignments,
+**So that** I can prioritize my homework.
 
-**Acceptance Criteria:**
+- **AC1:** Dashboard displays "Due Soon" and "Overdue" assignments with priority labels.
+- **AC2:** Clicking an assignment opens the submission interface.
 
-**Given** a PDF file containing a reading passage and questions
-**When** the Teacher uploads it to the "AI Builder"
-**Then** the system parses the text and identifies questions
-**And** presents a draft exercise for the teacher to review/edit within 10 seconds
+---
 
-### Story 3.3: Assignment Distribution
+### Epic 4: Student Submission & Offline-Proofing
 
-As a Teacher,
-I want to assign an exercise to a specific class with a due date,
-So that students know what to do and when.
+#### Story 4.1: Mobile Submission Interface (FR18, NFR7)
 
-**Acceptance Criteria:**
+**As a** Student,
+**I want to** submit my work easily from my smartphone,
+**So that** I can do my homework anywhere.
 
-**Given** a created Exercise
-**When** the Teacher clicks "Assign"
-**Then** they can select the target Class and set a Due Date/Time
-**And** all students in that class receive a "New Assignment" notification
+- **AC1:** UI is optimized for viewports down to 375px (no horizontal scrolling).
+- **AC2:** Input fields and buttons are touch-friendly (min 44px height).
+- **AC3:** Support for photo uploads (camera integration) for handwritten tasks.
 
-### Story 3.4: Student Due Dashboard
+#### Story 4.2: Local Auto-save & Persistent Storage (FR19, NFR4)
 
-As a Student,
-I want to see a list of assignments due soon,
-So that I can prioritize my homework.
+**As a** Student,
+**I want to** have my work saved automatically while I type,
+**So that** I don't lose progress if my browser closes.
 
-**Acceptance Criteria:**
+- **AC1:** System triggers a background save to persistent client-side storage every 3 seconds.
+- **AC2:** A "Saved" indicator appears in the UI to confirm local persistence.
 
-**Given** a Student on their dashboard
-**When** they look at the "To Do" list
-**Then** they see assignments ordered by Due Date (soonest first)
-**And** overdue assignments are visually highlighted (Red)
+#### Story 4.3: Offline Safeguards & Sync (FR34, FR35)
 
-## Epic 4: The Intelligent Grading Loop
+**As a** Student,
+**I want to** be able to submit even if my internet is unstable,
+**So that** my deadline is met without stress.
 
-**Goal:** Transform the core pedagogical interaction—from frictionless student submission (offline-proof) to high-velocity AI-assisted teacher feedback.
+- **AC1:** If offline during submission, system displays a persistent "Do Not Close Tab" warning banner.
+- **AC2:** The submission is queued and automatically retried once a network connection is detected.
+- **AC3:** User receives a success celebration/notification only after the server confirms receipt.
 
-### Story 4.1: Student Submission Interface (Mobile First)
+---
 
-As a Student,
-I want a simple mobile interface to submit text or photos of my work,
-So that I can turn in homework from anywhere.
+### Epic 5: AI Grading Workbench
 
-**Acceptance Criteria:**
+#### Story 5.1: Automated Submission Analysis (FR20)
 
-**Given** a Student on a mobile device
-**When** they open an assignment
-**Then** they can type a response or select a photo from their camera roll
-**And** the UI is responsive and easy to use on a small screen (375px)
+**As a** Teacher,
+**I want to** see AI-generated score suggestions as soon as a student submits,
+**So that** I have a draft ready for my review.
 
-### Story 4.2: Offline-Proof Auto-Save
+- **AC1:** System triggers AI analysis immediately upon submission.
+- **AC2:** For Writing/Speaking, AI provides band score suggestions and grammar highlights within 5 seconds of the teacher opening the submission.
 
-As a Student,
-I want my work to save automatically even if I lose internet,
-So that I never lose my progress.
+#### Story 5.2: Split-Screen Grading Interface (FR21, NFR1)
 
-**Acceptance Criteria:**
+**As a** Teacher,
+**I want to** see student work and AI feedback side-by-side,
+**So that** I can grade efficiently without switching tabs.
 
-**Given** a Student typing an essay
-**When** their internet connection drops
-**Then** the system continues to save their work to LocalStorage every 3 seconds
-**And** a visual indicator shows "Saved Locally"
-**And** syncs to the server automatically when connection returns
+- **AC1:** Workspace is divided into a Left pane (Student Work) and Right pane (AI Feedback Cards).
+- **AC2:** The next submission in the queue pre-fetches in < 500ms to ensure zero lag between items.
 
-### Story 4.3: Grading Workbench UI (Split-Screen)
+#### Story 5.3: Evidence Anchoring (FR22, FR24)
 
-As a Teacher,
-I want a split-screen interface with Student Work on the left and Grading Tools on the right,
-So that I can grade efficiently without tab switching.
+**As a** Teacher,
+**I want to** see exactly where the AI found an error in the text,
+**So that** I can verify the feedback accuracy.
 
-**Acceptance Criteria:**
+- **AC1:** Hovering over an AI feedback card draws a visual "tether" line to the relevant text segment.
+- **AC2:** If the teacher edits < 20% of the surrounding text, the anchor remains attached.
+- **AC3:** If > 50% of text is changed, the anchor is "orphaned" and marked for teacher review.
 
-**Given** a Teacher opening a submission
-**When** the workbench loads
-**Then** the Student's essay/image is displayed on the left pane
-**And** the Grading/AI panel is displayed on the right pane
-**And** both panes scroll independently
+#### Story 5.4: One-Click Approval Loop (FR23, FR25, FR26, NFR10)
 
-### Story 4.4: AI Analysis Pipeline
+**As a** Teacher,
+**I want to** quickly accept or reject AI suggestions,
+**So that** I can finish my grading stack efficiently.
 
-As a System,
-I want to trigger an AI analysis job upon student submission,
-So that the grading suggestions are ready when the teacher opens the workbench.
+- **AC1:** Teacher can accept an AI suggestion (score/comment) with a single click or keyboard shortcut.
+- **AC2:** Rejecting a suggestion removes it from the final feedback sent to the student.
+- **AC3:** Upon clicking "Approve & Next", the system plays a "Stamped" animation and loads the next item.
+- **AC4:** A "Breather" summary is shown after every 5 items to prevent teacher fatigue.
 
-**Acceptance Criteria:**
+---
 
-**Given** a new student submission
-**When** it is saved to the database
-**Then** an asynchronous Inngest job is triggered
-**And** the AI analyzes the text for grammar errors and band score
-**And** the results are stored as "Draft Feedback"
+### Epic 6: Student Health & Intervention
 
-### Story 4.5: Evidence Anchors
+#### Story 6.1: Traffic Light Dashboard (FR27, NFR2)
 
-As a Teacher,
-I want to see visual lines connecting AI comments to specific text in the student's work,
-So that I trust the AI's feedback.
+**As a** Teaching Owner,
+**I want to** see a high-level summary of student performance,
+**So that** I can identify at-risk students in seconds.
 
-**Acceptance Criteria:**
+- **AC1:** Dashboard displays student cards with color-coded status: Red (At-Risk), Yellow (Warning), Green (On Track).
+- **AC2:** Status is calculated based on attendance (e.g., < 80% = Red) and assignment completion.
+- **AC3:** Widget data updates in < 1 second on page load.
 
-**Given** a Teacher viewing AI-suggested feedback
-**When** they hover over a grammar comment
-**Then** a visual line is drawn connecting the comment card to the specific sentence in the essay
-**And** the relevant text is highlighted
+#### Story 6.2: Student Profile Overlay (FR28)
 
-### Story 4.6: One-Click Accept/Reject
+**As a** Teaching Owner,
+**I want to** see a student's history without leaving the dashboard,
+**So that** I maintain my workflow context.
 
-As a Teacher,
-I want to quickly accept or reject AI suggestions,
-So that I can finalize grading in seconds.
+- **AC1:** Clicking a student card opens a slide-over/overlay with detailed attendance and grade trends.
+- **AC2:** The overlay does not trigger a full page reload and preserves the background scroll position.
 
-**Acceptance Criteria:**
+#### Story 6.3: Zalo Intervention Loop (FR29)
 
-**Given** a list of AI suggestions
-**When** the Teacher clicks the "Accept" checkmark on a suggestion
-**Then** it is added to the Final Feedback report
-**When** the Teacher clicks "Reject", it is removed from the view
+**As a** Teaching Owner,
+**I want to** message a parent via Zalo when a student falls behind,
+**So that** I can prevent churn with a personal touch.
 
-## Epic 5: Retention Intelligence Dashboard
+- **AC1:** Profile view contains a "Message Parent" button.
+- **AC2:** Clicking the button opens a Zalo deep-link with a pre-filled template (e.g., "Hi [Parent], [Student] has missed 3 classes...").
+- **AC3:** Intervention action is logged in the student's activity history.
 
-**Goal:** Provide Owners with "Glanceable Intelligence" on student health to prevent churn via immediate intervention.
+---
 
-### Story 5.1: Student Health Logic
+### Epic 7: Zalo Integration & Notifications
 
-As a System,
-I want to calculate a "Health Score" for each student based on attendance and submission rates,
-So that at-risk students are flagged.
+#### Story 7.1: Engagement Notifications (FR30)
 
-**Acceptance Criteria:**
+**As a** Student,
+**I want to** receive Zalo alerts for my achievements,
+**So that** I feel motivated to keep studying.
 
-**Given** a nightly cron job
-**When** it analyzes student data (e.g., >2 missed classes or >3 missed assignments)
-**Then** it updates the student's status to "At Risk" (Red) or "Warning" (Yellow)
+- **AC1:** System sends an automated Zalo message when a student hits a "7-day streak" or a "Personal Best" score improvement.
+- **AC2:** Messages include encouraging copy and a link to view the achievement in ClassLite.
 
-### Story 5.2: Traffic Light Dashboard
+#### Story 7.2: Notification Management (FR31)
 
-As a Center Owner,
-I want to see a dashboard of students color-coded by health status,
-So that I can instantly identify who needs help.
+**As a** Parent or User,
+**I want to** control which notifications I receive on Zalo,
+**So that** I don't feel overwhelmed by messages.
 
-**Acceptance Criteria:**
+- **AC1:** User settings include a toggle for Zalo notifications (On/Off).
+- **AC2:** Users can select specific categories (Grades, Attendance, Streaks) to receive via Zalo.
 
-**Given** an Owner on the Dashboard
-**When** the page loads
-**Then** they see a list of students with Red/Yellow/Green indicators
-**And** the Red (At Risk) students are sorted to the top
+---
 
-### Story 5.3: Intervention Workflow
+### Epic 8: Platform Compliance & Methodology
 
-As a Center Owner,
-I want to click a student to see why they are at risk and message their parent,
-So that I can save the customer.
+#### Story 8.1: Methodology Guardian (FR32, FR33)
 
-**Acceptance Criteria:**
+**As a** Teaching Owner,
+**I want to** train the AI on my center's specific feedback style,
+**So that** the AI sounds like one of our teachers.
 
-**Given** an Owner clicking a "Red" student
-**When** the Profile Overlay opens
-**Then** it shows the specific reasons (e.g., "Missed 3 assignments")
-**And** a "Message Parent" button generates a Zalo deep link with a pre-filled concern message
+- **AC1:** Owner can upload 5-10 "Golden Samples" (Student Work + Teacher Feedback).
+- **AC2:** System uses Few-Shot Prompting using Golden Samples to target > 85% style alignment.
+- **AC3:** AI-generated feedback adopts the tone and vocabulary established in the samples.
 
-## Epic 6: Ecosystem Innovation (Phase 1.5)
+#### Story 8.2: Data Sovereignty & Privacy Center (NFR5, NFR6)
 
-**Goal:** Deepen engagement through Zalo parent loops and personalized AI tuning (Golden Samples).
+**As a** User,
+**I want to** ensure my data is stored according to local laws (Decree 13),
+**So that** my privacy is protected.
 
-### Story 6.1: Zalo Notification Integration
+- **AC1:** All personal data is encrypted-at-rest using AES-256.
+- **AC2:** Settings includes a "Privacy Center" where users can request a copy of their data or account deletion.
+- **AC3:** Every AI data processing event displays a transparent indicator explaining the data usage.
 
-As a System,
-I want to send automated "Micro-win" notifications to parents via Zalo,
-So that they feel the value of their investment.
+#### Story 8.3: Content Moderation System (Compliance) (FR36)
 
-**Acceptance Criteria:**
+**As a** Center Admin,
+**I want** the system to flag AI-generated or student-submitted content that violates local regulations,
+**So that** we remain compliant with Vietnamese internet laws.
 
-**Given** a student receives a high score (e.g., >8.0)
-**When** the grade is published
-**Then** a "Micro-win" message is sent to the linked Parent's Zalo account
-**And** the parent receives it immediately
-
-### Story 6.2: Golden Sample Upload
-
-As a Center Owner,
-I want to upload "Golden Sample" essays with my own grading,
-So that the AI learns my specific marking style.
-
-**Acceptance Criteria:**
-
-**Given** an Owner in the "AI Settings"
-**When** they upload a graded essay as a "Golden Sample"
-**Then** the system stores it as a few-shot example
-**And** future AI grading prompts include this example for style alignment
+- **AC1:** System screens content for prohibited political/sensitive terms.
+- **AC2:** Flagged content is locked with a "Compliance Review" overlay.
+- **AC3:** Admins can approve, redact, or delete flagged items in a dedicated workspace.
