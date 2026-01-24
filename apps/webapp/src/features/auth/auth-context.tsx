@@ -37,6 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = async () => {
     await firebaseAuth.signOut();
+    localStorage.removeItem("token");
     queryClient.setQueryData(AUTH_QUERY_KEYS.user, null);
     setFirebaseUser(null);
   };
@@ -48,11 +49,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (fbUser) {
         try {
           const token = await fbUser.getIdToken();
+          localStorage.setItem("token", token);
           await loginRef.current(token);
         } catch (error) {
           console.error("Session sync failed:", error);
         }
       } else {
+        localStorage.removeItem("token");
         queryClient.setQueryData(AUTH_QUERY_KEYS.user, null);
       }
 

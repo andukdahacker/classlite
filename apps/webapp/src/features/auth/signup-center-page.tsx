@@ -24,7 +24,7 @@ export function SignupCenterPage() {
           <SignupCenterForm />
           <div className="text-center text-sm">
             Already have an account?{" "}
-            <Link to="/login" className="underline underline-offset-4">
+            <Link to="/sign-in" className="underline underline-offset-4">
               Sign in
             </Link>
           </div>

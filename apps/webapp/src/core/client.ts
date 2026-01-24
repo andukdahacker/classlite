@@ -1,8 +1,22 @@
 import type { paths } from "@/schema/schema";
 import createClient, { type Middleware } from "openapi-fetch";
+import { firebaseAuth } from "./firebase";
 
 const authMiddleware: Middleware = {
   async onRequest({ request }) {
+    // 1. Try to get token from Firebase (most reliable/fresh)
+    let token = null;
+
+    if (firebaseAuth.currentUser) {
+      token = await firebaseAuth.currentUser.getIdToken();
+    } else {
+      // 2. Fallback to localStorage if needed (e.g. for initial load before Firebase initializes)
+      token = localStorage.getItem("token");
+    }
+
+    if (token) {
+      request.headers.set("Authorization", `Bearer ${token}`);
+    }
     return request;
   },
 

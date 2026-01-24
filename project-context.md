@@ -78,6 +78,15 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **Pattern:** Use TanStack Query `useMutation` with `networkMode: 'offlineFirst'`.
 - **Reason:** Students must be able to submit work without internet.
 
+### 5. Layered Architecture (Route-Controller-Service)
+
+- **Rule:** Controllers must be "pure" (decoupled from Fastify).
+- **Pattern:**
+  - **Service:** Interacts with DB/External APIs only. Returns raw data.
+  - **Controller:** Orchestrates services, formats the standard response `{ data, message }`, and throws domain errors.
+  - **Route:** Handles Fastify-specific logic (`request`, `reply`), extracts params/body, calls the controller, and maps errors to HTTP status codes.
+- **Reason:** Simplifies unit testing of business logic without mocking the entire Fastify request/reply lifecycle.
+
 ---
 
 ## Code Patterns & Conventions
@@ -95,7 +104,8 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 ### Error Handling
 
-- **Backend:** Throw `createError()` from `@fastify/error` or return standardized error objects.
+- **Domain Errors:** Throw standard `Error` with clear messages in Services/Controllers.
+- **Mapping:** The **Route layer** catches these errors and uses `reply.status(code).send({ message })` to map them to HTTP status codes (400, 401, 409, etc.).
 - **Frontend:** Handle errors in `onError` callbacks of mutations, display via Toasts.
 
 ---
@@ -106,6 +116,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 - **Framework:** Vitest
 - **Location:** Co-located with source code (`src/features/auth/auth.service.test.ts`).
+- **Command:** ALWAYS use `pnpm --filter=backend test` to run backend tests.
 - **Pattern:** Integration tests should spin up a real Fastify instance using `buildApp()`.
 - **Database:** Use a dedicated test database or Docker container. Do NOT mock Prisma Client methods if testing logic that depends on DB constraints.
 

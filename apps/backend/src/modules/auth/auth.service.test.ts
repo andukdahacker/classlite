@@ -20,6 +20,7 @@ const mockPrisma = {
   centerMembership: {
     findFirst: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
   },
   $transaction: vi.fn((callback) => callback(mockPrisma)),
 } as unknown as PrismaClient;
@@ -157,6 +158,56 @@ describe("AuthService", () => {
         {
           center_id: membership.centerId,
           role: "OWNER",
+        },
+      );
+    });
+
+    it("should transition INVITED status to ACTIVE on login", async () => {
+      // Arrange
+      const idToken = "invited-token";
+      const decodedToken = {
+        uid: "firebase-uid-invited",
+        email: "invited@test.com",
+      };
+      const existingUser = {
+        id: "user-id-invited",
+        email: "invited@test.com",
+      };
+      const invitedMembership = {
+        id: "mem-123",
+        centerId: "center-123",
+        role: "TEACHER",
+        status: "INVITED",
+      };
+
+      mockFirebaseAuth.verifyIdToken.mockResolvedValue(decodedToken);
+      (mockPrisma.authAccount.findUnique as any).mockResolvedValue({
+        userId: existingUser.id,
+      });
+      (mockPrisma.user.findUnique as any).mockResolvedValue(existingUser);
+      (mockPrisma.centerMembership.findFirst as any).mockResolvedValue(
+        invitedMembership,
+      );
+      (mockPrisma.centerMembership.update as any).mockResolvedValue({
+        ...invitedMembership,
+        status: "ACTIVE",
+      });
+
+      // Act
+      const result = await authService.login(idToken);
+
+      // Assert
+      expect(mockPrisma.centerMembership.update).toHaveBeenCalledWith({
+        where: { id: "mem-123" },
+        data: { status: "ACTIVE" },
+      });
+      expect(result.user.role).toBe("TEACHER");
+      expect(result.user.centerId).toBe("center-123");
+      expect(mockFirebaseAuth.setCustomUserClaims).toHaveBeenCalledWith(
+        decodedToken.uid,
+        {
+          center_id: "center-123",
+          role: "TEACHER",
         },
       );
     });

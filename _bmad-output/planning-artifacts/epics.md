@@ -79,7 +79,8 @@ NFR12 (Focus): Input fields in the Grading Workbench shall support "Click-to-Edi
 - **AI Orchestration:** Inngest for background jobs (avoid browser timeouts).
 - **Infrastructure:** Railway deployment (Docker/Node.js).
 - **Testing:** Vitest (Unit) + Playwright (E2E).
-- **API Response:** Standard wrapper `{ data: T, error: ... }`.
+- **API Response:** Standard wrapper `{ data: T, message: string }`.
+- **Controller Pattern:** Decoupled from framework; returns data/message objects, routes handle HTTP mapping.
 - **Validation:** Zod schemas in `packages/types`.
 - **Split-Screen Editor:** `GradingEditor` with `ProseMirror` (Left) and AI Card List (Right).
 - **Evidence Anchoring:** `ConnectionLine` SVG layer connecting AI comments to text ranges.

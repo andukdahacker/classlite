@@ -33,7 +33,18 @@ export async function authRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    authController.centerSignup.bind(authController),
+    async (request, reply) => {
+      try {
+        const result = await authController.centerSignup(request.body);
+        return reply.status(201).send(result);
+      } catch (error: any) {
+        request.log.error(error);
+        const statusCode = error.message.startsWith("CONFLICT") ? 409 : 400;
+        return reply.status(statusCode).send({
+          message: error.message || "Registration failed",
+        });
+      }
+    },
   );
 
   typedFastify.post(
@@ -49,7 +60,20 @@ export async function authRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    authController.centerSignupWithGoogle.bind(authController),
+    async (request, reply) => {
+      try {
+        const result = await authController.centerSignupWithGoogle(
+          request.body,
+        );
+        return reply.status(201).send(result);
+      } catch (error: any) {
+        request.log.error(error);
+        const statusCode = error.message.startsWith("CONFLICT") ? 409 : 400;
+        return reply.status(statusCode).send({
+          message: error.message || "Registration failed",
+        });
+      }
+    },
   );
 
   typedFastify.post(
@@ -64,7 +88,17 @@ export async function authRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    authController.login.bind(authController),
+    async (request, reply) => {
+      try {
+        const result = await authController.login(request.body.idToken);
+        return reply.status(200).send(result);
+      } catch (error: any) {
+        request.log.error(error);
+        return reply.status(401).send({
+          message: error.message || "Authentication failed",
+        });
+      }
+    },
   );
 
   // Protected route example to verify RBAC and Tenanted Client
@@ -76,6 +110,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           200: AuthUserSchema,
           400: ErrorResponseSchema,
           401: ErrorResponseSchema,
+          404: ErrorResponseSchema,
           500: ErrorResponseSchema,
         },
       },
@@ -93,35 +128,19 @@ export async function authRoutes(fastify: FastifyInstance) {
           .send({ message: "User does not belong to a center" });
       }
 
-      // Use tenanted client to ensure isolation
-      // We query CenterMembership because 'User' model is global, but 'CenterMembership' is tenanted
-      const db = getTenantedClient(fastify.prisma, user.centerId);
-
-      // We use findFirst to ensure the extension injects 'where: { centerId }'
-      // If we used findUnique, strict typing might prevent injection depending on Prisma version
-      const membership = await db.centerMembership.findFirst({
-        where: {
-          userId: user.uid,
-          // centerId is injected automatically by the extension
-        },
-        include: {
-          user: true, // Get the actual user profile data
-        },
-      });
-
-      if (!membership) {
-        return reply
-          .status(401)
-          .send({ message: "User not found in this center" });
+      try {
+        const result = await authController.getCurrentUser(
+          user.uid,
+          user.centerId,
+        );
+        return reply.status(200).send(result);
+      } catch (error: any) {
+        request.log.error(error);
+        const statusCode = error.message.startsWith("NOT_FOUND") ? 404 : 400;
+        return reply.status(statusCode).send({
+          message: error.message || "Failed to get user profile",
+        });
       }
-
-      return reply.status(200).send({
-        id: membership.user.id,
-        email: membership.user.email || "",
-        name: membership.user.name || null,
-        role: membership.role,
-        centerId: membership.centerId,
-      });
     },
   );
 }

@@ -45,6 +45,26 @@ export async function tenantRoutes(fastify: FastifyInstance) {
           .send({ message: "Unauthorized: Invalid platform admin key" });
       }
     },
-    handler: tenantController.provision,
+    handler: async (
+      request: FastifyRequest<{ Body: CreateTenantInput }>,
+      reply: FastifyReply,
+    ) => {
+      try {
+        const result = await tenantController.provision(request.body);
+        return reply.status(201).send(result);
+      } catch (error: any) {
+        if (error.code === "P2002" || error.message?.includes("CONFLICT")) {
+          return reply.status(409).send({
+            message:
+              error.message.replace("CONFLICT: ", "") || "A conflict occurred",
+          });
+        }
+
+        request.log.error(error);
+        return reply.status(500).send({
+          message: error.message || "Failed to provision tenant",
+        });
+      }
+    },
   });
 }

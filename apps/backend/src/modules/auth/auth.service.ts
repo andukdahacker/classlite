@@ -1,5 +1,4 @@
 import { MembershipStatus, PrismaClient } from "@workspace/db";
-import { Auth } from "firebase-admin/auth";
 import {
   AuthResponseData,
   AuthUser,
@@ -7,6 +6,7 @@ import {
   CenterSignupWithGoogleRequest,
   UserRole,
 } from "@workspace/types";
+import { Auth } from "firebase-admin/auth";
 
 export class AuthService {
   constructor(
@@ -293,9 +293,21 @@ export class AuthService {
 
       // 3. Get Membership and Role
       const membership = await tx.centerMembership.findFirst({
-        where: { userId, status: MembershipStatus.ACTIVE },
+        where: {
+          userId,
+          status: { in: [MembershipStatus.ACTIVE, MembershipStatus.INVITED] },
+        },
         include: { center: true },
+        orderBy: { createdAt: "desc" },
       });
+
+      if (membership && membership.status === MembershipStatus.INVITED) {
+        await tx.centerMembership.update({
+          where: { id: membership.id },
+          data: { status: MembershipStatus.ACTIVE },
+        });
+        membership.status = MembershipStatus.ACTIVE;
+      }
 
       const user = await tx.user.findUnique({
         where: { id: userId },
@@ -318,6 +330,30 @@ export class AuthService {
     await this.syncCustomClaims(uid, result.user);
 
     return result;
+  }
+
+  async getUserMembership(uid: string, centerId: string) {
+    const authAccount = await this.prisma.authAccount.findUnique({
+      where: {
+        provider_providerUserId: {
+          provider: "FIREBASE",
+          providerUserId: uid,
+        },
+      },
+    });
+
+    if (!authAccount) return null;
+
+    return this.prisma.centerMembership.findFirst({
+      where: {
+        userId: authAccount.userId,
+        centerId,
+        status: { in: [MembershipStatus.ACTIVE, MembershipStatus.INVITED] },
+      },
+      include: {
+        user: true,
+      },
+    });
   }
 
   private async syncCustomClaims(uid: string, user: AuthUser) {

@@ -215,6 +215,7 @@ The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the gradin
 ### Technical Architecture
 
 - **Tenant Model**: Logical Separation (Single DB, `center_id` column).
+- **Layering**: Clean architecture (Route -> Controller -> Service) to ensure testability and framework independence of business logic.
 - **Enforcement**: Middleware-level security hooks.
 - **Subscription**: Freemium model (MVP) with in-app billing integration capability.
 

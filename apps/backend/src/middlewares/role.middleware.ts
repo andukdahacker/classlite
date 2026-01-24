@@ -14,6 +14,7 @@ export const requireRole = (allowedRoles: UserRole | UserRole[]) => {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.jwtPayload;
 
+
     if (!user) {
       request.server.log.error(
         `ROLE_GUARD_ERROR: jwtPayload missing for path ${request.url}. Ensure authMiddleware is in the chain.`,

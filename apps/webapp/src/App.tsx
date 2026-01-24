@@ -1,14 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import { ThemeProvider } from "./core/components/common/theme-provider";
 import { UnauthorizedError } from "./core/client";
 import { AuthProvider } from "./features/auth/auth-context";
 import { ProtectedRoute } from "./features/auth/protected-route";
 import { RoleRedirect } from "./features/auth/role-redirect";
 import { LoginPage } from "./features/auth/login-page";
+import { SignupPage } from "./features/auth/signup-page";
 import { SignupCenterPage } from "./features/auth/signup-center-page";
+import { InviteUserModal } from "./features/users/components/InviteUserModal";
 
 function App() {
   const queryClient = new QueryClient({
@@ -36,6 +38,7 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/sign-in" element={<LoginPage />} />
+              <Route path="/sign-up" element={<SignupPage />} />
               <Route path="/sign-up/center" element={<SignupCenterPage />} />
 
               {/* Role-based redirection at root */}
@@ -47,6 +50,7 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["OWNER"]}>
                     <div>Owner Dashboard</div>
+                    <InviteUserModal />
                   </ProtectedRoute>
                 }
               />
@@ -70,6 +74,7 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
+          <Toaster />
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
