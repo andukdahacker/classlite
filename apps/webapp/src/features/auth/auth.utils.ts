@@ -2,6 +2,7 @@ import type { AuthUser } from "@workspace/types";
 
 export const getDashboardPath = (user: AuthUser | null) => {
   if (!user) return "/sign-in";
+  if (user.centerId) return `/${user.centerId}/dashboard`;
 
   switch (user.role) {
     case "OWNER":

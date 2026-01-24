@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  GalleryVerticalEnd,
-  LayoutDashboardIcon,
-  LibraryBig,
-  School,
-  Users2,
-} from "lucide-react";
+import { GalleryVerticalEnd } from "lucide-react";
 import * as React from "react";
 
 import {
@@ -23,6 +17,7 @@ import { useTenant } from "@/features/tenants/tenant-context";
 import { useAuth } from "@/features/auth/auth-context";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
+import { getNavigationConfig } from "@/core/config/navigation";
 
 export type NavItem = {
   title: string;
@@ -30,32 +25,19 @@ export type NavItem = {
   icon: React.ReactNode;
 };
 
-const navItems: NavItem[] = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: <LayoutDashboardIcon />,
-  },
-  {
-    title: "Users",
-    url: "/dashboard/users",
-    icon: <Users2 />,
-  },
-  {
-    title: "Classes",
-    url: "/dashboard/class",
-    icon: <School />,
-  },
-  {
-    title: "Exercises",
-    url: "/dashboard/exercises",
-    icon: <LibraryBig />,
-  },
-] as const;
-
 function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { tenant } = useTenant();
   const { user } = useAuth();
+  const centerId = user?.centerId;
+
+  const navConfig = getNavigationConfig(centerId || "default");
+  const filteredNavItems = navConfig
+    .filter((item) => user?.role && item.allowedRoles.includes(user.role))
+    .map((item) => ({
+      title: item.title,
+      url: item.url,
+      icon: <item.icon />,
+    }));
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -85,7 +67,7 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navItems} />
+        <NavMain items={filteredNavItems} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser

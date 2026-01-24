@@ -28,6 +28,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "firebase": "^11.9.1",
+    "framer-motion": "^12.29.0",
     "lucide-react": "^0.475.0",
     "openapi-fetch": "^0.14.0",
     "react": "^19.0.0",

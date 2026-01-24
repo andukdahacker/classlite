@@ -1,0 +1,104 @@
+import { render, screen } from "@testing-library/react";
+import { describe, it, vi, expect } from "vitest";
+import DashboardPage from "./DashboardPage";
+import { useAuth } from "@/features/auth/auth-context";
+import { BrowserRouter } from "react-router";
+
+vi.mock("@/features/auth/auth-context");
+vi.mock("@/features/tenants/tenant-context", () => ({
+  useTenant: () => ({ tenant: { name: "Test Center" } }),
+}));
+vi.mock("@tanstack/react-query", () => ({
+  useOnlineManager: () => ({ isOnline: () => true }),
+  useIsFetching: () => 0,
+  useIsMutating: () => 0,
+  onlineManager: {
+    subscribe: vi.fn(),
+    isOnline: vi.fn(() => true),
+  },
+}));
+
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+describe("DashboardPage", () => {
+  it("renders OwnerDashboard for OWNER role", async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: { role: "OWNER", centerId: "center-1" },
+      loading: false,
+    } as any);
+
+    render(
+      <BrowserRouter>
+        <DashboardPage />
+      </BrowserRouter>,
+    );
+
+    expect(
+      await screen.findByText(/Center Health Overview/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders TeacherDashboard for TEACHER role", async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: { role: "TEACHER", centerId: "center-1" },
+      loading: false,
+    } as any);
+
+    render(
+      <BrowserRouter>
+        <DashboardPage />
+      </BrowserRouter>,
+    );
+
+    expect(await screen.findByText(/Grading Queue/i)).toBeInTheDocument();
+  });
+
+  it("renders StudentDashboard for STUDENT role", async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: { role: "STUDENT", centerId: "center-1" },
+      loading: false,
+    } as any);
+
+    render(
+      <BrowserRouter>
+        <DashboardPage />
+      </BrowserRouter>,
+    );
+
+    expect(await screen.findByText(/Your Tasks/i)).toBeInTheDocument();
+  });
+
+  it("filters navigation items based on role", async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: { role: "STUDENT", centerId: "center-1" },
+      loading: false,
+    } as any);
+
+    render(
+      <BrowserRouter>
+        <DashboardPage />
+      </BrowserRouter>,
+    );
+
+    // Students should see Dashboard and Exercises
+    expect(screen.getAllByText(/Dashboard/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/Exercises/i)[0]).toBeInTheDocument();
+
+    // Students should NOT see Users or Classes or Settings
+    expect(screen.queryByText(/Users/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Classes/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Settings/i)).not.toBeInTheDocument();
+  });
+});

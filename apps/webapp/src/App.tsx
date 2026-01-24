@@ -14,6 +14,7 @@ import { SignupPage } from "./features/auth/signup-page";
 import { SignupCenterPage } from "./features/auth/signup-center-page";
 import { CenterSettingsPage } from "./features/tenants/center-settings-page";
 import { InviteUserModal } from "./features/users/components/InviteUserModal";
+import DashboardPage from "./features/dashboard/DashboardPage";
 
 function App() {
   const queryClient = new QueryClient({
@@ -54,40 +55,37 @@ function App() {
                 {/* Role-based redirection at root */}
                 <Route path="/" element={<RoleRedirect />} />
 
-                {/* Protected Dashboard Routes */}
+                {/* Unified Dashboard Route */}
                 <Route
-                  path="/dashboard/owner"
+                  path="/:centerId/dashboard"
                   element={
-                    <ProtectedRoute allowedRoles={["OWNER"]}>
-                      <div>Owner Dashboard</div>
-                      <InviteUserModal />
+                    <ProtectedRoute
+                      allowedRoles={["OWNER", "TEACHER", "STUDENT"]}
+                    >
+                      <DashboardPage />
                     </ProtectedRoute>
                   }
-                />
-                <Route
-                  path="/dashboard/owner/settings"
-                  element={
-                    <ProtectedRoute allowedRoles={["OWNER"]}>
-                      <CenterSettingsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard/teacher"
-                  element={
-                    <ProtectedRoute allowedRoles={["TEACHER"]}>
-                      <div>Teacher Dashboard</div>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard/student"
-                  element={
-                    <ProtectedRoute allowedRoles={["STUDENT"]}>
-                      <div>Student Dashboard</div>
-                    </ProtectedRoute>
-                  }
-                />
+                >
+                  <Route
+                    path="/:centerId/dashboard/settings"
+                    element={
+                      <ProtectedRoute allowedRoles={["OWNER"]}>
+                        <CenterSettingsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/:centerId/dashboard/users"
+                    element={
+                      <ProtectedRoute allowedRoles={["OWNER"]}>
+                        <div>Users Management (TBD)</div>
+                        <InviteUserModal />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Route>
+
+                <Route path="/dashboard" element={<RoleRedirect />} />
 
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
