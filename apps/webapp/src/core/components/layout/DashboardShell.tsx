@@ -1,4 +1,8 @@
-import { SidebarProvider } from "@workspace/ui/components/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@workspace/ui/components/sidebar";
 import { AppSidebar } from "../common/app-sidebar";
 import { TopBar } from "./TopBar";
 import { useState, useEffect } from "react";
@@ -14,6 +18,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@workspace/ui/components/sheet";
+import { Separator } from "@workspace/ui/components/separator";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(true);
@@ -44,17 +49,29 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full flex-col overflow-hidden bg-background font-sans">
-        <TopBar />
         <div className="flex flex-1 overflow-hidden relative">
           <div className="hidden md:flex">
             <AppSidebar />
           </div>
 
-          <main className="flex-1 overflow-y-auto relative">
-            <div className="container mx-auto max-w-7xl px-4 py-6 pb-24 md:pb-6">
-              {children}
-            </div>
-          </main>
+          <SidebarInset>
+            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+              <div className="flex items-center justify-between gap-2 px-4 w-full ">
+                <div className="gap-2 items-center flex">
+                  <SidebarTrigger className="-ml-1" />
+                  <Separator
+                    orientation="vertical"
+                    className="mr-2 data-[orientation=vertical]:h-4"
+                  />
+                </div>
+              </div>
+            </header>
+            <main className="flex-1 overflow-y-auto relative">
+              <div className="container mx-auto max-w-7xl px-4 py-6 pb-24 md:pb-6">
+                {children}
+              </div>
+            </main>
+          </SidebarInset>
 
           {/* AI Sidebar - Desktop (Fixed Right) */}
           <AnimatePresence>
@@ -133,10 +150,6 @@ function AISidebarContent({ onClose }: { onClose: () => void }) {
           <Sparkles className="h-4 w-4 text-primary" />
           <span className="font-heading">AI Assistant</span>
         </div>
-
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
       </div>
       <div className="flex-1 p-4">
         <div className="rounded-xl border bg-card p-4 shadow-sm">
