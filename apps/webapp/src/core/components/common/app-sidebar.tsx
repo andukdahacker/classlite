@@ -1,28 +1,28 @@
 "use client";
 
 import {
-    GalleryVerticalEnd,
-    LayoutDashboardIcon,
-    LibraryBig,
-    School,
-    Users2,
+  GalleryVerticalEnd,
+  LayoutDashboardIcon,
+  LibraryBig,
+  School,
+  Users2,
 } from "lucide-react";
 import * as React from "react";
 
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarRail,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
 } from "@workspace/ui/components/sidebar";
+import { useTenant } from "@/features/tenants/tenant-context";
+import { useAuth } from "@/features/auth/auth-context";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
-
-// This is sample data.
 
 export type NavItem = {
   title: string;
@@ -54,6 +54,8 @@ const navItems: NavItem[] = [
 ] as const;
 
 function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { tenant } = useTenant();
+  const { user } = useAuth();
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -62,13 +64,21 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg">
               <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <GalleryVerticalEnd className="size-4" />
+                {tenant?.logoUrl ? (
+                  <img
+                    src={tenant.logoUrl}
+                    alt={tenant.name}
+                    className="size-6 rounded"
+                  />
+                ) : (
+                  <GalleryVerticalEnd className="size-4" />
+                )}
               </div>
               <div className="flex flex-col text-left text-sm leading-tight">
-                <span className="truncate font-medium">ClassLite</span>
-                <span className="truncate text-xs">
-                    Role
+                <span className="truncate font-medium">
+                  {tenant?.name || "ClassLite"}
                 </span>
+                <span className="truncate text-xs">{user?.role}</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -79,12 +89,11 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <NavUser
-          user={
-            {
-                email: "ducdo@gmail.com",
-                name: "Duc Do",
-            }
-          }
+          user={{
+            email: user?.email || "",
+            name: user?.name || "",
+            avatar: user?.avatarUrl || "",
+          }}
         />
       </SidebarFooter>
       <SidebarRail />

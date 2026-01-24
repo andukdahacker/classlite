@@ -45,6 +45,10 @@ model Center {
   name String
   slug String @unique
 
+  logoUrl    String? @map("logo_url")
+  timezone   String  @default("UTC") @map("timezone")
+  brandColor String  @default("#2563EB") @map("brand_color")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

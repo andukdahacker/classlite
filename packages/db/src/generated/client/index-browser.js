@@ -142,6 +142,9 @@ exports.Prisma.CenterScalarFieldEnum = {
   id: 'id',
   name: 'name',
   slug: 'slug',
+  logoUrl: 'logoUrl',
+  timezone: 'timezone',
+  brandColor: 'brandColor',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

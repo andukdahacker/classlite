@@ -3788,6 +3788,9 @@ export namespace Prisma {
     id: string | null
     name: string | null
     slug: string | null
+    logoUrl: string | null
+    timezone: string | null
+    brandColor: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3796,6 +3799,9 @@ export namespace Prisma {
     id: string | null
     name: string | null
     slug: string | null
+    logoUrl: string | null
+    timezone: string | null
+    brandColor: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3804,6 +3810,9 @@ export namespace Prisma {
     id: number
     name: number
     slug: number
+    logoUrl: number
+    timezone: number
+    brandColor: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -3814,6 +3823,9 @@ export namespace Prisma {
     id?: true
     name?: true
     slug?: true
+    logoUrl?: true
+    timezone?: true
+    brandColor?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3822,6 +3834,9 @@ export namespace Prisma {
     id?: true
     name?: true
     slug?: true
+    logoUrl?: true
+    timezone?: true
+    brandColor?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3830,6 +3845,9 @@ export namespace Prisma {
     id?: true
     name?: true
     slug?: true
+    logoUrl?: true
+    timezone?: true
+    brandColor?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -3911,6 +3929,9 @@ export namespace Prisma {
     id: string
     name: string
     slug: string
+    logoUrl: string | null
+    timezone: string
+    brandColor: string
     createdAt: Date
     updatedAt: Date
     _count: CenterCountAggregateOutputType | null
@@ -3936,6 +3957,9 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     slug?: boolean
+    logoUrl?: boolean
+    timezone?: boolean
+    brandColor?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     memberships?: boolean | Center$membershipsArgs<ExtArgs>
@@ -3946,6 +3970,9 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     slug?: boolean
+    logoUrl?: boolean
+    timezone?: boolean
+    brandColor?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["center"]>
@@ -3954,6 +3981,9 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     slug?: boolean
+    logoUrl?: boolean
+    timezone?: boolean
+    brandColor?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["center"]>
@@ -3962,11 +3992,14 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     slug?: boolean
+    logoUrl?: boolean
+    timezone?: boolean
+    brandColor?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type CenterOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "slug" | "createdAt" | "updatedAt", ExtArgs["result"]["center"]>
+  export type CenterOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "slug" | "logoUrl" | "timezone" | "brandColor" | "createdAt" | "updatedAt", ExtArgs["result"]["center"]>
   export type CenterInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     memberships?: boolean | Center$membershipsArgs<ExtArgs>
     _count?: boolean | CenterCountOutputTypeDefaultArgs<ExtArgs>
@@ -3983,6 +4016,9 @@ export namespace Prisma {
       id: string
       name: string
       slug: string
+      logoUrl: string | null
+      timezone: string
+      brandColor: string
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["center"]>
@@ -4412,6 +4448,9 @@ export namespace Prisma {
     readonly id: FieldRef<"Center", 'String'>
     readonly name: FieldRef<"Center", 'String'>
     readonly slug: FieldRef<"Center", 'String'>
+    readonly logoUrl: FieldRef<"Center", 'String'>
+    readonly timezone: FieldRef<"Center", 'String'>
+    readonly brandColor: FieldRef<"Center", 'String'>
     readonly createdAt: FieldRef<"Center", 'DateTime'>
     readonly updatedAt: FieldRef<"Center", 'DateTime'>
   }
@@ -9139,6 +9178,9 @@ export namespace Prisma {
     id: 'id',
     name: 'name',
     slug: 'slug',
+    logoUrl: 'logoUrl',
+    timezone: 'timezone',
+    brandColor: 'brandColor',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -9440,6 +9482,9 @@ export namespace Prisma {
     id?: StringFilter<"Center"> | string
     name?: StringFilter<"Center"> | string
     slug?: StringFilter<"Center"> | string
+    logoUrl?: StringNullableFilter<"Center"> | string | null
+    timezone?: StringFilter<"Center"> | string
+    brandColor?: StringFilter<"Center"> | string
     createdAt?: DateTimeFilter<"Center"> | Date | string
     updatedAt?: DateTimeFilter<"Center"> | Date | string
     memberships?: CenterMembershipListRelationFilter
@@ -9449,6 +9494,9 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     slug?: SortOrder
+    logoUrl?: SortOrderInput | SortOrder
+    timezone?: SortOrder
+    brandColor?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     memberships?: CenterMembershipOrderByRelationAggregateInput
@@ -9461,6 +9509,9 @@ export namespace Prisma {
     OR?: CenterWhereInput[]
     NOT?: CenterWhereInput | CenterWhereInput[]
     name?: StringFilter<"Center"> | string
+    logoUrl?: StringNullableFilter<"Center"> | string | null
+    timezone?: StringFilter<"Center"> | string
+    brandColor?: StringFilter<"Center"> | string
     createdAt?: DateTimeFilter<"Center"> | Date | string
     updatedAt?: DateTimeFilter<"Center"> | Date | string
     memberships?: CenterMembershipListRelationFilter
@@ -9470,6 +9521,9 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     slug?: SortOrder
+    logoUrl?: SortOrderInput | SortOrder
+    timezone?: SortOrder
+    brandColor?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: CenterCountOrderByAggregateInput
@@ -9484,6 +9538,9 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Center"> | string
     name?: StringWithAggregatesFilter<"Center"> | string
     slug?: StringWithAggregatesFilter<"Center"> | string
+    logoUrl?: StringNullableWithAggregatesFilter<"Center"> | string | null
+    timezone?: StringWithAggregatesFilter<"Center"> | string
+    brandColor?: StringWithAggregatesFilter<"Center"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Center"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Center"> | Date | string
   }
@@ -9835,6 +9892,9 @@ export namespace Prisma {
     id?: string
     name: string
     slug: string
+    logoUrl?: string | null
+    timezone?: string
+    brandColor?: string
     createdAt?: Date | string
     updatedAt?: Date | string
     memberships?: CenterMembershipCreateNestedManyWithoutCenterInput
@@ -9844,6 +9904,9 @@ export namespace Prisma {
     id?: string
     name: string
     slug: string
+    logoUrl?: string | null
+    timezone?: string
+    brandColor?: string
     createdAt?: Date | string
     updatedAt?: Date | string
     memberships?: CenterMembershipUncheckedCreateNestedManyWithoutCenterInput
@@ -9853,6 +9916,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     slug?: StringFieldUpdateOperationsInput | string
+    logoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    brandColor?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     memberships?: CenterMembershipUpdateManyWithoutCenterNestedInput
@@ -9862,6 +9928,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     slug?: StringFieldUpdateOperationsInput | string
+    logoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    brandColor?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     memberships?: CenterMembershipUncheckedUpdateManyWithoutCenterNestedInput
@@ -9871,6 +9940,9 @@ export namespace Prisma {
     id?: string
     name: string
     slug: string
+    logoUrl?: string | null
+    timezone?: string
+    brandColor?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -9879,6 +9951,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     slug?: StringFieldUpdateOperationsInput | string
+    logoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    brandColor?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -9887,6 +9962,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     slug?: StringFieldUpdateOperationsInput | string
+    logoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    brandColor?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -10293,6 +10371,9 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     slug?: SortOrder
+    logoUrl?: SortOrder
+    timezone?: SortOrder
+    brandColor?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -10301,6 +10382,9 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     slug?: SortOrder
+    logoUrl?: SortOrder
+    timezone?: SortOrder
+    brandColor?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -10309,6 +10393,9 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     slug?: SortOrder
+    logoUrl?: SortOrder
+    timezone?: SortOrder
+    brandColor?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -11242,6 +11329,9 @@ export namespace Prisma {
     id?: string
     name: string
     slug: string
+    logoUrl?: string | null
+    timezone?: string
+    brandColor?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -11250,6 +11340,9 @@ export namespace Prisma {
     id?: string
     name: string
     slug: string
+    logoUrl?: string | null
+    timezone?: string
+    brandColor?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -11321,6 +11414,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     slug?: StringFieldUpdateOperationsInput | string
+    logoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    brandColor?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -11329,6 +11425,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     slug?: StringFieldUpdateOperationsInput | string
+    logoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    timezone?: StringFieldUpdateOperationsInput | string
+    brandColor?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

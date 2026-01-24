@@ -1,15 +1,133 @@
-import { CreateTenantInput, TenantData } from "@workspace/types";
+import {
+  CreateTenantInput,
+  TenantData,
+  UpdateCenterInput,
+} from "@workspace/types";
 import { CenterRole, MembershipStatus, PrismaClient } from "@workspace/db";
 import type { Auth } from "firebase-admin/auth";
+import type { Storage } from "firebase-admin/storage";
 import type { Resend } from "resend";
 
 export class TenantService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly firebaseAuth: Auth,
+    private readonly firebaseStorage: Storage,
     private readonly resend: Resend,
     private readonly options: { emailFrom: string },
   ) {}
+
+  async getTenant(centerId: string): Promise<TenantData> {
+    const center = await this.prisma.center.findUniqueOrThrow({
+      where: { id: centerId },
+    });
+
+    const ownerMembership = await this.prisma.centerMembership.findFirstOrThrow(
+      {
+        where: {
+          centerId: center.id,
+          role: CenterRole.OWNER,
+        },
+        include: {
+          user: true,
+        },
+      },
+    );
+
+    return {
+      center: {
+        id: center.id,
+        name: center.name,
+        slug: center.slug,
+        logoUrl: center.logoUrl,
+        timezone: center.timezone,
+        brandColor: center.brandColor,
+        createdAt: center.createdAt,
+        updatedAt: center.updatedAt,
+      },
+      owner: {
+        id: ownerMembership.user.id,
+        email: ownerMembership.user.email,
+        name: ownerMembership.user.name,
+        role: "OWNER",
+      },
+    };
+  }
+
+  async uploadLogo(
+    centerId: string,
+    fileBuffer: Buffer,
+    contentType: string,
+  ): Promise<string> {
+    const bucket = this.firebaseStorage.bucket();
+    const filePath = `tenants/${centerId}/branding/logo.png`;
+    const file = bucket.file(filePath);
+
+    await file.save(fileBuffer, {
+      metadata: {
+        contentType,
+        cacheControl: "public, max-age=31536000",
+      },
+    });
+
+    // Make the file public
+    await file.makePublic();
+
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+
+    await this.prisma.center.update({
+      where: { id: centerId },
+      data: { logoUrl: publicUrl },
+    });
+
+    return publicUrl;
+  }
+
+  async updateTenant(
+    centerId: string,
+    input: UpdateCenterInput,
+  ): Promise<TenantData> {
+    const center = await this.prisma.center.update({
+      where: { id: centerId },
+      data: {
+        name: input.name,
+        logoUrl: input.logoUrl,
+        timezone: input.timezone,
+        brandColor: input.brandColor,
+      },
+    });
+
+    const ownerMembership = await this.prisma.centerMembership.findFirstOrThrow(
+      {
+        where: {
+          centerId: center.id,
+          role: CenterRole.OWNER,
+        },
+        include: {
+          user: true,
+        },
+      },
+    );
+
+    return {
+      center: {
+        id: center.id,
+        name: center.name,
+        slug: center.slug,
+        logoUrl: center.logoUrl,
+        timezone: center.timezone,
+        brandColor: center.brandColor,
+        createdAt: center.createdAt,
+        updatedAt: center.updatedAt,
+      },
+      owner: {
+        id: ownerMembership.user.id,
+        email: ownerMembership.user.email,
+        name: ownerMembership.user.name,
+        role: "OWNER",
+      },
+    };
+  }
 
   async createTenant(input: CreateTenantInput): Promise<TenantData> {
     const { name, slug, ownerEmail, ownerName } = input;
@@ -110,6 +228,9 @@ export class TenantService {
           id: result.center.id,
           name: result.center.name,
           slug: result.center.slug,
+          logoUrl: result.center.logoUrl,
+          timezone: result.center.timezone,
+          brandColor: result.center.brandColor,
           createdAt: result.center.createdAt,
           updatedAt: result.center.updatedAt,
         },

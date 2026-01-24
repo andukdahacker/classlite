@@ -189,6 +189,18 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 - **AC2:** Component conditionally renders children based on `requiredPermission`.
 - **AC3:** Support "Disabled" or "Hidden" states for unauthorized roles.
 
+#### Story 1.5: Unified Dashboard Shell (FR9, FR17, FR27)
+
+**As a** User (Owner, Admin, Teacher, Student),
+**I want to** land on a dashboard tailored to my role after login,
+**So that** I can immediately see the most important information for my daily tasks.
+
+- **AC1: 3-Column Responsive Layout:** Implement a shell with a **Navigation Rail** (Left), **Main Content Area** (Center), and a collapsible **AI Sidebar** (Right). Sidebar collapses on tablets; Navigation Rail moves to a **Bottom Bar** on mobile (< 768px).
+- **AC2: Role-Based Routing:** Configure `/:centerId/dashboard` to dynamically render role-specific layouts based on the `role` claim (Owner: Health, Teacher: Queue, Student: Tasks).
+- **AC3: Global Status & Identity:** Display Center Logo/Name (from Story 1.2) and the **Offline/Sync Status Indicator** in the top bar with the "Writing Feather" animation.
+- **AC4: Design System Fidelity:** Apply the "Electric Focus" theme (Royal Blue #2563EB) and `Outfit/Inter` font stacks with a `0.75rem` (12px) border radius.
+- **AC5: Performance:** Ensure the shell renders in < 300ms (pre-widget load) with professional empty states for new tenants.
+
 ---
 
 ### Epic 2: Logistics & Scheduling

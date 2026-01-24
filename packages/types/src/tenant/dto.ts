@@ -21,8 +21,11 @@ export const TenantDataSchema = z.object({
     id: z.string(),
     name: z.string(),
     slug: z.string(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
+    logoUrl: z.string().nullable().optional(),
+    timezone: z.string(),
+    brandColor: z.string(),
+    createdAt: z.union([z.date(), z.string()]),
+    updatedAt: z.union([z.date(), z.string()]),
   }),
   owner: z.object({
     id: z.string(),
@@ -33,6 +36,28 @@ export const TenantDataSchema = z.object({
 });
 
 export type TenantData = z.infer<typeof TenantDataSchema>;
+
+export const UpdateCenterSchema = z.object({
+  name: z.string().min(1, "Center name is required").optional(),
+  logoUrl: z.url("Invalid logo URL").nullable().optional(),
+  timezone: z
+    .string()
+    .refine((val) => {
+      try {
+        Intl.DateTimeFormat(undefined, { timeZone: val });
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }, "Invalid IANA timezone")
+    .optional(),
+  brandColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color code")
+    .optional(),
+});
+
+export type UpdateCenterInput = z.infer<typeof UpdateCenterSchema>;
 
 export const TenantResponseSchema = createResponseSchema(TenantDataSchema);
 
