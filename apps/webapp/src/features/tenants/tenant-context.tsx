@@ -7,7 +7,9 @@ import type { TenantData, UpdateCenterInput } from "@workspace/types";
 interface TenantContextType {
   tenant: TenantData["center"] | null;
   isLoading: boolean;
-  updateBranding: (input: UpdateCenterInput) => Promise<{ center: TenantData["center"], owner: TenantData["owner"] }>;
+  updateBranding: (
+    input: UpdateCenterInput,
+  ) => Promise<{ center: TenantData["center"]; owner: TenantData["owner"] }>;
   uploadLogo: (file: File) => Promise<string>;
 }
 
@@ -56,35 +58,34 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
     const formData = new FormData();
     formData.append("file", file);
 
-    const baseUrl = import.meta.env.PROD
-      ? "https://api.classlite.app"
-      : "http://localhost:4000";
+    const { data, error } = await client.POST("/api/v1/tenants/{id}/logo", {
+      params: { path: { id: user.centerId } },
+      body: formData as any,
+    });
 
-    const response = await fetch(
-      `${baseUrl}/api/v1/tenants/${user.centerId}/logo`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: formData,
-      },
-    );
-
-    if (!response.ok) throw new Error("Failed to upload logo");
-    const result = await response.json();
+    if (error) throw error;
+    if (!data?.data?.logoUrl) throw new Error("Failed to upload logo");
 
     queryClient.invalidateQueries({ queryKey: ["tenant", user?.centerId] });
-    return result.data.logoUrl;
+    return data.data.logoUrl;
   };
 
   // CSS Variable injection
   useEffect(() => {
     if (data?.center?.brandColor) {
-      document.documentElement.style.setProperty(
-        "--primary",
-        hexToHslVariables(data.center.brandColor),
+      const root = document.documentElement;
+      const hsl = hexToHslVariables(data.center.brandColor);
+      root.style.setProperty("--primary", `hsl(${hsl})`);
+
+      // Set foreground color based on brightness for contrast
+      const brightness = getBrightness(data.center.brandColor);
+      root.style.setProperty(
+        "--primary-foreground",
+        brightness > 160 ? "oklch(0.267 0.038 253.28)" : "oklch(0.985 0 0)",
       );
+
+      // Update other related variables if needed
+      root.style.setProperty("--ring", `hsl(${hsl})`);
     }
   }, [data?.center?.brandColor]);
 
@@ -110,11 +111,54 @@ export const useTenant = () => {
   return context;
 };
 
-// Helper to convert hex to shadcn-compatible HSL variables if needed
-// For now, let's keep it simple and just set the hex if tailwind handles it
-// But shadcn usually expects HSL components for variables like --primary
+// Helper to convert hex to shadcn-compatible HSL variables
 function hexToHslVariables(hex: string): string {
-  // Simple implementation for now - might need refinement for full shadcn theme support
-  // This is a placeholder for the logic to convert #RRGGBB to "H S% L%"
-  return hex; // Tailwinds v4/modern might handle hex directly in variables better
+  let r = 0,
+    g = 0,
+    b = 0;
+  if (hex.length === 4) {
+    r = parseInt(hex[1] + hex[1], 16);
+    g = parseInt(hex[2] + hex[2], 16);
+    b = parseInt(hex[3] + hex[3], 16);
+  } else if (hex.length === 7) {
+    r = parseInt(hex.substring(1, 3), 16);
+    g = parseInt(hex.substring(3, 5), 16);
+    b = parseInt(hex.substring(5, 7), 16);
+  }
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
+  let h = 0,
+    s = 0,
+    l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+
+  return `${(h * 360).toFixed(2)} ${(s * 100).toFixed(2)}% ${(l * 100).toFixed(2)}%`;
+}
+
+function getBrightness(hex: string): number {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return 255;
+  const r = parseInt(result[1], 16);
+  const g = parseInt(result[2], 16);
+  const b = parseInt(result[3], 16);
+  return (r * 299 + g * 587 + b * 114) / 1000;
 }

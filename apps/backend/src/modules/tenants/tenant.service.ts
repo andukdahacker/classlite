@@ -3,7 +3,12 @@ import {
   TenantData,
   UpdateCenterInput,
 } from "@workspace/types";
-import { CenterRole, MembershipStatus, PrismaClient } from "@workspace/db";
+import {
+  CenterRole,
+  MembershipStatus,
+  PrismaClient,
+  getTenantedClient,
+} from "@workspace/db";
 import type { Auth } from "firebase-admin/auth";
 import type { Storage } from "firebase-admin/storage";
 import type { Resend } from "resend";
@@ -18,21 +23,20 @@ export class TenantService {
   ) {}
 
   async getTenant(centerId: string): Promise<TenantData> {
-    const center = await this.prisma.center.findUniqueOrThrow({
+    const db = getTenantedClient(this.prisma, centerId);
+    const center = await db.center.findUniqueOrThrow({
       where: { id: centerId },
     });
 
-    const ownerMembership = await this.prisma.centerMembership.findFirstOrThrow(
-      {
-        where: {
-          centerId: center.id,
-          role: CenterRole.OWNER,
-        },
-        include: {
-          user: true,
-        },
+    const ownerMembership = await db.centerMembership.findFirstOrThrow({
+      where: {
+        centerId: center.id,
+        role: CenterRole.OWNER,
       },
-    );
+      include: {
+        user: true,
+      },
+    });
 
     return {
       center: {
@@ -75,7 +79,8 @@ export class TenantService {
 
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
 
-    await this.prisma.center.update({
+    const db = getTenantedClient(this.prisma, centerId);
+    await db.center.update({
       where: { id: centerId },
       data: { logoUrl: publicUrl },
     });
@@ -87,7 +92,8 @@ export class TenantService {
     centerId: string,
     input: UpdateCenterInput,
   ): Promise<TenantData> {
-    const center = await this.prisma.center.update({
+    const db = getTenantedClient(this.prisma, centerId);
+    const center = await db.center.update({
       where: { id: centerId },
       data: {
         name: input.name,
@@ -97,17 +103,15 @@ export class TenantService {
       },
     });
 
-    const ownerMembership = await this.prisma.centerMembership.findFirstOrThrow(
-      {
-        where: {
-          centerId: center.id,
-          role: CenterRole.OWNER,
-        },
-        include: {
-          user: true,
-        },
+    const ownerMembership = await db.centerMembership.findFirstOrThrow({
+      where: {
+        centerId: center.id,
+        role: CenterRole.OWNER,
       },
-    );
+      include: {
+        user: true,
+      },
+    });
 
     return {
       center: {

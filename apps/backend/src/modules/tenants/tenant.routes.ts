@@ -194,6 +194,13 @@ export async function tenantRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ message: "No file uploaded" });
       }
 
+      const allowedMimetypes = ["image/png", "image/jpeg", "image/jpg"];
+      if (!allowedMimetypes.includes(data.mimetype)) {
+        return reply.status(400).send({
+          message: "Invalid file type. Only PNG and JPG are allowed.",
+        });
+      }
+
       try {
         const buffer = await data.toBuffer();
         const logoUrl = await tenantService.uploadLogo(
