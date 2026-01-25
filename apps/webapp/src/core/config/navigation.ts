@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Users2,
+  BookOpen,
   School,
   LibraryBig,
   Settings,
@@ -31,8 +32,14 @@ export const getNavigationConfig = (centerId: string): NavItemConfig[] => {
       allowedRoles: ["OWNER", "ADMIN"],
     },
     {
+      title: "Courses",
+      url: `${dashboardPath}/courses`,
+      icon: BookOpen,
+      allowedRoles: ["OWNER", "ADMIN"],
+    },
+    {
       title: "Classes",
-      url: `${dashboardPath}/class`,
+      url: `${dashboardPath}/classes`,
       icon: School,
       allowedRoles: ["OWNER", "ADMIN", "TEACHER"],
     },

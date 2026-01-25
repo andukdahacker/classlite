@@ -4,7 +4,6 @@ import {
   SidebarTrigger,
 } from "@workspace/ui/components/sidebar";
 import { AppSidebar } from "../common/app-sidebar";
-import { TopBar } from "./TopBar";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X } from "lucide-react";

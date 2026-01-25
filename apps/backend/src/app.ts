@@ -12,6 +12,8 @@ import Env from "./env.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { tenantRoutes } from "./modules/tenants/tenant.routes.js";
 import { invitationRoutes } from "./modules/tenants/invitation.routes.js";
+import { coursesRoutes } from "./modules/logistics/courses.routes.js";
+import { classesRoutes } from "./modules/logistics/classes.routes.js";
 import firebasePlugin from "./plugins/firebase.plugin.js";
 import prismaPlugin from "./plugins/prisma.plugin.js";
 import resendPlugin from "./plugins/resend.plugin.js";
@@ -182,6 +184,8 @@ export const buildApp = async () => {
   await app.register(tenantRoutes, { prefix: "/api/v1/tenants" });
   await app.register(authRoutes, { prefix: "/api/v1/auth" });
   await app.register(invitationRoutes, { prefix: "/api/v1/invitations" });
+  await app.register(coursesRoutes, { prefix: "/api/v1/logistics/courses" });
+  await app.register(classesRoutes, { prefix: "/api/v1/logistics/classes" });
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);

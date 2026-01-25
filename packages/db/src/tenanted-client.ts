@@ -8,6 +8,9 @@ import { PrismaClient } from "./generated/client";
  */
 const TENANTED_MODELS = [
   "CenterMembership",
+  "Course",
+  "Class",
+  "ClassStudent",
   // TODO: Add automatic detection or enforce via linting
 ];
 
@@ -40,13 +43,31 @@ export const getTenantedClient = (prisma: PrismaClient, centerId: string) => {
               [
                 "findMany",
                 "findFirst",
-                "findUnique", // Added findUnique - it might fail if not using compound ID, but worth trying to inject if possible or at least strict checking
                 "count",
                 "aggregate",
                 "groupBy",
               ].includes(operation)
             ) {
               queryArgs.where = { ...queryArgs.where, centerId };
+            }
+
+            // findUnique -> findFirst to allow non-unique field injection
+            if (
+              operation === "findUnique" ||
+              operation === "findUniqueOrThrow"
+            ) {
+              const modelKey = model.charAt(0).toLowerCase() + model.slice(1);
+              if (operation === "findUnique") {
+                return (prisma as any)[modelKey].findFirst({
+                  ...queryArgs,
+                  where: { ...queryArgs.where, centerId },
+                });
+              } else {
+                return (prisma as any)[modelKey].findFirstOrThrow({
+                  ...queryArgs,
+                  where: { ...queryArgs.where, centerId },
+                });
+              }
             }
 
             // WRITE operations - Insert

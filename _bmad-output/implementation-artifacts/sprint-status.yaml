@@ -46,8 +46,8 @@ development_status:
   epic-1-retrospective: done
 
   # Epic 2: Logistics & Scheduling
-  epic-2: backlog
-  2-1-course-class-management: backlog
+  epic-2: in-progress
+  2-1-course-class-management: review
   2-2-visual-weekly-scheduler: backlog
   2-3-conflict-detection: backlog
   2-4-attendance-tracking: backlog

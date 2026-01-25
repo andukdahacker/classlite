@@ -128,4 +128,27 @@ describe("tenanted-client", () => {
       }),
     );
   });
+
+  it("should intercept create on Course and inject centerId", async () => {
+    getTenantedClient(mockPrisma, "center-123");
+
+    const queryFn = vi.fn();
+    const args = { data: { name: "IELTS 101" } };
+
+    await extensionDefinition.query.$allModels.$allOperations({
+      model: "Course",
+      operation: "create",
+      args,
+      query: queryFn,
+    });
+
+    expect(queryFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "IELTS 101",
+          centerId: "center-123",
+        }),
+      }),
+    );
+  });
 });

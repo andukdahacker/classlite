@@ -14,6 +14,8 @@ import { SignupPage } from "./features/auth/signup-page";
 import { SignupCenterPage } from "./features/auth/signup-center-page";
 import { CenterSettingsPage } from "./features/tenants/center-settings-page";
 import { InviteUserModal } from "./features/users/components/InviteUserModal";
+import { CoursesPage } from "./features/logistics/courses-page";
+import { ClassesPage } from "./features/logistics/classes-page";
 import DashboardPage from "./features/dashboard/DashboardPage";
 
 function App() {
@@ -80,6 +82,26 @@ function App() {
                       <ProtectedRoute allowedRoles={["OWNER"]}>
                         <div>Users Management (TBD)</div>
                         <InviteUserModal />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/:centerId/dashboard/courses"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                      >
+                        <CoursesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/:centerId/dashboard/classes"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                      >
+                        <ClassesPage />
                       </ProtectedRoute>
                     }
                   />

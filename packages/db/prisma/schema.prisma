@@ -19,6 +19,7 @@ model User {
 
   authAccounts AuthAccount[]
   memberships  CenterMembership[]
+  classes      ClassStudent[]
 }
 
 model AuthAccount {
@@ -69,6 +70,7 @@ model CenterMembership {
   membershipPermissions MembershipPermission[]
 
   @@unique([centerId, userId])
+  @@unique([id, centerId])
 }
 
 enum CenterRole {
@@ -112,4 +114,48 @@ model MembershipPermission {
   permission Permission       @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([membershipId, permissionId])
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  color       String?
+  centerId    String   @map("center_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  classes Class[]
+
+  @@index([centerId])
+  @@unique([id, centerId])
+}
+
+model Class {
+  id        String   @id @default(cuid())
+  name      String
+  courseId  String   @map("course_id")
+  teacherId String?  @map("teacher_id")
+  centerId  String   @map("center_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  course   Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  students ClassStudent[]
+
+  @@index([centerId])
+  @@index([courseId])
+  @@unique([id, centerId])
+}
+
+model ClassStudent {
+  classId   String @map("class_id")
+  studentId String @map("student_id")
+  centerId  String @map("center_id")
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([classId, studentId])
+  @@index([centerId])
 }
