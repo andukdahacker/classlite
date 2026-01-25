@@ -111,15 +111,15 @@ export const ClassesPage = () => {
                   <TableCell>{cls.studentCount || 0}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRoster(cls)}
-                      >
-                        <Users className="mr-2 size-4" />
-                        Roster
-                      </Button>
                       <RBACWrapper requiredRoles={["OWNER", "ADMIN"]}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRoster(cls)}
+                        >
+                          <Users className="mr-2 size-4" />
+                          Roster
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
