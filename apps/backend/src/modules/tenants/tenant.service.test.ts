@@ -58,7 +58,7 @@ describe("TenantService", () => {
       mockFirebaseAuth as any,
       mockFirebaseStorage as any,
       mockResend as any,
-      { emailFrom: "test@classlite.app" },
+      { emailFrom: "test@classlite.app", bucketName: "test-bucket" },
     );
   });
 

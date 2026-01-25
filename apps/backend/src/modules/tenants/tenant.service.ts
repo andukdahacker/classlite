@@ -19,7 +19,7 @@ export class TenantService {
     private readonly firebaseAuth: Auth,
     private readonly firebaseStorage: Storage,
     private readonly resend: Resend,
-    private readonly options: { emailFrom: string },
+    private readonly options: { emailFrom: string; bucketName: string },
   ) {}
 
   async getTenant(centerId: string): Promise<TenantData> {
@@ -63,7 +63,7 @@ export class TenantService {
     fileBuffer: Buffer,
     contentType: string,
   ): Promise<string> {
-    const bucket = this.firebaseStorage.bucket();
+    const bucket = this.firebaseStorage.bucket(this.options.bucketName);
     const filePath = `tenants/${centerId}/branding/logo.png`;
     const file = bucket.file(filePath);
 

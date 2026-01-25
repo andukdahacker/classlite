@@ -26,6 +26,7 @@ export async function tenantRoutes(fastify: FastifyInstance) {
     fastify.resend,
     {
       emailFrom: env.EMAIL_FROM || "ClassLite <no-reply@classlite.app>",
+      bucketName: env.FIREBASE_STORAGE_BUCKET,
     },
   );
   const tenantController = new TenantController(tenantService);
