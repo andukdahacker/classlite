@@ -27,12 +27,14 @@ classification:
   domain: edtech
   complexity: medium
   projectContext: brownfield
-lastEdited: "2026-01-24"
+lastEdited: "2026-01-29"
 editHistory:
   - date: "2026-01-17"
     changes: "Updated Executive Summary, User Journeys, Functional Requirements, and NFRs based on UX Design Specification (High-Velocity Pedagogy, Offline-Proofing, Grading Workbench details)."
   - date: "2026-01-24"
     changes: "Narrative expansion (Admin & Content journeys), domain compliance (Decree 13), RBAC matrix addition, and structural hardening of FRs/NFRs to remove implementation leakage and improve SMART alignment."
+  - date: "2026-01-29"
+    changes: "Added comprehensive IELTS Exercise Type Taxonomy (Section 3.1) with 13 Reading types, 6 Listening types, Writing tasks, and Speaking format. Added FRs for audio support, timers, mock tests, rubrics, skill tagging, and answer key management. Updated Journey 5 for realistic IELTS workflow."
 ---
 
 # Product Requirements Document - classlite
@@ -97,20 +99,28 @@ The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the gradin
 **Focus:** The "Painkiller" MVP. Robust, autonomous operations for the two biggest pains: **Grading Efficiency** and **Scheduling Logistics**.
 
 - **Administration**: Auth (Fixed Roles), Center Config, Roster Management, Visual Scheduler.
-- **Pedagogy**: Manual Exercise Builder, Student Submission (Mobile Web).
+- **Pedagogy**: IELTS Exercise Builder (see Exercise Type scope below), Student Submission (Mobile Web).
 - **AI Core**: AI Grading Workbench (Generic AI models) to prove efficiency.
+
+**Exercise Builder - MVP Scope:**
+- **Reading (8 types):** R1-R8 (MCQ Single/Multi, TFNG, YNNG, Sentence Completion, Short Answer, Summary Completion with/without word bank)
+- **Listening (6 types):** L1-L6 with audio upload and playback (single-play + practice modes)
+- **Writing (3 types):** W1-W3 with AI-assisted band scoring
+- **Core Features:** Time limits, answer key management, skill/level tagging, auto-grading for Reading/Listening
 
 ### Phase 1.5 (Differentiation Update)
 
 **Focus:** Innovation and Retention. De-risked features deployed shortly after stability is proven.
 
 - **Innovation**: **Zalo Integration** (Parent Loop) and **Methodology Guardian** (Style Cloning).
+- **Exercise Builder Additions:** R9-R12 (Matching types: Headings, Information, Features, Sentence Endings)
 
 ### Phase 2 (Growth)
 
 **Focus:** Scale and Ecosystem.
 
 - **Features**: Knowledge Hub (Asset Library), Gamification (Badges/Points), Native Mobile Apps.
+- **Exercise Builder Additions:** R13-R14 (Diagram/Flow-chart types), S1-S3 (Speaking with audio recording), Full Mock Test Assembly with band conversion.
 
 ---
 
@@ -161,14 +171,27 @@ The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the gradin
 
 ### Journey 5: The Content Architect (Teacher)
 
-**Goal:** Create a high-quality exercise set using AI in under 5 minutes.
+**Goal:** Create a realistic IELTS Reading passage with mixed question types in under 10 minutes.
 
-- **Trigger:** Teacher needs a new Reading exercise.
-- **Step 1 (Source):** Teacher uploads a news article PDF.
-- **Step 2 (Generate):** Teacher selects "Multiple Choice" and "True/False" formats. AI generates questions in 15 seconds.
-- **Step 3 (Refine):** Teacher edits Question 3 to make it harder.
-- **Step 4 (Assign):** Teacher clicks "Assign to Class 10A" with a Friday deadline.
-- **Validation:** Exercise is published. Teacher saved 40 minutes of manual typing.
+- **Trigger:** Teacher needs a new Reading exercise for Band 6-7 students.
+- **Step 1 (Source):** Teacher uploads an academic article PDF (~800 words).
+- **Step 2 (Configure):** Teacher selects question types: "True/False/Not Given" (5 questions), "Matching Headings" (6 paragraphs), "Summary Completion" (4 blanks). Sets 20-minute time limit.
+- **Step 3 (Generate):** AI parses the passage, generates questions with answer keys. Preview shows passage with paragraph labels and question sections.
+- **Step 4 (Refine):** Teacher adjusts a distractor in the TFNG section, reorders one heading option, adds an alternative accepted spelling to an answer.
+- **Step 5 (Tag & Assign):** Teacher tags as "Reading / Band 6-7 / Academic" and assigns to Class 10A with Friday 6 PM deadline.
+- **Validation:** Exercise is published with auto-grading enabled. Teacher saved 45 minutes vs manual creation.
+
+### Journey 6: The Listening Lab (Teacher)
+
+**Goal:** Create a Listening exercise with audio and mixed question types.
+
+- **Trigger:** Teacher has an IELTS-style audio recording to use.
+- **Step 1 (Upload Audio):** Teacher uploads MP3 file (5 minutes). System shows waveform preview.
+- **Step 2 (Add Questions):** Teacher manually creates: "Form Completion" (5 blanks), "Multiple Choice" (3 questions). Links each section to audio timestamps.
+- **Step 3 (Configure Playback):** Teacher sets "Single Play" mode for test simulation, enables "Show Transcript After Submit".
+- **Step 4 (Preview):** Teacher tests the exercise as a student would experience it.
+- **Step 5 (Assign):** Assigned to Class 10A with instructions: "Use headphones in a quiet room."
+- **Validation:** Students can practice realistic Listening conditions. Auto-grading handles answer variants.
 
 ---
 
@@ -198,13 +221,19 @@ _Traces to: Journey 4_
 
 ### 3. Pedagogy & Exercise Builder
 
-_Traces to: Journey 5_
+_Traces to: Journey 5, Journey 6_
 
-- **FR13**: [Teacher] can [create exercises using a Manual Builder (Rich Text, Multiple Choice, Fill-in-Blank)].
-- **FR14**: [Teacher] can [upload PDF/Word docs to trigger AI exercise generation].
+- **FR13**: [Teacher] can [create exercises using the IELTS Exercise Builder supporting all question types defined in Section 3.1].
+- **FR14**: [Teacher] can [upload PDF/Word docs to trigger AI exercise generation for Reading question types].
 - **FR15**: [Teacher] can [edit AI-generated content before publishing].
-- **FR16**: [Teacher] can [assign exercises with due dates].
+- **FR16**: [Teacher] can [assign exercises with due dates and optional time limits].
 - **FR17**: [Student] can [view "Due Soon" assignments dashboard].
+- **FR37**: [Teacher] can [upload audio files (MP3/WAV/M4A, max 100MB) for Listening exercises with configurable playback rules].
+- **FR38**: [Teacher] can [set time limits on exercises with auto-submit on expiry and optional "5-minute warning" alert].
+- **FR39**: [Teacher] can [assemble multiple exercises into a Mock Test with ordered sections, cumulative timing, and unified scoring].
+- **FR40**: [Teacher] can [define answer keys with acceptable variants (spelling, capitalization, synonyms) for auto-grading].
+- **FR41**: [Teacher] can [tag exercises by Skill (Reading/Listening/Writing/Speaking), Target Band Level, and Topic for organization and filtering].
+- **FR42**: [System] can [provide IELTS-aligned band descriptor rubrics for Writing/Speaking with per-criterion scoring (1-9 scale)].
 
 ### 4. Grading Workbench
 
@@ -241,6 +270,118 @@ _Traces to: Journey 1, 2, 3_
 
 ---
 
+## Section 3.1: IELTS Exercise Type Taxonomy
+
+This section defines all supported IELTS question types that the Exercise Builder (FR13) must implement. Each type has specific UI/UX requirements and grading logic.
+
+### Reading Question Types (13 Types)
+
+#### Auto-Gradable Types (MVP Priority: High)
+
+| ID | Type | Description | Student UI | Answer Format | Auto-Grade Logic |
+|:---|:-----|:------------|:-----------|:--------------|:-----------------|
+| **R1** | Multiple Choice (Single) | Select ONE correct answer from A-D | Radio buttons | Single letter | Exact match |
+| **R2** | Multiple Choice (Multi) | Select 2-3 correct answers from A-E | Checkboxes with max selection | Multiple letters | All correct = full marks |
+| **R3** | True/False/Not Given | Judge factual accuracy of statements | 3-option radio per statement | T/F/NG per item | Exact match |
+| **R4** | Yes/No/Not Given | Judge agreement with writer's opinion | 3-option radio per statement | Y/N/NG per item | Exact match |
+| **R5** | Sentence Completion | Complete sentence with words from passage | Text input (word limit enforced) | Text (1-3 words) | Normalized match* |
+| **R6** | Short Answer | Answer question in ≤N words from passage | Text input (word limit enforced) | Text (1-3 words) | Normalized match* |
+| **R7** | Summary Completion (Word Bank) | Fill blanks by selecting from word list | Dropdown or drag-drop | Selected words | Exact match |
+| **R8** | Summary Completion (Passage) | Fill blanks with words from passage | Text input | Text (1-2 words) | Normalized match* |
+
+#### Auto-Gradable Types (MVP Priority: Medium)
+
+| ID | Type | Description | Student UI | Answer Format | Auto-Grade Logic |
+|:---|:-----|:------------|:-----------|:--------------|:-----------------|
+| **R9** | Matching Headings | Match headings to paragraphs | Drag-drop or dropdown per paragraph | Heading letter per paragraph | Exact match |
+| **R10** | Matching Information | Match statements to paragraphs | Dropdown per statement | Paragraph letter | Exact match |
+| **R11** | Matching Features | Match items to categories | Dropdown per item | Category letter | Exact match |
+| **R12** | Matching Sentence Endings | Connect sentence beginnings to endings | Dropdown or drag-drop | Ending letter | Exact match |
+
+#### Auto-Gradable Types (MVP Priority: Low - Phase 2)
+
+| ID | Type | Description | Student UI | Answer Format | Auto-Grade Logic |
+|:---|:-----|:------------|:-----------|:--------------|:-----------------|
+| **R13** | Note/Table/Flow-chart Completion | Fill structured blanks | Text inputs in visual layout | Text per blank | Normalized match* |
+| **R14** | Diagram Labelling | Label parts of a diagram | Text inputs positioned on image | Text per label | Normalized match* |
+
+**\*Normalized Match:** Answer comparison ignores case, leading/trailing spaces, and accepts teacher-defined variants (e.g., "19" = "nineteen", "UK" = "United Kingdom").
+
+### Listening Question Types (6 Types)
+
+All Listening types require **audio player integration** with these capabilities:
+- Play/Pause control
+- Progress bar (non-seekable in test mode, seekable in practice mode)
+- Single-play enforcement option (audio plays once, then locks)
+- Section markers for multi-part audio
+- Playback speed: 0.75x, 1.0x, 1.25x (practice mode only)
+
+| ID | Type | Description | Student UI | Auto-Grade |
+|:---|:-----|:------------|:-----------|:-----------|
+| **L1** | Form/Note/Table Completion | Fill details heard in audio | Text inputs in structured layout | Normalized match |
+| **L2** | Multiple Choice | Select answer based on audio | Radio buttons | Exact match |
+| **L3** | Matching | Match speakers/items to options | Dropdown per item | Exact match |
+| **L4** | Map/Plan Labelling | Label locations on a visual | Dropdown or drag letters onto map | Exact match |
+| **L5** | Sentence Completion | Complete sentences from audio | Text input (word limit) | Normalized match |
+| **L6** | Short Answer | Brief answers from audio | Text input (word limit) | Normalized match |
+
+### Writing Task Types (3 Types)
+
+Writing tasks are **not auto-gradable** but receive AI-assisted scoring suggestions per IELTS band descriptors.
+
+| ID | Type | Description | Student UI | AI Grading Output |
+|:---|:-----|:------------|:-----------|:------------------|
+| **W1** | Task 1 Academic | Describe chart/graph/table/process/map | Rich text editor + reference image display | 4-criterion band scores + comments |
+| **W2** | Task 1 General | Write a letter (formal/informal/semi-formal) | Rich text editor + prompt display | 4-criterion band scores + comments |
+| **W3** | Task 2 Essay | Argument/Discussion/Problem-Solution essay | Rich text editor + prompt display | 4-criterion band scores + comments |
+
+**Writing Rubric Criteria (IELTS Official):**
+
+| Criterion | Task 1 Label | Task 2 Label | Weight |
+|:----------|:-------------|:-------------|:-------|
+| Criterion 1 | Task Achievement | Task Response | 25% |
+| Criterion 2 | Coherence & Cohesion | Coherence & Cohesion | 25% |
+| Criterion 3 | Lexical Resource | Lexical Resource | 25% |
+| Criterion 4 | Grammatical Range & Accuracy | Grammatical Range & Accuracy | 25% |
+
+### Speaking Format (Phase 2 - Recording Required)
+
+Speaking exercises require **audio recording** capability from student devices.
+
+| ID | Part | Duration | Format | Student UI |
+|:---|:-----|:---------|:-------|:-----------|
+| **S1** | Part 1 | 4-5 min | Short Q&A (examiner questions displayed) | Record button per question |
+| **S2** | Part 2 | 3-4 min | Cue card monologue (1 min prep + 2 min speak) | Timer + cue card display + single recording |
+| **S3** | Part 3 | 4-5 min | Discussion (follow-up questions) | Record button per question |
+
+### Mock Test Assembly
+
+Teachers can combine exercises into a **Mock Test** that simulates full IELTS test conditions:
+
+| Component | Exercises Included | Total Time | Scoring |
+|:----------|:-------------------|:-----------|:--------|
+| **Listening Test** | 4 sections (L1-L6 types), 40 questions | 30 min + 10 min transfer | Raw score → Band conversion |
+| **Reading Test** | 3 passages (R1-R14 types), 40 questions | 60 min | Raw score → Band conversion |
+| **Writing Test** | Task 1 + Task 2 | 60 min (20 + 40) | Averaged band score |
+| **Speaking Test** | Parts 1-3 | 11-14 min | Averaged band score |
+
+**Band Score Conversion (Reading/Listening):**
+
+| Raw Score | Band |
+|:----------|:-----|
+| 39-40 | 9.0 |
+| 37-38 | 8.5 |
+| 35-36 | 8.0 |
+| 33-34 | 7.5 |
+| 30-32 | 7.0 |
+| 27-29 | 6.5 |
+| 23-26 | 6.0 |
+| 19-22 | 5.5 |
+| 15-18 | 5.0 |
+| ... | ... |
+
+---
+
 ## Domain Compliance & Security
 
 ### Section 7: Domain Compliance
@@ -257,9 +398,12 @@ _Traces to: Journey 1, 2, 3_
 | Class Scheduling         | CRUD  | CRUD  |        R         |    R    |
 | Attendance               | CRUD  | CRUD  |       CRUD       |    R    |
 | Exercise Creation        | CRUD  | CRUD  |       CRUD       |    -    |
+| Audio Upload (Listening) | CRUD  | CRUD  |       CRUD       |    -    |
+| Mock Test Assembly       | CRUD  | CRUD  |       CRUD       |    -    |
 | Assignment               | CRUD  | CRUD  |       CRUD       |    -    |
 | Submission               |   -   |   -   |        -         |  CRUD   |
 | AI Grading Workbench     | CRUD  | CRUD  |       CRUD       |    -    |
+| Band Rubric Config       | CRUD  | CRUD  |        R         |    -    |
 | Student Health Dashboard |   R   |   R   | R (Own Students) |    -    |
 | Zalo Integration Config  | CRUD  | CRUD  |        -         |    -    |
 

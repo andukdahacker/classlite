@@ -1,4 +1,4 @@
-# generated: 2026-01-24
+# generated: 2026-01-29
 # project: classlite
 # project_key: classlite
 # tracking_system: file-system
@@ -28,8 +28,19 @@
 # - Stories can be worked in parallel if team capacity allows
 # - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+#
+# CHANGE LOG:
+# ===========
+# 2026-01-29: Major update - Added stories from epics.md completeness review
+#   - Epic 1: Added 1.6-1.11 (auth, user management, navigation gaps)
+#   - Epic 2: Added 2.5-2.6 (session CRUD, email notifications)
+#   - Epic 3: Restructured for IELTS Exercise Builder (3.1-3.16 replaces old 3.1-3.5)
+#   - Epic 5: Added 5.5-5.6 (grading queue, student feedback view)
+#   - Epic 6: Added 6.4 (teacher student health view)
+#   - Epic 7: Added 7.3 (Zalo account linking)
+#   - Epic 8: Added 8.4-8.5 (i18n, golden sample UI)
 
-generated: 2026-01-24
+generated: 2026-01-29
 project: classlite
 project_key: classlite
 tracking_system: file-system
@@ -37,27 +48,52 @@ story_location: _bmad-output/implementation-artifacts
 
 development_status:
   # Epic 1: Tenant & User Management
-  epic-1: done
+  # Status: IN-PROGRESS (new foundational stories added 2026-01-29)
+  epic-1: in-progress
   1-1-multi-tenant-onboarding: done
   1-2-center-branding-identity: done
   1-3-user-invitation-rbac: done
   1-4-universal-ui-access-control: done
   1-5-unified-dashboard-shell: done
-  epic-1-retrospective: done
+  1-6-login-page-session-management: review          # NEW - implemented, needs review
+  1-7-password-reset-flow: backlog                   # NEW
+  1-8-user-management-interface: backlog             # NEW
+  1-9-user-profile-self-service: backlog             # NEW
+  1-10-csv-bulk-user-import: backlog                 # NEW
+  1-11-navigation-structure: backlog                 # NEW
+  epic-1-retrospective: optional                     # Reopened - was done
 
   # Epic 2: Logistics & Scheduling
+  # Status: IN-PROGRESS (2.1-2.2 done, new stories added)
   epic-2: in-progress
   2-1-course-class-management: done
   2-2-visual-weekly-scheduler: done
   2-3-conflict-detection: backlog
   2-4-attendance-tracking: backlog
+  2-5-class-session-crud: backlog                    # NEW
+  2-6-schedule-change-notifications-email: backlog   # NEW
   epic-2-retrospective: optional
 
-  # Epic 3: Exercise Builder & Content
+  # Epic 3: IELTS Exercise Builder & Content
+  # Status: BACKLOG (completely restructured 2026-01-29 for IELTS question types)
+  # OLD stories 3.1-3.5 replaced with comprehensive 3.1-3.16
   epic-3: backlog
-  3-1-manual-exercise-builder: backlog
-  3-2-ai-content-architect: backlog
-  3-3-student-assignment-dashboard: backlog
+  3-1-exercise-builder-core-passage-management: backlog      # NEW structure
+  3-2-reading-question-types-basic: backlog                  # R1-R8
+  3-3-reading-question-types-matching: backlog               # R9-R12 (Phase 1.5)
+  3-4-reading-question-types-advanced: backlog               # R13-R14 (Phase 2)
+  3-5-answer-key-management: backlog                         # Variants, normalization
+  3-6-listening-exercise-builder: backlog                    # Audio upload
+  3-7-listening-question-types: backlog                      # L1-L6
+  3-8-writing-task-builder: backlog                          # W1-W3 with rubrics
+  3-9-speaking-exercise-builder: backlog                     # S1-S3 (Phase 2)
+  3-10-timer-test-conditions: backlog                        # Time limits, auto-submit
+  3-11-exercise-tagging-organization: backlog                # Skill/band/topic tags
+  3-12-ai-content-generation-reading: backlog                # PDF upload, AI questions
+  3-13-mock-test-assembly: backlog                           # Full test simulation
+  3-14-exercise-library-management: backlog                  # Browse, organize
+  3-15-exercise-assignment-management: backlog               # Assign to classes
+  3-16-student-assignment-dashboard: backlog                 # Student view
   epic-3-retrospective: optional
 
   # Epic 4: Student Submission & Offline-Proofing
@@ -73,6 +109,8 @@ development_status:
   5-2-split-screen-grading-interface: backlog
   5-3-evidence-anchoring: backlog
   5-4-one-click-approval-loop: backlog
+  5-5-grading-queue-management: backlog              # NEW
+  5-6-student-feedback-view: backlog                 # NEW - critical gap
   epic-5-retrospective: optional
 
   # Epic 6: Student Health & Intervention
@@ -80,12 +118,14 @@ development_status:
   6-1-traffic-light-dashboard: backlog
   6-2-student-profile-overlay: backlog
   6-3-zalo-intervention-loop: backlog
+  6-4-teacher-student-health-view: backlog           # NEW
   epic-6-retrospective: optional
 
   # Epic 7: Zalo Integration & Notifications
   epic-7: backlog
   7-1-engagement-notifications: backlog
   7-2-notification-management: backlog
+  7-3-zalo-account-linking: backlog                  # NEW - prerequisite for 7.1-7.2
   epic-7-retrospective: optional
 
   # Epic 8: Platform Compliance & Methodology
@@ -93,4 +133,6 @@ development_status:
   8-1-methodology-guardian: backlog
   8-2-data-sovereignty-privacy-center: backlog
   8-3-content-moderation-system: backlog
+  8-4-language-preference-i18n: backlog              # NEW (NFR8)
+  8-5-golden-sample-management-interface: backlog    # NEW
   epic-8-retrospective: optional
