@@ -11,6 +11,7 @@ import { Button } from "@workspace/ui/components/button";
 import { Link, useLocation } from "react-router";
 import { useAuth } from "@/features/auth/auth-context";
 import { getNavigationConfig } from "@/core/config/navigation";
+import { NotificationBell } from "@/features/dashboard/components/NotificationBell";
 import {
   Sheet,
   SheetContent,
@@ -62,6 +63,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     orientation="vertical"
                     className="mr-2 data-[orientation=vertical]:h-4"
                   />
+                </div>
+                <div className="flex items-center gap-2">
+                  <NotificationBell />
                 </div>
               </div>
             </header>

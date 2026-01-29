@@ -17,9 +17,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  authAccounts AuthAccount[]
-  memberships  CenterMembership[]
-  classes      ClassStudent[]
+  authAccounts   AuthAccount[]
+  memberships    CenterMembership[]
+  classes        ClassStudent[]
+  notifications  Notification[]
+  teachingClasses Class[]          @relation("ClassTeacher")
 }
 
 model AuthAccount {
@@ -140,11 +142,15 @@ model Class {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  course   Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  students ClassStudent[]
+  course    Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher   User?           @relation("ClassTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  students  ClassStudent[]
+  schedules ClassSchedule[]
+  sessions  ClassSession[]
 
   @@index([centerId])
   @@index([courseId])
+  @@index([teacherId])
   @@unique([id, centerId])
 }
 
@@ -158,4 +164,69 @@ model ClassStudent {
 
   @@id([classId, studentId])
   @@index([centerId])
+}
+
+model ClassSchedule {
+  id        String @id @default(cuid())
+  classId   String @map("class_id")
+  dayOfWeek Int    @map("day_of_week") // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  startTime String @map("start_time") // HH:mm format
+  endTime   String @map("end_time") // HH:mm format
+  roomName  String? @map("room_name")
+  centerId  String @map("center_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  class    Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  sessions ClassSession[]
+
+  @@index([centerId])
+  @@index([classId])
+  @@unique([id, centerId])
+}
+
+model ClassSession {
+  id         String        @id @default(cuid())
+  classId    String        @map("class_id")
+  scheduleId String?       @map("schedule_id")
+  startTime  DateTime      @map("start_time")
+  endTime    DateTime      @map("end_time")
+  roomName   String?       @map("room_name")
+  status     SessionStatus @default(SCHEDULED)
+  centerId   String        @map("center_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  class    Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  schedule ClassSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+
+  @@index([centerId])
+  @@index([classId])
+  @@index([scheduleId])
+  @@index([startTime, endTime])
+  @@unique([id, centerId])
+}
+
+enum SessionStatus {
+  SCHEDULED
+  CANCELLED
+  COMPLETED
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  centerId  String   @map("center_id")
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([centerId])
+  @@index([userId])
+  @@index([userId, read])
 }

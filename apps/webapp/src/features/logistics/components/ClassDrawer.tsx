@@ -29,11 +29,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@workspace/ui/components/sheet";
+import { Separator } from "@workspace/ui/components/separator";
+import { addWeeks, startOfWeek } from "date-fns";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useClasses, useCourses } from "../hooks/use-logistics";
+import { useSessions } from "../hooks/use-sessions";
+import { ScheduleManager } from "./ScheduleManager";
 
 interface ClassDrawerProps {
   cls?: Class | null;
@@ -51,6 +55,20 @@ export function ClassDrawer({
   const isEditing = !!cls;
   const { createClass, updateClass } = useClasses(centerId);
   const { courses } = useCourses(centerId);
+  const { generateSessions } = useSessions(centerId);
+
+  // Callback to auto-generate sessions when a schedule is created
+  const handleScheduleCreated = useCallback(async () => {
+    const now = new Date();
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const fourWeeksLater = addWeeks(weekStart, 4);
+
+    await generateSessions({
+      startDate: weekStart.toISOString(),
+      endDate: fourWeeksLater.toISOString(),
+      classId: cls?.id,
+    });
+  }, [generateSessions, cls?.id]);
 
   const form = useForm<CreateClassInput>({
     resolver: zodResolver(CreateClassSchema),
@@ -118,64 +136,78 @@ export function ClassDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-6 p-6"
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Class Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Class 10A" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="courseId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Course</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
+        <div className="flex flex-col h-full overflow-y-auto">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-6 p-6"
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class Name</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a course" />
-                      </SelectTrigger>
+                      <Input placeholder="e.g. Class 10A" {...field} />
                     </FormControl>
-                    <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem key={course.id} value={course.id}>
-                          {course.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <SheetFooter>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && (
-                  <Loader2 className="mr-2 size-4 animate-spin" />
+                    <FormMessage />
+                  </FormItem>
                 )}
-                {isEditing ? "Save Changes" : "Create Class"}
-              </Button>
-            </SheetFooter>
-          </form>
-        </Form>
+              />
+
+              <FormField
+                control={form.control}
+                name="courseId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Course</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a course" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {courses.map((course) => (
+                          <SelectItem key={course.id} value={course.id}>
+                            {course.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <SheetFooter>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting && (
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                  )}
+                  {isEditing ? "Save Changes" : "Create Class"}
+                </Button>
+              </SheetFooter>
+            </form>
+          </Form>
+
+          {/* Schedule Manager - outside the form to avoid nested forms */}
+          {isEditing && cls && (
+            <div className="px-6 pb-6">
+              <Separator className="mb-4" />
+              <ScheduleManager
+                classId={cls.id}
+                centerId={centerId}
+                onScheduleCreated={handleScheduleCreated}
+              />
+            </div>
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   );

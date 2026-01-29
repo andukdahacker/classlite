@@ -3,6 +3,7 @@ import {
   Users2,
   BookOpen,
   School,
+  Calendar,
   LibraryBig,
   Settings,
 } from "lucide-react";
@@ -42,6 +43,12 @@ export const getNavigationConfig = (centerId: string): NavItemConfig[] => {
       url: `${dashboardPath}/classes`,
       icon: School,
       allowedRoles: ["OWNER", "ADMIN", "TEACHER"],
+    },
+    {
+      title: "Schedule",
+      url: `${dashboardPath}/schedule`,
+      icon: Calendar,
+      allowedRoles: ["OWNER", "ADMIN", "TEACHER", "STUDENT"],
     },
     {
       title: "Exercises",

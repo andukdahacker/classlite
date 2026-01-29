@@ -8,6 +8,9 @@ import type {
   UpdateClassInput,
   AddStudentToClassInput,
   ClassStudent,
+  ClassSchedule,
+  CreateClassScheduleInput,
+  UpdateClassScheduleInput,
 } from "@workspace/types";
 
 export const useCourses = (centerId?: string | null) => {
@@ -210,5 +213,79 @@ export const useRoster = (classId?: string, centerId?: string) => {
     isLoading: rosterQuery.isLoading,
     addStudent: addStudentMutation.mutateAsync,
     removeStudent: removeStudentMutation.mutateAsync,
+  };
+};
+
+export const useSchedules = (classId?: string, centerId?: string) => {
+  const queryClient = useQueryClient();
+
+  const schedulesQuery = useQuery({
+    queryKey: ["schedules", classId],
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/v1/logistics/schedules/", {
+        params: { query: { classId } },
+      });
+      if (error) throw error;
+      return data?.data as ClassSchedule[];
+    },
+    enabled: !!classId,
+  });
+
+  const createScheduleMutation = useMutation({
+    mutationFn: async (input: CreateClassScheduleInput) => {
+      const { data, error } = await client.POST("/api/v1/logistics/schedules/", {
+        body: input,
+      });
+      if (error) throw error;
+      return data?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["schedules", classId] });
+    },
+  });
+
+  const updateScheduleMutation = useMutation({
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: UpdateClassScheduleInput;
+    }) => {
+      const { data, error } = await client.PATCH(
+        "/api/v1/logistics/schedules/{id}",
+        {
+          params: { path: { id } },
+          body: input,
+        },
+      );
+      if (error) throw error;
+      return data?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["schedules", classId] });
+    },
+  });
+
+  const deleteScheduleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await client.DELETE("/api/v1/logistics/schedules/{id}", {
+        params: { path: { id } },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["schedules", classId] });
+    },
+  });
+
+  return {
+    schedules: schedulesQuery.data ?? [],
+    isLoading: schedulesQuery.isLoading,
+    createSchedule: createScheduleMutation.mutateAsync,
+    updateSchedule: updateScheduleMutation.mutateAsync,
+    deleteSchedule: deleteScheduleMutation.mutateAsync,
+    isCreating: createScheduleMutation.isPending,
+    isDeleting: deleteScheduleMutation.isPending,
   };
 };

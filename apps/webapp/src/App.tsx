@@ -16,6 +16,7 @@ import { CenterSettingsPage } from "./features/tenants/center-settings-page";
 import { InviteUserModal } from "./features/users/components/InviteUserModal";
 import { CoursesPage } from "./features/logistics/courses-page";
 import { ClassesPage } from "./features/logistics/classes-page";
+import { SchedulerPage } from "./features/logistics/scheduler-page";
 import DashboardPage from "./features/dashboard/DashboardPage";
 
 function App() {
@@ -102,6 +103,16 @@ function App() {
                         allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
                       >
                         <ClassesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/:centerId/dashboard/schedule"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER", "STUDENT"]}
+                      >
+                        <SchedulerPage />
                       </ProtectedRoute>
                     }
                   />

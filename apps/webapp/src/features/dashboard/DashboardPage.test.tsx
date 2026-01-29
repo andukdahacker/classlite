@@ -16,6 +16,17 @@ vi.mock("@tanstack/react-query", () => ({
     subscribe: vi.fn(),
     isOnline: vi.fn(() => true),
   },
+  useQueryClient: () => ({
+    invalidateQueries: vi.fn(),
+  }),
+  useQuery: () => ({
+    data: [],
+    isLoading: false,
+  }),
+  useMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
 }));
 
 Object.defineProperty(window, "matchMedia", {

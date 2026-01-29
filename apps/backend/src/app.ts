@@ -14,6 +14,9 @@ import { tenantRoutes } from "./modules/tenants/tenant.routes.js";
 import { invitationRoutes } from "./modules/tenants/invitation.routes.js";
 import { coursesRoutes } from "./modules/logistics/courses.routes.js";
 import { classesRoutes } from "./modules/logistics/classes.routes.js";
+import { schedulesRoutes } from "./modules/logistics/schedules.routes.js";
+import { sessionsRoutes } from "./modules/logistics/sessions.routes.js";
+import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
 import firebasePlugin from "./plugins/firebase.plugin.js";
 import prismaPlugin from "./plugins/prisma.plugin.js";
 import resendPlugin from "./plugins/resend.plugin.js";
@@ -186,6 +189,9 @@ export const buildApp = async () => {
   await app.register(invitationRoutes, { prefix: "/api/v1/invitations" });
   await app.register(coursesRoutes, { prefix: "/api/v1/logistics/courses" });
   await app.register(classesRoutes, { prefix: "/api/v1/logistics/classes" });
+  await app.register(schedulesRoutes, { prefix: "/api/v1/logistics/schedules" });
+  await app.register(sessionsRoutes, { prefix: "/api/v1/logistics/sessions" });
+  await app.register(notificationsRoutes, { prefix: "/api/v1/notifications" });
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);
