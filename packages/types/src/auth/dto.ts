@@ -63,3 +63,41 @@ export const CenterSignupWithGoogleRequestSchema = z.object({
 export type CenterSignupWithGoogleRequest = z.infer<
   typeof CenterSignupWithGoogleRequestSchema
 >;
+
+// --- Login Attempt Tracking (Account Lockout) ---
+
+export const LoginAttemptCheckResponseDataSchema = z.object({
+  locked: z.boolean(),
+  retryAfterMinutes: z.number().optional(),
+  attemptsRemaining: z.number().optional(),
+});
+
+export type LoginAttemptCheckResponseData = z.infer<
+  typeof LoginAttemptCheckResponseDataSchema
+>;
+
+export const LoginAttemptCheckResponseSchema = createResponseSchema(
+  LoginAttemptCheckResponseDataSchema
+);
+
+export const RecordLoginAttemptRequestSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  success: z.boolean(),
+});
+
+export type RecordLoginAttemptRequest = z.infer<
+  typeof RecordLoginAttemptRequestSchema
+>;
+
+export const RecordLoginAttemptResponseDataSchema = z.object({
+  locked: z.boolean(),
+  retryAfterMinutes: z.number().optional(),
+});
+
+export type RecordLoginAttemptResponseData = z.infer<
+  typeof RecordLoginAttemptResponseDataSchema
+>;
+
+export const RecordLoginAttemptResponseSchema = createResponseSchema(
+  RecordLoginAttemptResponseDataSchema
+);

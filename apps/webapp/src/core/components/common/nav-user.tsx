@@ -1,12 +1,9 @@
 "use client";
 
 import {
-  BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
-  Sparkles,
+  User,
 } from "lucide-react";
 
 import {
@@ -40,6 +37,7 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { useAuth } from "@/features/auth/auth-context";
 
 export function NavUser({
@@ -52,7 +50,8 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
-  const { logout } = useAuth();
+  const { logout, user: authUser } = useAuth();
+  const navigate = useNavigate();
   const [logoutConfirmDialogOpen, setLogoutConfirmDialogOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -104,24 +103,12 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
+              <DropdownMenuItem
+                onClick={() => authUser?.centerId && navigate(`/${authUser.centerId}/profile`)}
+                disabled={!authUser?.centerId}
+              >
+                <User />
+                My Profile
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

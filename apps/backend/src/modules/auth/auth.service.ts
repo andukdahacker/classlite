@@ -315,12 +315,18 @@ export class AuthService {
 
       if (!user) throw new Error("INTERNAL_ERROR: User not found");
 
+      // Validate role is a valid UserRole, default to STUDENT if not
+      const validRoles: UserRole[] = ["OWNER", "ADMIN", "TEACHER", "STUDENT"];
+      const role: UserRole = membership?.role && validRoles.includes(membership.role as UserRole)
+        ? (membership.role as UserRole)
+        : "STUDENT";
+
       return {
         user: {
           id: user.id,
           email: user.email!,
           name: user.name,
-          role: (membership?.role as UserRole) ?? "STUDENT",
+          role,
           centerId: membership?.centerId || null,
         },
       };
@@ -361,5 +367,104 @@ export class AuthService {
       center_id: user.centerId || null,
       role: user.role,
     });
+  }
+
+  // --- Login Attempt Tracking (Account Lockout) ---
+
+  private readonly MAX_ATTEMPTS = 5;
+  private readonly LOCKOUT_MINUTES = 15;
+
+  /**
+   * Check if an account is locked due to too many failed attempts
+   * NOTE: Always returns consistent response to prevent email enumeration attacks
+   */
+  async checkLoginAttempt(email: string): Promise<{
+    locked: boolean;
+    retryAfterMinutes?: number;
+    attemptsRemaining?: number;
+  }> {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const attempt = await this.prisma.loginAttempt.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    // Always return consistent response for unknown emails (prevent enumeration)
+    if (!attempt) {
+      return { locked: false, attemptsRemaining: this.MAX_ATTEMPTS };
+    }
+
+    // Check if lockout has expired
+    if (attempt.lockedUntil) {
+      const now = new Date();
+      if (attempt.lockedUntil > now) {
+        const retryAfterMs = attempt.lockedUntil.getTime() - now.getTime();
+        const retryAfterMinutes = Math.ceil(retryAfterMs / (1000 * 60));
+        // Only expose lockout status, not attempts (security: prevent enumeration)
+        return { locked: true, retryAfterMinutes };
+      }
+      // Lockout expired, reset attempts
+      await this.prisma.loginAttempt.update({
+        where: { email: normalizedEmail },
+        data: { attempts: 0, lockedUntil: null },
+      });
+      return { locked: false, attemptsRemaining: this.MAX_ATTEMPTS };
+    }
+
+    // Return consistent attemptsRemaining to prevent enumeration
+    // (attacker can't tell if email exists based on response)
+    const attemptsRemaining = Math.max(0, this.MAX_ATTEMPTS - attempt.attempts);
+    return { locked: false, attemptsRemaining };
+  }
+
+  /**
+   * Record a login attempt (success resets, failure increments)
+   */
+  async recordLoginAttempt(
+    email: string,
+    success: boolean
+  ): Promise<{
+    locked: boolean;
+    retryAfterMinutes?: number;
+  }> {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    if (success) {
+      // Reset on successful login
+      await this.prisma.loginAttempt.upsert({
+        where: { email: normalizedEmail },
+        create: { email: normalizedEmail, attempts: 0, lastAttempt: new Date() },
+        update: { attempts: 0, lockedUntil: null, lastAttempt: new Date() },
+      });
+      return { locked: false };
+    }
+
+    // Failed attempt - increment counter
+    const attempt = await this.prisma.loginAttempt.upsert({
+      where: { email: normalizedEmail },
+      create: {
+        email: normalizedEmail,
+        attempts: 1,
+        lastAttempt: new Date(),
+      },
+      update: {
+        attempts: { increment: 1 },
+        lastAttempt: new Date(),
+      },
+    });
+
+    // Check if should lock
+    if (attempt.attempts >= this.MAX_ATTEMPTS) {
+      const lockedUntil = new Date(
+        Date.now() + this.LOCKOUT_MINUTES * 60 * 1000
+      );
+      await this.prisma.loginAttempt.update({
+        where: { email: normalizedEmail },
+        data: { lockedUntil },
+      });
+      return { locked: true, retryAfterMinutes: this.LOCKOUT_MINUTES };
+    }
+
+    return { locked: false };
   }
 }

@@ -11,11 +11,23 @@ export function GoogleLoginButton() {
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(firebaseAuth, provider);
+      const result = await signInWithPopup(firebaseAuth, provider);
       // The onAuthStateChanged listener in AuthProvider will handle the backend sync
-    } catch (error: any) {
-      console.error("Google login failed:", error);
-      toast.error(error.message || "Failed to sign in with Google");
+      // Check if user has a center membership via ID token claims
+      const idTokenResult = await result.user.getIdTokenResult();
+      if (!idTokenResult.claims.center_id) {
+        // First-time Google user without a center - sign them out and show error
+        await firebaseAuth.signOut();
+        toast.error("Account not found. Please register your center first or contact your center administrator.");
+        return;
+      }
+    } catch (error: unknown) {
+      const firebaseError = error as { code?: string; message?: string };
+      if (firebaseError.code === "auth/popup-closed-by-user") {
+        // User closed popup, don't show error
+        return;
+      }
+      toast.error(firebaseError.message || "Failed to sign in with Google");
     } finally {
       setIsLoading(false);
     }

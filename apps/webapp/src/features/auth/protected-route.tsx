@@ -25,7 +25,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user) {
-    return <Navigate to="/sign-in" state={{ from: location }} replace />;
+    // Capture current path as redirect query param for post-login navigation
+    const currentPath = location.pathname + location.search;
+    const redirectParam = encodeURIComponent(currentPath);
+    return (
+      <Navigate
+        to={`/sign-in?redirect=${redirectParam}`}
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {

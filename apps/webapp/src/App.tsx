@@ -18,6 +18,7 @@ import { CoursesPage } from "./features/logistics/courses-page";
 import { ClassesPage } from "./features/logistics/classes-page";
 import { SchedulerPage } from "./features/logistics/scheduler-page";
 import DashboardPage from "./features/dashboard/DashboardPage";
+import { ProfilePage } from "./features/users/profile-page";
 
 function App() {
   const queryClient = new QueryClient({
@@ -113,6 +114,16 @@ function App() {
                         allowedRoles={["OWNER", "ADMIN", "TEACHER", "STUDENT"]}
                       >
                         <SchedulerPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/:centerId/profile"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER", "STUDENT"]}
+                      >
+                        <ProfilePage />
                       </ProtectedRoute>
                     }
                   />

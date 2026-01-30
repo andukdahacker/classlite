@@ -1,5 +1,15 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+import {
+  onAuthStateChanged,
+  onIdTokenChanged,
+  type User as FirebaseUser,
+} from "firebase/auth";
 import { firebaseAuth } from "@/core/firebase";
 import type { AuthUser } from "@workspace/types";
 import {
@@ -8,12 +18,14 @@ import {
   AUTH_QUERY_KEYS,
 } from "./auth.hooks.js";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface AuthContextType {
   user: AuthUser | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   logout: () => Promise<void>;
+  sessionExpired: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const queryClient = useQueryClient();
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const { data: user } = useAuthUserQuery();
   const { mutateAsync: login, isPending: isLoggingIn } = useLoginMutation();
@@ -35,13 +48,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     loginRef.current = login;
   }, [login]);
 
-  const logout = async () => {
-    await firebaseAuth.signOut();
+  const logout = useCallback(async () => {
+    try {
+      await firebaseAuth.signOut();
+    } catch {
+      // Ignore sign out errors
+    }
     localStorage.removeItem("token");
     queryClient.setQueryData(AUTH_QUERY_KEYS.user, null);
+    queryClient.clear(); // Clear all cached data on logout
     setFirebaseUser(null);
-  };
+    setSessionExpired(false);
+  }, [queryClient]);
 
+  // Handle session expiry redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("expired") === "true") {
+      setSessionExpired(true);
+      toast.error("Your session has expired. Please sign in again.");
+      // Clean up the URL
+      params.delete("expired");
+      const newUrl =
+        window.location.pathname +
+        (params.toString() ? `?${params.toString()}` : "");
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, []);
+
+  // Auth state change listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (fbUser) => {
       setFirebaseUser(fbUser);
@@ -51,8 +86,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           const token = await fbUser.getIdToken();
           localStorage.setItem("token", token);
           await loginRef.current(token);
-        } catch (error) {
-          console.error("Session sync failed:", error);
+          setSessionExpired(false);
+        } catch {
+          // Session sync failed - user will be prompted to re-login if needed
         }
       } else {
         localStorage.removeItem("token");
@@ -65,6 +101,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return unsubscribe;
   }, [queryClient]);
 
+  // Silent token refresh listener
+  useEffect(() => {
+    const unsubscribe = onIdTokenChanged(firebaseAuth, async (fbUser) => {
+      if (fbUser) {
+        try {
+          // Force refresh token if it's about to expire (within 5 minutes)
+          const tokenResult = await fbUser.getIdTokenResult();
+          const expirationTime = new Date(tokenResult.expirationTime).getTime();
+          const now = Date.now();
+          const fiveMinutes = 5 * 60 * 1000;
+
+          if (expirationTime - now < fiveMinutes) {
+            // Token is about to expire, force refresh
+            const newToken = await fbUser.getIdToken(true);
+            localStorage.setItem("token", newToken);
+            // Sync with backend
+            await loginRef.current(newToken);
+          } else {
+            // Token changed but not expiring, just update storage
+            const token = await fbUser.getIdToken();
+            localStorage.setItem("token", token);
+          }
+        } catch {
+          // On refresh failure, logout and redirect with expired flag
+          await logout();
+          window.location.href = "/sign-in?expired=true";
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [logout]);
+
+  // Periodic token refresh check (every 4 minutes)
+  useEffect(() => {
+    const intervalId = setInterval(async () => {
+      const fbUser = firebaseAuth.currentUser;
+      if (fbUser) {
+        try {
+          // This will automatically refresh if token is expired
+          await fbUser.getIdToken();
+        } catch {
+          // Periodic token check failed - session expired
+          await logout();
+          window.location.href = "/sign-in?expired=true";
+        }
+      }
+    }, 4 * 60 * 1000); // 4 minutes
+
+    return () => clearInterval(intervalId);
+  }, [logout]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -72,6 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         firebaseUser,
         loading: loading || isLoggingIn,
         logout,
+        sessionExpired,
       }}
     >
       {children}

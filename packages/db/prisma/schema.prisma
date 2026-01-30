@@ -230,3 +230,15 @@ model Notification {
   @@index([userId])
   @@index([userId, read])
 }
+
+model LoginAttempt {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  attempts    Int       @default(0)
+  lockedUntil DateTime? @map("locked_until")
+  lastAttempt DateTime? @map("last_attempt")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("login_attempts")
+}

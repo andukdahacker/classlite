@@ -6,6 +6,8 @@ import { TenantService } from "./tenant.service.js";
 // Mock external dependencies
 const mockPrisma = {
   $transaction: vi.fn((callback) => callback(mockPrisma)),
+  // $extends returns the mock itself since we're not testing tenanting logic here
+  $extends: vi.fn(() => mockPrisma),
   user: {
     findUnique: vi.fn(),
     create: vi.fn(),
@@ -17,6 +19,7 @@ const mockPrisma = {
   center: {
     create: vi.fn(),
     update: vi.fn(),
+    findUniqueOrThrow: vi.fn(),
   },
   centerMembership: {
     create: vi.fn(),

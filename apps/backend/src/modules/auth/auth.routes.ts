@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
 import {
   LoginRequestSchema,
   CenterSignupRequestSchema,
@@ -7,6 +8,9 @@ import {
   AuthResponseSchema,
   ErrorResponseSchema,
   AuthUserSchema,
+  LoginAttemptCheckResponseSchema,
+  RecordLoginAttemptRequestSchema,
+  RecordLoginAttemptResponseSchema,
 } from "@workspace/types";
 import { getTenantedClient } from "@workspace/db";
 import { AuthController } from "./auth.controller.js";
@@ -139,6 +143,70 @@ export async function authRoutes(fastify: FastifyInstance) {
         const statusCode = error.message.startsWith("NOT_FOUND") ? 404 : 400;
         return reply.status(statusCode).send({
           message: error.message || "Failed to get user profile",
+        });
+      }
+    },
+  );
+
+  // --- Login Attempt Tracking (Account Lockout) ---
+
+  // Check if account is locked
+  typedFastify.get(
+    "/login-attempt/:email",
+    {
+      schema: {
+        params: z.object({
+          email: z.string(),
+        }),
+        response: {
+          200: LoginAttemptCheckResponseSchema,
+          500: ErrorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { email } = request.params;
+        const result = await authService.checkLoginAttempt(email);
+        return reply.status(200).send({ data: result, message: "OK" });
+      } catch (error: any) {
+        request.log.error(error);
+        return reply.status(500).send({
+          message: error.message || "Failed to check login status",
+        });
+      }
+    },
+  );
+
+  // Record login attempt (success or failure)
+  typedFastify.post(
+    "/login-attempt",
+    {
+      schema: {
+        body: RecordLoginAttemptRequestSchema,
+        response: {
+          200: RecordLoginAttemptResponseSchema,
+          423: ErrorResponseSchema, // Locked
+          500: ErrorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { email, success } = request.body;
+        const result = await authService.recordLoginAttempt(email, success);
+
+        if (result.locked) {
+          return reply.status(423).send({
+            message: `Account locked. Try again in ${result.retryAfterMinutes} minutes.`,
+          });
+        }
+
+        return reply.status(200).send({ data: result, message: "OK" });
+      } catch (error: any) {
+        request.log.error(error);
+        return reply.status(500).send({
+          message: error.message || "Failed to record login attempt",
         });
       }
     },
