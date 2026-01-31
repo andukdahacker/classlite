@@ -1,11 +1,8 @@
 "use client";
 
-import {
-  ChevronsUpDown,
-  LogOut,
-  User,
-} from "lucide-react";
+import { ChevronsUpDown, LogOut, User } from "lucide-react";
 
+import { useAuth } from "@/features/auth/auth-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +35,6 @@ import {
 } from "@workspace/ui/components/sidebar";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { useAuth } from "@/features/auth/auth-context";
 
 export function NavUser({
   user,
@@ -104,7 +100,10 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem
-                onClick={() => authUser?.centerId && navigate(`/${authUser.centerId}/profile`)}
+                onClick={() =>
+                  authUser?.centerId &&
+                  navigate(`/${authUser.centerId}/dashboard/profile`)
+                }
                 disabled={!authUser?.centerId}
               >
                 <User />

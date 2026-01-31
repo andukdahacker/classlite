@@ -8,9 +8,23 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
-import { Link } from "react-router";
+import { useEffect } from "react";
+import { Link, useSearchParams } from "react-router";
+import { toast } from "sonner";
 
 export function LoginPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Handle password reset success message
+  useEffect(() => {
+    if (searchParams.get("reset") === "true") {
+      toast.success("Password updated successfully");
+      // Clean up URL
+      searchParams.delete("reset");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md">

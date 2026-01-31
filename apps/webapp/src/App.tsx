@@ -1,23 +1,25 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { toast, Toaster } from "sonner";
-import { ThemeProvider } from "./core/components/common/theme-provider";
 import { UnauthorizedError } from "./core/client";
+import { ThemeProvider } from "./core/components/common/theme-provider";
 import { AuthProvider } from "./features/auth/auth-context";
-import { TenantProvider } from "./features/tenants/tenant-context";
-import { ProtectedRoute } from "./features/auth/protected-route";
+import { ForgotPasswordPage } from "./features/auth/forgot-password-page";
 import { GuestRoute } from "./features/auth/guest-route";
-import { RoleRedirect } from "./features/auth/role-redirect";
 import { LoginPage } from "./features/auth/login-page";
-import { SignupPage } from "./features/auth/signup-page";
+import { ProtectedRoute } from "./features/auth/protected-route";
+import { ResetPasswordPage } from "./features/auth/reset-password-page";
+import { RoleRedirect } from "./features/auth/role-redirect";
 import { SignupCenterPage } from "./features/auth/signup-center-page";
-import { CenterSettingsPage } from "./features/tenants/center-settings-page";
-import { InviteUserModal } from "./features/users/components/InviteUserModal";
-import { CoursesPage } from "./features/logistics/courses-page";
-import { ClassesPage } from "./features/logistics/classes-page";
-import { SchedulerPage } from "./features/logistics/scheduler-page";
+import { SignupPage } from "./features/auth/signup-page";
 import DashboardPage from "./features/dashboard/DashboardPage";
+import { ClassesPage } from "./features/logistics/classes-page";
+import { CoursesPage } from "./features/logistics/courses-page";
+import { SchedulerPage } from "./features/logistics/scheduler-page";
+import { CenterSettingsPage } from "./features/tenants/center-settings-page";
+import { TenantProvider } from "./features/tenants/tenant-context";
+import { InviteUserModal } from "./features/users/components/InviteUserModal";
 import { ProfilePage } from "./features/users/profile-page";
 
 function App() {
@@ -53,6 +55,14 @@ function App() {
                   <Route
                     path="/sign-up/center"
                     element={<SignupCenterPage />}
+                  />
+                  <Route
+                    path="/forgot-password"
+                    element={<ForgotPasswordPage />}
+                  />
+                  <Route
+                    path="/reset-password"
+                    element={<ResetPasswordPage />}
                   />
                 </Route>
 
@@ -118,7 +128,7 @@ function App() {
                     }
                   />
                   <Route
-                    path="/:centerId/profile"
+                    path="/:centerId/dashboard/profile"
                     element={
                       <ProtectedRoute
                         allowedRoles={["OWNER", "ADMIN", "TEACHER", "STUDENT"]}

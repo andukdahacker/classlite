@@ -56,7 +56,7 @@ development_status:
   1-4-universal-ui-access-control: done
   1-5-unified-dashboard-shell: done
   1-6-login-page-session-management: done
-  1-7-password-reset-flow: backlog # NEW
+  1-7-password-reset-flow: done
   1-8-user-management-interface: backlog # NEW
   1-9-user-profile-self-service: backlog # NEW
   1-10-csv-bulk-user-import: backlog # NEW
