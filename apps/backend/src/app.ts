@@ -18,6 +18,7 @@ import { schedulesRoutes } from "./modules/logistics/schedules.routes.js";
 import { sessionsRoutes } from "./modules/logistics/sessions.routes.js";
 import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
 import { usersRoutes } from "./modules/users/users.routes.js";
+import { inngestRoutes } from "./modules/inngest/inngest.routes.js";
 import firebasePlugin from "./plugins/firebase.plugin.js";
 import prismaPlugin from "./plugins/prisma.plugin.js";
 import resendPlugin from "./plugins/resend.plugin.js";
@@ -71,6 +72,9 @@ export const buildApp = async () => {
           type: "string",
         },
         FIREBASE_PRIVATE_KEY: {
+          type: "string",
+        },
+        FIREBASE_API_KEY: {
           type: "string",
         },
         RESEND_API_KEY: {
@@ -194,6 +198,9 @@ export const buildApp = async () => {
   await app.register(sessionsRoutes, { prefix: "/api/v1/logistics/sessions" });
   await app.register(notificationsRoutes, { prefix: "/api/v1/notifications" });
   await app.register(usersRoutes, { prefix: "/api/v1/users" });
+
+  // Inngest background job routes (no prefix - uses /api/inngest)
+  await app.register(inngestRoutes);
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);

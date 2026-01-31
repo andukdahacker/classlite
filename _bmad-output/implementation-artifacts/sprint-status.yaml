@@ -58,7 +58,7 @@ development_status:
   1-6-login-page-session-management: done
   1-7-password-reset-flow: done
   1-8-user-management-interface: done
-  1-9-user-profile-self-service: backlog # NEW
+  1-9-user-profile-self-service: done
   1-10-csv-bulk-user-import: backlog # NEW
   1-11-navigation-structure: backlog # NEW
   epic-1-retrospective: optional # Reopened - was done

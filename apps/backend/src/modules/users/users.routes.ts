@@ -1,22 +1,31 @@
 import {
+  BulkActionResponseSchema,
+  BulkUserActionRequestSchema,
+  CancelDeletionResponseSchema,
+  ChangePasswordResponseSchema,
+  ChangePasswordSchema,
+  ChangeRoleRequestSchema,
+  ChangeRoleResponseSchema,
+  ErrorResponseSchema,
+  InvitationListQuerySchema,
+  InvitationListResponseSchema,
+  RequestDeletionResponseSchema,
+  UpdateProfileResponseSchema,
+  UpdateProfileSchema,
   UserListQuerySchema,
   UserListResponseSchema,
   UserProfileResponseSchema,
-  ChangeRoleRequestSchema,
-  ChangeRoleResponseSchema,
   UserStatusResponseSchema,
-  BulkUserActionRequestSchema,
-  BulkActionResponseSchema,
-  InvitationListQuerySchema,
-  InvitationListResponseSchema,
-  ErrorResponseSchema,
-  type UserListQuery,
-  type ChangeRoleRequest,
   type BulkUserActionRequest,
+  type ChangePasswordInput,
+  type ChangeRoleRequest,
+  type UpdateProfileInput,
+  type UserListQuery,
 } from "@workspace/types";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
+import Env from "../../env.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireRole } from "../../middlewares/role.middleware.js";
 import { UsersController } from "./users.controller.js";
@@ -44,11 +53,11 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Querystring: UserListQuery }>,
-      reply
+      reply,
     ) => {
       const result = await usersController.listUsers(
         request.query,
-        request.jwtPayload!
+        request.jwtPayload!,
       );
       return reply.send(result);
     },
@@ -67,11 +76,11 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Querystring: { status?: string } }>,
-      reply
+      reply,
     ) => {
       const result = await usersController.listInvitations(
         request.query.status,
-        request.jwtPayload!
+        request.jwtPayload!,
       );
       return reply.send(result);
     },
@@ -100,12 +109,12 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Params: { id: string } }>,
-      reply
+      reply,
     ) => {
       try {
         const result = await usersController.resendInvitation(
           request.params.id,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -140,12 +149,12 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Params: { id: string } }>,
-      reply
+      reply,
     ) => {
       try {
         const result = await usersController.revokeInvitation(
           request.params.id,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -157,6 +166,222 @@ export async function usersRoutes(fastify: FastifyInstance) {
           return reply.status(400).send({ message: err.message });
         }
         throw error;
+      }
+    },
+  });
+
+  // PATCH /api/v1/users/me/profile - Update own profile
+  api.patch("/me/profile", {
+    schema: {
+      body: UpdateProfileSchema,
+      response: {
+        200: UpdateProfileResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{ Body: UpdateProfileInput }>,
+      reply,
+    ) => {
+      try {
+        const result = await usersController.updateMyProfile(
+          request.body,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        const err = error as Error;
+        return reply.status(400).send({ message: err.message });
+      }
+    },
+  });
+
+  // GET /api/v1/users/me/has-password - Check if user has password provider
+  api.get("/me/has-password", {
+    schema: {
+      response: {
+        200: z.object({
+          hasPassword: z.boolean(),
+        }),
+        401: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      const result = await usersController.hasPasswordProvider(
+        request.jwtPayload!,
+      );
+      return reply.send(result);
+    },
+  });
+
+  // POST /api/v1/users/me/change-password - Change own password
+  api.post("/me/change-password", {
+    schema: {
+      body: ChangePasswordSchema,
+      response: {
+        200: ChangePasswordResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{ Body: ChangePasswordInput }>,
+      reply,
+    ) => {
+      try {
+        const env = fastify.getEnvs<Env>();
+        if (!env.FIREBASE_API_KEY) {
+          return reply
+            .status(500)
+            .send({ message: "Password change not configured" });
+        }
+        const result = await usersController.changeMyPassword(
+          request.body,
+          request.jwtPayload!,
+          env.FIREBASE_API_KEY,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        const err = error as Error;
+        if (err.message === "Current password is incorrect") {
+          return reply.status(400).send({ message: err.message });
+        }
+        return reply.status(400).send({ message: err.message });
+      }
+    },
+  });
+
+  // POST /api/v1/users/me/request-deletion - Request account deletion
+  api.post("/me/request-deletion", {
+    schema: {
+      response: {
+        200: RequestDeletionResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      try {
+        const result = await usersController.requestMyDeletion(
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        const err = error as Error;
+        if (err.message === "Owners cannot delete their account") {
+          return reply.status(403).send({ message: err.message });
+        }
+        return reply.status(400).send({ message: err.message });
+      }
+    },
+  });
+
+  // POST /api/v1/users/me/cancel-deletion - Cancel account deletion
+  api.post("/me/cancel-deletion", {
+    schema: {
+      response: {
+        200: CancelDeletionResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      try {
+        const result = await usersController.cancelMyDeletion(
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        const err = error as Error;
+        return reply.status(400).send({ message: err.message });
+      }
+    },
+  });
+
+  // POST /api/v1/users/me/avatar - Upload profile avatar
+  api.post("/me/avatar", {
+    schema: {
+      response: {
+        200: z.object({
+          data: z.object({ avatarUrl: z.string() }),
+          message: z.string(),
+        }),
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      const data = await request.file();
+      if (!data) {
+        return reply.status(400).send({ message: "No file uploaded" });
+      }
+
+      const allowedMimetypes = [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/webp",
+      ];
+      if (!allowedMimetypes.includes(data.mimetype)) {
+        return reply.status(400).send({
+          message: "Invalid file type. Only PNG, JPG, and WEBP are allowed.",
+        });
+      }
+
+      const buffer = await data.toBuffer();
+      // 1MB limit
+      if (buffer.length > 1 * 1024 * 1024) {
+        return reply.status(400).send({
+          message: "File too large. Maximum size is 1MB.",
+        });
+      }
+
+      try {
+        const userId = request.jwtPayload!.uid;
+        const centerId = request.jwtPayload!.centerId;
+
+        const bucket = fastify.firebaseStorage.bucket();
+        const filePath = `centers/${centerId}/users/${userId}/avatar`;
+        const file = bucket.file(filePath);
+
+        // Delete old avatar if exists
+        try {
+          await file.delete();
+        } catch {
+          // File might not exist, ignore
+        }
+
+        await file.save(buffer, {
+          metadata: {
+            contentType: data.mimetype,
+            cacheControl: "public, max-age=31536000",
+          },
+        });
+
+        await file.makePublic();
+        const avatarUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+
+        // Update user avatar in database
+        await fastify.prisma.user.update({
+          where: { id: userId },
+          data: { avatarUrl },
+        });
+
+        return reply.status(200).send({
+          data: { avatarUrl },
+          message: "Avatar uploaded successfully",
+        });
+      } catch (error: unknown) {
+        request.log.error(error);
+        return reply.status(500).send({ message: "Failed to upload avatar" });
       }
     },
   });
@@ -177,12 +402,12 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER", "STUDENT"])],
     handler: async (
       request: FastifyRequest<{ Params: { userId: string } }>,
-      reply
+      reply,
     ) => {
       try {
         const result = await usersController.getUser(
           request.params.userId,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -217,13 +442,13 @@ export async function usersRoutes(fastify: FastifyInstance) {
         Params: { userId: string };
         Body: ChangeRoleRequest;
       }>,
-      reply
+      reply,
     ) => {
       try {
         const result = await usersController.changeRole(
           request.params.userId,
           request.body,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -257,12 +482,12 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Params: { userId: string } }>,
-      reply
+      reply,
     ) => {
       try {
         const result = await usersController.deactivateUser(
           request.params.userId,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -297,12 +522,12 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Params: { userId: string } }>,
-      reply
+      reply,
     ) => {
       try {
         const result = await usersController.reactivateUser(
           request.params.userId,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -330,11 +555,11 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Body: BulkUserActionRequest }>,
-      reply
+      reply,
     ) => {
       const result = await usersController.bulkDeactivate(
         request.body,
-        request.jwtPayload!
+        request.jwtPayload!,
       );
       return reply.send(result);
     },
@@ -355,11 +580,11 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Body: BulkUserActionRequest }>,
-      reply
+      reply,
     ) => {
       const result = await usersController.bulkRemind(
         request.body,
-        request.jwtPayload!
+        request.jwtPayload!,
       );
       return reply.send(result);
     },

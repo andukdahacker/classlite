@@ -7,6 +7,8 @@ import type {
   ChangeRoleRequest,
   BulkUserActionRequest,
   InvitationListResponse,
+  UpdateProfileInput,
+  ChangePasswordInput,
 } from "@workspace/types";
 
 // Query keys
@@ -243,6 +245,147 @@ export function useRevokeInvitation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: usersKeys.invitations() });
+    },
+  });
+}
+
+// Update own profile mutation
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: UpdateProfileInput) => {
+      const result = await client.PATCH("/api/v1/users/me/profile", {
+        body: input,
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message || "Failed to update profile");
+      }
+
+      return result.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: usersKeys.all });
+      // Update auth user cache with new profile data
+      queryClient.setQueryData(["auth-user"], (old: unknown) => {
+        if (!old) return old;
+        return { ...(old as object), ...data.data };
+      });
+    },
+  });
+}
+
+// Check if user has password provider
+export function useHasPassword() {
+  return useQuery({
+    queryKey: [...usersKeys.all, "has-password"] as const,
+    queryFn: async (): Promise<{ hasPassword: boolean }> => {
+      const result = await client.GET("/api/v1/users/me/has-password");
+
+      if (result.error) {
+        throw new Error(result.error.message || "Failed to check password status");
+      }
+
+      return result.data;
+    },
+  });
+}
+
+// Change password mutation
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: async (input: ChangePasswordInput) => {
+      const result = await client.POST("/api/v1/users/me/change-password", {
+        body: input,
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message || "Failed to change password");
+      }
+
+      return result.data;
+    },
+  });
+}
+
+// Request account deletion mutation
+export function useRequestDeletion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const result = await client.POST("/api/v1/users/me/request-deletion");
+
+      if (result.error) {
+        throw new Error(result.error.message || "Failed to request deletion");
+      }
+
+      return result.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: usersKeys.all });
+      // Update auth user cache with deletion timestamp
+      queryClient.setQueryData(["auth-user"], (old: unknown) => {
+        if (!old) return old;
+        return { ...(old as object), deletionRequestedAt: data.data.deletionRequestedAt };
+      });
+    },
+  });
+}
+
+// Cancel account deletion mutation
+export function useCancelDeletion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const result = await client.POST("/api/v1/users/me/cancel-deletion");
+
+      if (result.error) {
+        throw new Error(result.error.message || "Failed to cancel deletion");
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: usersKeys.all });
+      // Clear deletion timestamp from auth user cache
+      queryClient.setQueryData(["auth-user"], (old: unknown) => {
+        if (!old) return old;
+        return { ...(old as object), deletionRequestedAt: null };
+      });
+    },
+  });
+}
+
+// Upload avatar mutation
+export function useUploadAvatar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await client.POST("/api/v1/users/me/avatar", {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        body: formData as any,
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message || "Failed to upload avatar");
+      }
+
+      return result.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: usersKeys.all });
+      // Update auth user cache with new avatar URL
+      queryClient.setQueryData(["auth-user"], (old: unknown) => {
+        if (!old) return old;
+        return { ...(old as object), avatarUrl: data?.data?.avatarUrl };
+      });
     },
   });
 }

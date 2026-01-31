@@ -138,6 +138,9 @@ export const UserProfileSchema = z.object({
   email: z.string().nullable(),
   name: z.string().nullable(),
   avatarUrl: z.string().nullable(),
+  phoneNumber: z.string().nullable(),
+  preferredLanguage: z.string(),
+  deletionRequestedAt: z.string().nullable(),
   role: z.enum(["OWNER", "ADMIN", "TEACHER", "STUDENT"]),
   status: z.enum(["ACTIVE", "SUSPENDED", "INVITED"]),
   createdAt: z.string(),
@@ -152,3 +155,62 @@ export const UserProfileResponseSchema = z.object({
 });
 
 export type UserProfileResponse = z.infer<typeof UserProfileResponseSchema>;
+
+// Update profile request
+export const UpdateProfileSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100).optional(),
+  phoneNumber: z.string().max(20).optional().nullable(),
+  preferredLanguage: z.enum(["en", "vi"]).optional(),
+  avatarUrl: z.string().url().optional().nullable(),
+});
+
+export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
+
+export const UpdateProfileResponseSchema = z.object({
+  data: UserProfileSchema,
+  message: z.string(),
+});
+
+export type UpdateProfileResponse = z.infer<typeof UpdateProfileResponseSchema>;
+
+// Change password request
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+});
+
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
+
+export const ChangePasswordResponseSchema = z.object({
+  data: z.object({
+    success: z.boolean(),
+  }),
+  message: z.string(),
+});
+
+export type ChangePasswordResponse = z.infer<typeof ChangePasswordResponseSchema>;
+
+// Request deletion
+export const RequestDeletionResponseSchema = z.object({
+  data: z.object({
+    deletionRequestedAt: z.string(),
+    deletionScheduledFor: z.string(),
+  }),
+  message: z.string(),
+});
+
+export type RequestDeletionResponse = z.infer<typeof RequestDeletionResponseSchema>;
+
+// Cancel deletion
+export const CancelDeletionResponseSchema = z.object({
+  data: z.object({
+    success: z.boolean(),
+  }),
+  message: z.string(),
+});
+
+export type CancelDeletionResponse = z.infer<typeof CancelDeletionResponseSchema>;

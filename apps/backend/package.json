@@ -38,6 +38,7 @@
     "fastify-type-provider-zod": "^6.1.0",
     "firebase-admin": "^13.0.2",
     "handlebars": "^4.7.8",
+    "inngest": "^3.50.0",
     "jsonwebtoken": "^9.0.2",
     "mime-types": "^2.1.35",
     "resend": "^6.4.0",

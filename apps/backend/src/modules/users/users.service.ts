@@ -10,8 +10,11 @@ import type {
   UserProfile,
   ChangeRoleRequest,
   BulkUserActionRequest,
+  UpdateProfileInput,
 } from "@workspace/types";
 import { getAuth } from "firebase-admin/auth";
+import { inngest } from "../inngest/client.js";
+import type { UserDeletionScheduledEvent } from "./jobs/user-deletion.job.js";
 
 export class UsersService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -33,11 +36,189 @@ export class UsersService {
       email: membership.user.email,
       name: membership.user.name,
       avatarUrl: membership.user.avatarUrl,
+      phoneNumber: membership.user.phoneNumber,
+      preferredLanguage: membership.user.preferredLanguage,
+      deletionRequestedAt: membership.user.deletionRequestedAt?.toISOString() ?? null,
       role: membership.role as "OWNER" | "ADMIN" | "TEACHER" | "STUDENT",
       status: membership.status as "ACTIVE" | "SUSPENDED" | "INVITED",
       createdAt: membership.createdAt.toISOString(),
       lastActiveAt: membership.user.updatedAt?.toISOString() ?? null,
     };
+  }
+
+  async updateProfile(
+    userId: string,
+    input: UpdateProfileInput
+  ): Promise<UserProfile> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: input.name,
+        phoneNumber: input.phoneNumber,
+        preferredLanguage: input.preferredLanguage,
+        avatarUrl: input.avatarUrl,
+      },
+      include: {
+        memberships: true,
+      },
+    });
+
+    const membership = user.memberships[0];
+    if (!membership) {
+      throw new Error("User has no membership");
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      phoneNumber: user.phoneNumber,
+      preferredLanguage: user.preferredLanguage,
+      deletionRequestedAt: user.deletionRequestedAt?.toISOString() ?? null,
+      role: membership.role as "OWNER" | "ADMIN" | "TEACHER" | "STUDENT",
+      status: membership.status as "ACTIVE" | "SUSPENDED" | "INVITED",
+      createdAt: membership.createdAt.toISOString(),
+      lastActiveAt: user.updatedAt?.toISOString() ?? null,
+    };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    firebaseApiKey: string
+  ): Promise<{ success: boolean }> {
+    // Get user's Firebase UID
+    const authAccount = await this.prisma.authAccount.findFirst({
+      where: { userId, provider: "FIREBASE" },
+    });
+
+    if (!authAccount) {
+      throw new Error("No Firebase account linked");
+    }
+
+    // Get user email
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user?.email) {
+      throw new Error("User email not found");
+    }
+
+    // Verify current password using Firebase REST API
+    const verifyResponse = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: user.email,
+          password: currentPassword,
+          returnSecureToken: false,
+        }),
+      }
+    );
+
+    if (!verifyResponse.ok) {
+      const errorData = await verifyResponse.json();
+      if (errorData.error?.message === "INVALID_PASSWORD" ||
+          errorData.error?.message === "INVALID_LOGIN_CREDENTIALS") {
+        throw new Error("Current password is incorrect");
+      }
+      throw new Error("Password verification failed");
+    }
+
+    // Update password via Firebase Admin SDK
+    await getAuth().updateUser(authAccount.providerUserId, {
+      password: newPassword,
+    });
+
+    // Revoke all refresh tokens (logs out other sessions)
+    await getAuth().revokeRefreshTokens(authAccount.providerUserId);
+
+    return { success: true };
+  }
+
+  async hasPasswordProvider(userId: string): Promise<boolean> {
+    const authAccount = await this.prisma.authAccount.findFirst({
+      where: { userId, provider: "FIREBASE" },
+    });
+
+    if (!authAccount) {
+      return false;
+    }
+
+    try {
+      const firebaseUser = await getAuth().getUser(authAccount.providerUserId);
+      return firebaseUser.providerData.some(
+        (provider) => provider.providerId === "password"
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  async requestDeletion(
+    centerId: string,
+    userId: string
+  ): Promise<{ deletionRequestedAt: Date; deletionScheduledFor: Date }> {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    // Check if user is an OWNER
+    const membership = await db.centerMembership.findFirst({
+      where: { userId },
+    });
+
+    if (!membership) {
+      throw new Error("User not found in this center");
+    }
+
+    if (membership.role === "OWNER") {
+      throw new Error("Owners cannot delete their account");
+    }
+
+    const deletionRequestedAt = new Date();
+    const deletionScheduledFor = new Date(deletionRequestedAt);
+    deletionScheduledFor.setDate(deletionScheduledFor.getDate() + 7);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { deletionRequestedAt },
+    });
+
+    // Schedule the deletion via Inngest
+    await inngest.send({
+      name: "user/deletion.scheduled",
+      data: {
+        userId,
+        deletionRequestedAt: deletionRequestedAt.toISOString(),
+      },
+    } as UserDeletionScheduledEvent);
+
+    return { deletionRequestedAt, deletionScheduledFor };
+  }
+
+  async cancelDeletion(userId: string): Promise<{ success: boolean }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (!user.deletionRequestedAt) {
+      throw new Error("No deletion request found");
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { deletionRequestedAt: null },
+    });
+
+    return { success: true };
   }
 
   async listUsers(

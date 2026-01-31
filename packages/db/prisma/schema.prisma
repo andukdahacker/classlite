@@ -9,19 +9,22 @@ datasource db {
 }
 
 model User {
-  id        String  @id @default(cuid())
-  email     String? @unique
-  name      String?
-  avatarUrl String?
+  id                  String    @id @default(cuid())
+  email               String?   @unique
+  name                String?
+  avatarUrl           String?
+  phoneNumber         String?
+  preferredLanguage   String    @default("en")
+  deletionRequestedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  authAccounts   AuthAccount[]
-  memberships    CenterMembership[]
-  classes        ClassStudent[]
-  notifications  Notification[]
-  teachingClasses Class[]          @relation("ClassTeacher")
+  authAccounts    AuthAccount[]
+  memberships     CenterMembership[]
+  classes         ClassStudent[]
+  notifications   Notification[]
+  teachingClasses Class[]            @relation("ClassTeacher")
 }
 
 model AuthAccount {
