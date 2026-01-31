@@ -1,16 +1,16 @@
 import {
-  PrismaClient,
-  getTenantedClient,
   CenterRole,
   MembershipStatus,
+  PrismaClient,
+  getTenantedClient,
 } from "@workspace/db";
 import type {
-  UserListQuery,
-  UserListItem,
-  UserProfile,
-  ChangeRoleRequest,
   BulkUserActionRequest,
+  ChangeRoleRequest,
   UpdateProfileInput,
+  UserListItem,
+  UserListQuery,
+  UserProfile,
 } from "@workspace/types";
 import { getAuth } from "firebase-admin/auth";
 import { inngest } from "../inngest/client.js";
@@ -19,7 +19,10 @@ import type { UserDeletionScheduledEvent } from "./jobs/user-deletion.job.js";
 export class UsersService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async getUserById(centerId: string, userId: string): Promise<UserProfile | null> {
+  async getUserById(
+    centerId: string,
+    userId: string,
+  ): Promise<UserProfile | null> {
     const db = getTenantedClient(this.prisma, centerId);
 
     const membership = await db.centerMembership.findFirst({
@@ -38,7 +41,8 @@ export class UsersService {
       avatarUrl: membership.user.avatarUrl,
       phoneNumber: membership.user.phoneNumber,
       preferredLanguage: membership.user.preferredLanguage,
-      deletionRequestedAt: membership.user.deletionRequestedAt?.toISOString() ?? null,
+      deletionRequestedAt:
+        membership.user.deletionRequestedAt?.toISOString() ?? null,
       role: membership.role as "OWNER" | "ADMIN" | "TEACHER" | "STUDENT",
       status: membership.status as "ACTIVE" | "SUSPENDED" | "INVITED",
       createdAt: membership.createdAt.toISOString(),
@@ -48,7 +52,7 @@ export class UsersService {
 
   async updateProfile(
     userId: string,
-    input: UpdateProfileInput
+    input: UpdateProfileInput,
   ): Promise<UserProfile> {
     const user = await this.prisma.user.update({
       where: { id: userId },
@@ -87,7 +91,7 @@ export class UsersService {
     userId: string,
     currentPassword: string,
     newPassword: string,
-    firebaseApiKey: string
+    firebaseApiKey: string,
   ): Promise<{ success: boolean }> {
     // Get user's Firebase UID
     const authAccount = await this.prisma.authAccount.findFirst({
@@ -118,13 +122,15 @@ export class UsersService {
           password: currentPassword,
           returnSecureToken: false,
         }),
-      }
+      },
     );
 
     if (!verifyResponse.ok) {
       const errorData = await verifyResponse.json();
-      if (errorData.error?.message === "INVALID_PASSWORD" ||
-          errorData.error?.message === "INVALID_LOGIN_CREDENTIALS") {
+      if (
+        errorData.error?.message === "INVALID_PASSWORD" ||
+        errorData.error?.message === "INVALID_LOGIN_CREDENTIALS"
+      ) {
         throw new Error("Current password is incorrect");
       }
       throw new Error("Password verification failed");
@@ -153,7 +159,7 @@ export class UsersService {
     try {
       const firebaseUser = await getAuth().getUser(authAccount.providerUserId);
       return firebaseUser.providerData.some(
-        (provider) => provider.providerId === "password"
+        (provider) => provider.providerId === "password",
       );
     } catch {
       return false;
@@ -162,7 +168,7 @@ export class UsersService {
 
   async requestDeletion(
     centerId: string,
-    userId: string
+    userId: string,
   ): Promise<{ deletionRequestedAt: Date; deletionScheduledFor: Date }> {
     const db = getTenantedClient(this.prisma, centerId);
 
@@ -223,7 +229,7 @@ export class UsersService {
 
   async listUsers(
     centerId: string,
-    query: UserListQuery
+    query: UserListQuery,
   ): Promise<{ items: UserListItem[]; total: number }> {
     const db = getTenantedClient(this.prisma, centerId);
     const { page, limit, search, role, status } = query;
@@ -280,7 +286,7 @@ export class UsersService {
   async changeRole(
     centerId: string,
     userId: string,
-    input: ChangeRoleRequest
+    input: ChangeRoleRequest,
   ): Promise<{ id: string; role: string }> {
     const db = getTenantedClient(this.prisma, centerId);
 
@@ -308,7 +314,7 @@ export class UsersService {
   async deactivateUser(
     centerId: string,
     userId: string,
-    requestingUserId: string
+    requestingUserId: string,
   ): Promise<{ id: string; status: string }> {
     const db = getTenantedClient(this.prisma, centerId);
 
@@ -364,7 +370,7 @@ export class UsersService {
 
   async reactivateUser(
     centerId: string,
-    userId: string
+    userId: string,
   ): Promise<{ id: string; status: string }> {
     const db = getTenantedClient(this.prisma, centerId);
 
@@ -387,7 +393,7 @@ export class UsersService {
   async bulkDeactivate(
     centerId: string,
     input: BulkUserActionRequest,
-    requestingUserId: string
+    requestingUserId: string,
   ): Promise<{ processed: number; failed: number }> {
     const db = getTenantedClient(this.prisma, centerId);
     let processed = 0;
@@ -440,7 +446,7 @@ export class UsersService {
 
   async bulkRemind(
     centerId: string,
-    input: BulkUserActionRequest
+    input: BulkUserActionRequest,
   ): Promise<{ processed: number; failed: number }> {
     // This would integrate with email service
     // For now, just count the users
@@ -449,7 +455,7 @@ export class UsersService {
 
   async listInvitations(
     centerId: string,
-    status?: string
+    status?: string,
   ): Promise<
     Array<{
       id: string;
@@ -486,7 +492,7 @@ export class UsersService {
 
   async resendInvitation(
     centerId: string,
-    invitationId: string
+    invitationId: string,
   ): Promise<{ id: string; status: string }> {
     const db = getTenantedClient(this.prisma, centerId);
 
@@ -509,7 +515,10 @@ export class UsersService {
     return { id: invitationId, status: membership.status };
   }
 
-  async revokeInvitation(centerId: string, invitationId: string): Promise<void> {
+  async revokeInvitation(
+    centerId: string,
+    invitationId: string,
+  ): Promise<void> {
     const db = getTenantedClient(this.prisma, centerId);
 
     const membership = await db.centerMembership.findUnique({
@@ -521,7 +530,9 @@ export class UsersService {
     }
 
     if (membership.status !== "INVITED") {
-      throw new Error("Cannot revoke - user has already accepted the invitation");
+      throw new Error(
+        "Cannot revoke - user has already accepted the invitation",
+      );
     }
 
     // Delete the membership (invitation)
