@@ -12,13 +12,13 @@ model User {
   id                  String    @id @default(cuid())
   email               String?   @unique
   name                String?
-  avatarUrl           String?
-  phoneNumber         String?
-  preferredLanguage   String    @default("en")
-  deletionRequestedAt DateTime?
+  avatarUrl           String?   @map("avatar_url")
+  phoneNumber         String?   @map("phone_number")
+  preferredLanguage   String    @default("en") @map("preferred_language")
+  deletionRequestedAt DateTime? @map("deletion_requested_at")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   authAccounts    AuthAccount[]
   memberships     CenterMembership[]
@@ -29,12 +29,12 @@ model User {
 
 model AuthAccount {
   id             String       @id @default(cuid())
-  userId         String
+  userId         String       @map("user_id")
   provider       AuthProvider
-  providerUserId String
+  providerUserId String       @map("provider_user_id")
   email          String?
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -52,23 +52,23 @@ model Center {
   slug String @unique
 
   logoUrl    String? @map("logo_url")
-  timezone   String  @default("UTC") @map("timezone")
+  timezone   String  @default("UTC")
   brandColor String  @default("#2563EB") @map("brand_color")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   memberships CenterMembership[]
 }
 
 model CenterMembership {
   id       String           @id @default(cuid())
-  centerId String
-  userId   String
+  centerId String           @map("center_id")
+  userId   String           @map("user_id")
   role     CenterRole
   status   MembershipStatus @default(ACTIVE)
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   center                Center                 @relation(fields: [centerId], references: [id], onDelete: Cascade)
   user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -102,7 +102,7 @@ model Permission {
 
 model RolePermission {
   role         CenterRole
-  permissionId String
+  permissionId String     @map("permission_id")
 
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
@@ -111,8 +111,8 @@ model RolePermission {
 
 model MembershipPermission {
   id           String  @id @default(cuid())
-  membershipId String
-  permissionId String
+  membershipId String  @map("membership_id")
+  permissionId String  @map("permission_id")
   allowed      Boolean
 
   membership CenterMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
@@ -132,8 +132,8 @@ model Course {
 
   classes Class[]
 
-  @@index([centerId])
   @@unique([id, centerId])
+  @@index([centerId])
 }
 
 model Class {
@@ -151,10 +151,10 @@ model Class {
   schedules ClassSchedule[]
   sessions  ClassSession[]
 
+  @@unique([id, centerId])
   @@index([centerId])
   @@index([courseId])
   @@index([teacherId])
-  @@unique([id, centerId])
 }
 
 model ClassStudent {
@@ -170,13 +170,13 @@ model ClassStudent {
 }
 
 model ClassSchedule {
-  id        String @id @default(cuid())
-  classId   String @map("class_id")
-  dayOfWeek Int    @map("day_of_week") // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-  startTime String @map("start_time") // HH:mm format
-  endTime   String @map("end_time") // HH:mm format
+  id        String  @id @default(cuid())
+  classId   String  @map("class_id")
+  dayOfWeek Int     @map("day_of_week") // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  startTime String  @map("start_time") // HH:mm format
+  endTime   String  @map("end_time") // HH:mm format
   roomName  String? @map("room_name")
-  centerId  String @map("center_id")
+  centerId  String  @map("center_id")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -184,9 +184,9 @@ model ClassSchedule {
   class    Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
   sessions ClassSession[]
 
+  @@unique([id, centerId])
   @@index([centerId])
   @@index([classId])
-  @@unique([id, centerId])
 }
 
 model ClassSession {
@@ -205,11 +205,11 @@ model ClassSession {
   class    Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
   schedule ClassSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
 
+  @@unique([id, centerId])
   @@index([centerId])
   @@index([classId])
   @@index([scheduleId])
   @@index([startTime, endTime])
-  @@unique([id, centerId])
 }
 
 enum SessionStatus {
@@ -242,6 +242,4 @@ model LoginAttempt {
   lastAttempt DateTime? @map("last_attempt")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  @@map("login_attempts")
 }
