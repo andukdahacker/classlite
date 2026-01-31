@@ -15,7 +15,7 @@ export class InvitationService {
   ) {}
 
   async inviteUser(centerId: string, input: CreateInvitationRequest) {
-    const { email, role } = input;
+    const { email, role, personalMessage } = input;
     const db = getTenantedClient(this.prisma, centerId);
 
     // 1. Check if user already has a membership in this center
@@ -69,6 +69,10 @@ export class InvitationService {
       email,
     )}`;
 
+    const personalMessageHtml = personalMessage
+      ? `<p style="margin: 16px 0; padding: 12px; background: #f5f5f5; border-radius: 8px;"><em>"${personalMessage}"</em></p>`
+      : "";
+
     await this.resend.emails.send({
       from: this.options.emailFrom,
       to: email,
@@ -76,6 +80,7 @@ export class InvitationService {
       html: `
         <h1>You've been invited!</h1>
         <p>You have been invited to join a center on ClassLite as a <strong>${role.toLowerCase()}</strong>.</p>
+        ${personalMessageHtml}
         <p>Please click the link below to create your account and join:</p>
         <a href="${signupUrl}">Join Now</a>
       `,

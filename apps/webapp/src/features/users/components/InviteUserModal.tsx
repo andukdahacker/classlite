@@ -22,6 +22,7 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
+import { Textarea } from "@workspace/ui/components/textarea";
 import {
   Select,
   SelectContent,
@@ -35,7 +36,11 @@ import { createInvitation } from "../invitation.api";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
-export function InviteUserModal() {
+interface InviteUserModalProps {
+  onSuccess?: () => void;
+}
+
+export function InviteUserModal({ onSuccess }: InviteUserModalProps = {}) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -44,6 +49,7 @@ export function InviteUserModal() {
     defaultValues: {
       email: "",
       role: "STUDENT",
+      personalMessage: "",
     },
   });
 
@@ -53,11 +59,26 @@ export function InviteUserModal() {
       toast.success("Invitation sent successfully");
       setOpen(false);
       form.reset();
-      // Invalidate users list if applicable
+      // Invalidate users and invitations lists
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
+      onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to send invitation");
+      // Handle duplicate email error inline
+      const errorMessage = error.message || "Failed to send invitation";
+      if (
+        errorMessage.toLowerCase().includes("already") ||
+        errorMessage.toLowerCase().includes("duplicate") ||
+        errorMessage.toLowerCase().includes("exists")
+      ) {
+        form.setError("email", {
+          type: "manual",
+          message: "This email has already been invited or is already a member",
+        });
+      } else {
+        toast.error(errorMessage);
+      }
     },
   });
 
@@ -111,10 +132,31 @@ export function InviteUserModal() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="ADMIN">Admin</SelectItem>
                       <SelectItem value="TEACHER">Teacher</SelectItem>
                       <SelectItem value="STUDENT">Student</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="personalMessage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Personal Message (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Add a personal message to the invitation email..."
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Maximum 500 characters
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

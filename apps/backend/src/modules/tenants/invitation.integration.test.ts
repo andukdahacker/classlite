@@ -1,11 +1,12 @@
-import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from "vitest";
 import { PrismaClient } from "@workspace/db";
 import { getTenantedClient } from "@workspace/db";
+import { getTestPrisma, closeTestPrisma, isTestDatabaseAvailable } from "../../test/db.js";
 import { InvitationService } from "./invitation.service.js";
 
 describe("Invitation Integration", () => {
   let prisma: PrismaClient;
-  let setupFailed = false;
+  let dbAvailable = false;
   let invitationService: InvitationService;
 
   const centerAId = "center-inv-a";
@@ -17,14 +18,17 @@ describe("Invitation Integration", () => {
     },
   };
 
+  beforeAll(async () => {
+    dbAvailable = await isTestDatabaseAvailable();
+    if (dbAvailable) {
+      prisma = await getTestPrisma();
+    }
+  });
+
   beforeEach(async () => {
-    setupFailed = false;
+    if (!dbAvailable) return;
 
     try {
-      if (!prisma) {
-        prisma = new PrismaClient();
-      }
-
       invitationService = new InvitationService(prisma, mockResend as any, {
         emailFrom: "test@classlite.app",
         webappUrl: "http://localhost:3000",
@@ -49,21 +53,29 @@ describe("Invitation Integration", () => {
         data: { id: centerBId, name: "Center B", slug: "center-inv-b" },
       });
     } catch (e) {
-      console.warn("Database integration test setup failed. Skipping.");
-      setupFailed = true;
+      console.warn("Database integration test setup failed:", e);
     }
   });
 
   afterAll(async () => {
-    if (prisma) {
+    if (dbAvailable && prisma) {
       try {
-        await prisma.$disconnect();
+        await prisma.centerMembership.deleteMany({
+          where: { centerId: { in: [centerAId, centerBId] } },
+        });
+        await prisma.center.deleteMany({
+          where: { id: { in: [centerAId, centerBId] } },
+        });
+        await prisma.user.deleteMany({
+          where: { email: { in: ["invited-a@test.com", "invited-b@test.com"] } },
+        });
       } catch {}
     }
+    await closeTestPrisma();
   });
 
   it("should create invitation in the correct center using tenanted client", async () => {
-    if (setupFailed) return;
+    if (!dbAvailable) return;
 
     const email = "invited-a@test.com";
 

@@ -1,14 +1,14 @@
-import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@workspace/db";
 import { addDays, setHours, setMinutes } from "date-fns";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { getTestPrisma, closeTestPrisma, isTestDatabaseAvailable } from "../../test/db.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { SessionsController } from "./sessions.controller.js";
 import { SessionsService } from "./sessions.service.js";
 
 describe("Sessions Integration - Move Session Notify Flow", () => {
   let prisma: PrismaClient;
-  let setupFailed = false;
+  let dbAvailable = false;
   let sessionsService: SessionsService;
   let notificationsService: NotificationsService;
   let sessionsController: SessionsController;
@@ -20,18 +20,17 @@ describe("Sessions Integration - Move Session Notify Flow", () => {
   let studentUserId: string;
   let sessionId: string;
 
+  beforeAll(async () => {
+    dbAvailable = await isTestDatabaseAvailable();
+    if (dbAvailable) {
+      prisma = await getTestPrisma();
+    }
+  });
+
   beforeEach(async () => {
-    setupFailed = false;
+    if (!dbAvailable) return;
+
     try {
-      const adapter = new PrismaPg({
-        connectionString: "postgresql://user:password@localhost:5432/classlite",
-      });
-
-      if (!prisma)
-        prisma = new PrismaClient({
-          adapter,
-        });
-
       sessionsService = new SessionsService(prisma);
       notificationsService = new NotificationsService(prisma);
       sessionsController = new SessionsController(
@@ -122,35 +121,36 @@ describe("Sessions Integration - Move Session Notify Flow", () => {
       });
       sessionId = session.id;
     } catch (e) {
-      console.warn("Database integration test setup failed. Skipping.", e);
-      setupFailed = true;
+      console.warn("Database integration test setup failed:", e);
     }
   });
 
   afterAll(async () => {
-    if (prisma) {
-      // Final Cleanup
-      await prisma.notification.deleteMany({ where: { centerId } });
-      await prisma.classSession.deleteMany({ where: { centerId } });
-      await prisma.classSchedule.deleteMany({ where: { centerId } });
-      await prisma.classStudent.deleteMany({ where: { centerId } });
-      await prisma.class.deleteMany({ where: { centerId } });
-      await prisma.course.deleteMany({ where: { centerId } });
-      await prisma.centerMembership.deleteMany({ where: { centerId } });
-      await prisma.center.deleteMany({ where: { id: centerId } });
-      await prisma.user.deleteMany({
-        where: {
-          email: {
-            in: ["teacher-session@test.com", "student-session@test.com"],
+    if (dbAvailable && prisma) {
+      try {
+        // Final Cleanup
+        await prisma.notification.deleteMany({ where: { centerId } });
+        await prisma.classSession.deleteMany({ where: { centerId } });
+        await prisma.classSchedule.deleteMany({ where: { centerId } });
+        await prisma.classStudent.deleteMany({ where: { centerId } });
+        await prisma.class.deleteMany({ where: { centerId } });
+        await prisma.course.deleteMany({ where: { centerId } });
+        await prisma.centerMembership.deleteMany({ where: { centerId } });
+        await prisma.center.deleteMany({ where: { id: centerId } });
+        await prisma.user.deleteMany({
+          where: {
+            email: {
+              in: ["teacher-session@test.com", "student-session@test.com"],
+            },
           },
-        },
-      });
-      await prisma.$disconnect();
+        });
+      } catch {}
     }
+    await closeTestPrisma();
   });
 
   it("should create notifications for teacher and students when session is moved", async () => {
-    if (setupFailed) return;
+    if (!dbAvailable) return;
 
     // Verify initial state - no notifications
     const initialNotificationsTeacher =
@@ -205,7 +205,7 @@ describe("Sessions Integration - Move Session Notify Flow", () => {
   });
 
   it("should NOT create notifications when session time is unchanged", async () => {
-    if (setupFailed) return;
+    if (!dbAvailable) return;
 
     // Update only the room name (not time)
     const mockJwtPayload = {
@@ -235,7 +235,7 @@ describe("Sessions Integration - Move Session Notify Flow", () => {
   });
 
   it("should return sessions for the correct center", async () => {
-    if (setupFailed) return;
+    if (!dbAvailable) return;
 
     // Create a fresh session for this test
     const tomorrow = addDays(new Date(), 1);

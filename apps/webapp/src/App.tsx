@@ -19,8 +19,8 @@ import { CoursesPage } from "./features/logistics/courses-page";
 import { SchedulerPage } from "./features/logistics/scheduler-page";
 import { CenterSettingsPage } from "./features/tenants/center-settings-page";
 import { TenantProvider } from "./features/tenants/tenant-context";
-import { InviteUserModal } from "./features/users/components/InviteUserModal";
 import { ProfilePage } from "./features/users/profile-page";
+import { UsersPage } from "./features/users/users-page";
 
 function App() {
   const queryClient = new QueryClient({
@@ -91,9 +91,8 @@ function App() {
                   <Route
                     path="/:centerId/dashboard/users"
                     element={
-                      <ProtectedRoute allowedRoles={["OWNER"]}>
-                        <div>Users Management (TBD)</div>
-                        <InviteUserModal />
+                      <ProtectedRoute allowedRoles={["OWNER", "ADMIN"]}>
+                        <UsersPage />
                       </ProtectedRoute>
                     }
                   />
@@ -129,6 +128,16 @@ function App() {
                   />
                   <Route
                     path="/:centerId/dashboard/profile"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER", "STUDENT"]}
+                      >
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/:centerId/dashboard/profile/:userId"
                     element={
                       <ProtectedRoute
                         allowedRoles={["OWNER", "ADMIN", "TEACHER", "STUDENT"]}

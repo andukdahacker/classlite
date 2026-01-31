@@ -1,30 +1,30 @@
-import { describe, it, expect, beforeEach, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
 import { PrismaClient } from "@workspace/db";
 import { CoursesService } from "./courses.service.js";
 import { ClassesService } from "./classes.service.js";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { getTestPrisma, closeTestPrisma, isTestDatabaseAvailable } from "../../test/db.js";
 
 describe("Logistics Integration", () => {
   let prisma: PrismaClient;
-  let setupFailed = false;
+  let dbAvailable = false;
   let coursesService: CoursesService;
   let classesService: ClassesService;
 
   const centerAId = "center-log-a";
   const centerBId = "center-log-b";
+  const studentEmail = "student-logistics@test.com";
+
+  beforeAll(async () => {
+    dbAvailable = await isTestDatabaseAvailable();
+    if (dbAvailable) {
+      prisma = await getTestPrisma();
+    }
+  });
 
   beforeEach(async () => {
-    setupFailed = false;
+    if (!dbAvailable) return;
+
     try {
-      const adapter = new PrismaPg({
-        connectionString: "postgresql://user:password@localhost:5432/classlite",
-      });
-
-      if (!prisma)
-        prisma = new PrismaClient({
-          adapter,
-        });
-
       coursesService = new CoursesService(prisma);
       classesService = new ClassesService(prisma);
 
@@ -45,7 +45,7 @@ describe("Logistics Integration", () => {
         where: { id: { in: [centerAId, centerBId] } },
       });
       await prisma.user.deleteMany({
-        where: { email: "student@test.com" },
+        where: { email: studentEmail },
       });
 
       // Setup Centers
@@ -56,38 +56,39 @@ describe("Logistics Integration", () => {
         data: { id: centerBId, name: "Center B", slug: "center-log-b" },
       });
     } catch (e) {
-      console.warn("Database integration test setup failed. Skipping.", e);
-      setupFailed = true;
+      console.warn("Database integration test setup failed:", e);
     }
   });
 
   afterAll(async () => {
-    if (prisma) {
-      // Final Cleanup
-      await prisma.classStudent.deleteMany({
-        where: { centerId: { in: [centerAId, centerBId] } },
-      });
-      await prisma.class.deleteMany({
-        where: { centerId: { in: [centerAId, centerBId] } },
-      });
-      await prisma.course.deleteMany({
-        where: { centerId: { in: [centerAId, centerBId] } },
-      });
-      await prisma.centerMembership.deleteMany({
-        where: { centerId: { in: [centerAId, centerBId] } },
-      });
-      await prisma.center.deleteMany({
-        where: { id: { in: [centerAId, centerBId] } },
-      });
-      await prisma.user.deleteMany({
-        where: { email: "student@test.com" },
-      });
-      await prisma.$disconnect();
+    if (dbAvailable && prisma) {
+      try {
+        // Final Cleanup
+        await prisma.classStudent.deleteMany({
+          where: { centerId: { in: [centerAId, centerBId] } },
+        });
+        await prisma.class.deleteMany({
+          where: { centerId: { in: [centerAId, centerBId] } },
+        });
+        await prisma.course.deleteMany({
+          where: { centerId: { in: [centerAId, centerBId] } },
+        });
+        await prisma.centerMembership.deleteMany({
+          where: { centerId: { in: [centerAId, centerBId] } },
+        });
+        await prisma.center.deleteMany({
+          where: { id: { in: [centerAId, centerBId] } },
+        });
+        await prisma.user.deleteMany({
+          where: { email: studentEmail },
+        });
+      } catch {}
     }
+    await closeTestPrisma();
   });
 
   it("should isolate courses by center", async () => {
-    if (setupFailed) return;
+    if (!dbAvailable) return;
 
     await coursesService.createCourse(centerAId, { name: "Course A" });
     await coursesService.createCourse(centerBId, { name: "Course B" });
@@ -102,7 +103,7 @@ describe("Logistics Integration", () => {
   });
 
   it("should update and delete courses within center isolation", async () => {
-    if (setupFailed) return;
+    if (!dbAvailable) return;
 
     const course = await coursesService.createCourse(centerAId, {
       name: "Original",
@@ -128,7 +129,7 @@ describe("Logistics Integration", () => {
   });
 
   it("should isolate classes and manage roster", async () => {
-    if (setupFailed) return;
+    if (!dbAvailable) return;
 
     // Create Course
     const course = await coursesService.createCourse(centerAId, {
@@ -143,7 +144,7 @@ describe("Logistics Integration", () => {
 
     // Create a User for student
     const studentUser = await prisma.user.create({
-      data: { email: "student@test.com", name: "Student" },
+      data: { email: studentEmail, name: "Student" },
     });
 
     // Add to Center
