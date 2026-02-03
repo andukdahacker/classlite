@@ -17,10 +17,16 @@ import DashboardPage from "./features/dashboard/DashboardPage";
 import { ClassesPage } from "./features/logistics/classes-page";
 import { CoursesPage } from "./features/logistics/courses-page";
 import { SchedulerPage } from "./features/logistics/scheduler-page";
-import { CenterSettingsPage } from "./features/tenants/center-settings-page";
 import { TenantProvider } from "./features/tenants/tenant-context";
 import { ProfilePage } from "./features/users/profile-page";
 import { UsersPage } from "./features/users/users-page";
+import { ExercisesPage } from "./features/exercises/ExercisesPage";
+import { GradingQueuePage } from "./features/grading/GradingQueuePage";
+import { StudentsPage } from "./features/students/StudentsPage";
+import { SettingsLayout } from "./features/settings/components/SettingsLayout";
+import { GeneralSettingsPage } from "./features/settings/pages/GeneralSettingsPage";
+import { IntegrationsPage } from "./features/settings/pages/IntegrationsPage";
+import { PrivacyPage } from "./features/settings/pages/PrivacyPage";
 
 function App() {
   const queryClient = new QueryClient({
@@ -74,30 +80,36 @@ function App() {
                   path="/:centerId/dashboard"
                   element={
                     <ProtectedRoute
-                      allowedRoles={["OWNER", "TEACHER", "STUDENT"]}
+                      allowedRoles={["OWNER", "ADMIN", "TEACHER", "STUDENT"]}
                     >
                       <DashboardPage />
                     </ProtectedRoute>
                   }
                 >
+                  {/* Redirect old /users route to settings/users */}
                   <Route
-                    path="/:centerId/dashboard/settings"
-                    element={
-                      <ProtectedRoute allowedRoles={["OWNER"]}>
-                        <CenterSettingsPage />
-                      </ProtectedRoute>
-                    }
+                    path="users"
+                    element={<Navigate to="settings/users" replace />}
                   />
+
+                  {/* Settings with sub-navigation */}
                   <Route
-                    path="/:centerId/dashboard/users"
+                    path="settings"
                     element={
                       <ProtectedRoute allowedRoles={["OWNER", "ADMIN"]}>
-                        <UsersPage />
+                        <SettingsLayout />
                       </ProtectedRoute>
                     }
-                  />
+                  >
+                    <Route index element={<GeneralSettingsPage />} />
+                    <Route path="users" element={<UsersPage />} />
+                    <Route path="integrations" element={<IntegrationsPage />} />
+                    <Route path="privacy" element={<PrivacyPage />} />
+                  </Route>
+
+                  {/* Courses - accessed via Classes, kept for direct URL access */}
                   <Route
-                    path="/:centerId/dashboard/courses"
+                    path="courses"
                     element={
                       <ProtectedRoute
                         allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
@@ -107,7 +119,7 @@ function App() {
                     }
                   />
                   <Route
-                    path="/:centerId/dashboard/classes"
+                    path="classes"
                     element={
                       <ProtectedRoute
                         allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
@@ -117,7 +129,7 @@ function App() {
                     }
                   />
                   <Route
-                    path="/:centerId/dashboard/schedule"
+                    path="schedule"
                     element={
                       <ProtectedRoute
                         allowedRoles={["OWNER", "ADMIN", "TEACHER", "STUDENT"]}
@@ -127,7 +139,37 @@ function App() {
                     }
                   />
                   <Route
-                    path="/:centerId/dashboard/profile"
+                    path="exercises"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                      >
+                        <ExercisesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="grading"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                      >
+                        <GradingQueuePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="students"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                      >
+                        <StudentsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="profile"
                     element={
                       <ProtectedRoute
                         allowedRoles={["OWNER", "ADMIN", "TEACHER", "STUDENT"]}
@@ -137,7 +179,7 @@ function App() {
                     }
                   />
                   <Route
-                    path="/:centerId/dashboard/profile/:userId"
+                    path="profile/:userId"
                     element={
                       <ProtectedRoute
                         allowedRoles={["OWNER", "ADMIN", "TEACHER", "STUDENT"]}

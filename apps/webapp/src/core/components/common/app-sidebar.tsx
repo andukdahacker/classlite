@@ -23,6 +23,7 @@ export type NavItem = {
   title: string;
   url: string;
   icon: React.ReactNode;
+  badge?: string;
 };
 
 function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -33,10 +34,13 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navConfig = getNavigationConfig(centerId || "default");
   const filteredNavItems = navConfig
     .filter((item) => user?.role && item.allowedRoles.includes(user.role))
+    .sort((a, b) => a.order - b.order)
     .map((item) => ({
       title: item.title,
       url: item.url,
       icon: <item.icon />,
+      // Teachers have read-only access to Classes
+      badge: user?.role === "TEACHER" && item.title === "Classes" ? "Read" : undefined,
     }));
 
   return (

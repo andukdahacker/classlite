@@ -6,11 +6,15 @@ import {
 import { AppSidebar } from "../common/app-sidebar";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { Link, useLocation } from "react-router";
 import { useAuth } from "@/features/auth/auth-context";
-import { getNavigationConfig } from "@/core/config/navigation";
+import {
+  getNavigationConfig,
+  getMobileNavItems,
+  getOverflowNavItems,
+} from "@/core/config/navigation";
 import { NotificationBell } from "@/features/dashboard/components/NotificationBell";
 import {
   Sheet,
@@ -19,6 +23,8 @@ import {
   SheetTitle,
 } from "@workspace/ui/components/sheet";
 import { Separator } from "@workspace/ui/components/separator";
+import { MobileNavOverflow } from "./MobileNavOverflow";
+import { Breadcrumbs } from "./Breadcrumbs";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(true);
@@ -42,9 +48,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   const navConfig = getNavigationConfig(centerId || "default");
-  const filteredNavItems = navConfig.filter(
-    (item) => user?.role && item.allowedRoles.includes(user.role),
-  );
+  const filteredNavItems = navConfig
+    .filter((item) => user?.role && item.allowedRoles.includes(user.role))
+    .sort((a, b) => a.order - b.order);
+
+  // Mobile bottom bar: top 4 mobileVisible items + overflow
+  const mobileNavItems = getMobileNavItems(filteredNavItems);
+  const overflowNavItems = getOverflowNavItems(filteredNavItems);
 
   return (
     <SidebarProvider>
@@ -56,13 +66,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
           <SidebarInset>
             <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-              <div className="flex items-center justify-between gap-2 px-4 w-full ">
+              <div className="flex items-center justify-between gap-2 px-4 w-full">
                 <div className="gap-2 items-center flex">
                   <SidebarTrigger className="-ml-1" />
                   <Separator
                     orientation="vertical"
                     className="mr-2 data-[orientation=vertical]:h-4"
                   />
+                  <Breadcrumbs />
                 </div>
                 <div className="flex items-center gap-2">
                   <NotificationBell />
@@ -122,23 +133,35 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Mobile Bottom Bar */}
-        <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t bg-background px-4 md:hidden">
-          {filteredNavItems.map((item) => (
-            <Link
-              key={item.url}
-              to={item.url}
-              className={`flex flex-col items-center gap-1 transition-colors ${
-                location.pathname === item.url
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-primary"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium uppercase tracking-wider">
-                {item.title}
-              </span>
-            </Link>
-          ))}
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t bg-background px-4 md:hidden"
+          aria-label="Main navigation"
+        >
+          {mobileNavItems.map((item) => {
+            const isActive =
+              location.pathname === item.url ||
+              location.pathname.startsWith(`${item.url}/`);
+            return (
+              <Link
+                key={item.url}
+                to={item.url}
+                className={`flex flex-col items-center gap-1 transition-colors ${
+                  isActive
+                    ? "text-nav-active"
+                    : "text-muted-foreground hover:text-primary"
+                }`}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium uppercase tracking-wider">
+                  {item.title}
+                </span>
+              </Link>
+            );
+          })}
+          {overflowNavItems.length > 0 && (
+            <MobileNavOverflow items={overflowNavItems} />
+          )}
         </nav>
       </div>
     </SidebarProvider>

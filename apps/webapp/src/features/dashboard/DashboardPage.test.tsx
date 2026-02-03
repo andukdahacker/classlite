@@ -103,13 +103,16 @@ describe("DashboardPage", () => {
       </BrowserRouter>,
     );
 
-    // Students should see Dashboard and Exercises
+    // Students should see Dashboard, Schedule, and My Profile
     expect(screen.getAllByText(/Dashboard/i)[0]).toBeInTheDocument();
-    expect(screen.getAllByText(/Exercises/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/Schedule/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/My Profile/i)[0]).toBeInTheDocument();
 
-    // Students should NOT see Users or Classes or Settings
-    expect(screen.queryByText(/Users/i)).not.toBeInTheDocument();
+    // Students should NOT see Classes, Exercises, Grading, Students, or Settings
     expect(screen.queryByText(/Classes/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Exercises/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Grading/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Students/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Settings/i)).not.toBeInTheDocument();
   });
 });
