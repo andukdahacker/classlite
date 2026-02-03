@@ -21,11 +21,13 @@ import {
   useSignupCenterMutation,
   useSignupCenterWithGoogleMutation,
 } from "../auth.hooks";
+import { useAuth } from "../auth-context";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export function SignupCenterForm() {
   const navigate = useNavigate();
+  const { setSignupInProgress } = useAuth();
   const { mutateAsync: signup, isPending } = useSignupCenterMutation();
   const { mutateAsync: signupWithGoogle, isPending: isGooglePending } =
     useSignupCenterWithGoogleMutation();
@@ -59,10 +61,18 @@ export function SignupCenterForm() {
       return;
     }
 
+    // Prevent auth context from calling login before signup completes
+    console.log("Setting signup in progress to true");
+    setSignupInProgress(true);
+
     try {
       const provider = new GoogleAuthProvider();
+      console.log("Calling signInWithPopup");
       const result = await signInWithPopup(firebaseAuth, provider);
+      console.log("signInWithPopup completed");
+      console.log("Getting idToken...");
       const idToken = await result.user.getIdToken();
+      console.log("Got idToken, calling signupWithGoogle...");
 
       await signupWithGoogle({
         idToken,
@@ -70,9 +80,13 @@ export function SignupCenterForm() {
         centerSlug: form.getValues("centerSlug"),
       });
 
+      console.log("signupWithGoogle completed successfully");
+      setSignupInProgress(false);
       toast.success("Center registered successfully with Google!");
-      navigate("/dashboard/owner");
+      navigate("/dashboard");
     } catch (error: any) {
+      console.log("Signup error caught:", error);
+      setSignupInProgress(false);
       // Force sign out if registration fails so user state doesn't get stuck
       await signOut(firebaseAuth);
       toast.error(error.message || "Google signup failed");

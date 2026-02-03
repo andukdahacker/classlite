@@ -26,6 +26,7 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   sessionExpired: boolean;
+  setSignupInProgress: (inProgress: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +38,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const signupInProgressRef = React.useRef(false);
+
+  const setSignupInProgress = useCallback((inProgress: boolean) => {
+    console.log("setSignupInProgress called with:", inProgress);
+    signupInProgressRef.current = inProgress;
+  }, []);
 
   const { data: user } = useAuthUserQuery();
   const { mutateAsync: login, isPending: isLoggingIn } = useLoginMutation();
@@ -79,15 +86,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Auth state change listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (fbUser) => {
+      console.log("=== onAuthStateChanged fired ===", fbUser?.uid);
       setFirebaseUser(fbUser);
 
+      console.log("Firebase user:", fbUser);
+
       if (fbUser) {
+        // Skip automatic login if signup is in progress - the signup flow
+        // will handle authentication after creating the user in the backend
+        console.log("onAuthStateChanged - signupInProgressRef:", signupInProgressRef.current);
+        if (signupInProgressRef.current) {
+          console.log("Skipping login - signup in progress");
+          setLoading(false);
+          return;
+        }
+
         try {
           const token = await fbUser.getIdToken();
           localStorage.setItem("token", token);
+          console.log("onAuthStateChanged - calling login");
           await loginRef.current(token);
+          console.log("onAuthStateChanged - login completed");
           setSessionExpired(false);
-        } catch {
+        } catch (err) {
+          console.log("onAuthStateChanged - login failed:", err);
           // Session sync failed - user will be prompted to re-login if needed
         }
       } else {
@@ -99,11 +121,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     return unsubscribe;
-  }, [queryClient]);
+  }, []);
 
   // Silent token refresh listener
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(firebaseAuth, async (fbUser) => {
+      // Skip token refresh during signup - the signup flow handles authentication
+      console.log("onIdTokenChanged - signupInProgressRef:", signupInProgressRef.current);
+      if (signupInProgressRef.current) {
+        console.log("Skipping token refresh - signup in progress");
+        return;
+      }
+
       if (fbUser) {
         try {
           // Force refresh token if it's about to expire (within 5 minutes)
@@ -136,19 +165,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Periodic token refresh check (every 4 minutes)
   useEffect(() => {
-    const intervalId = setInterval(async () => {
-      const fbUser = firebaseAuth.currentUser;
-      if (fbUser) {
-        try {
-          // This will automatically refresh if token is expired
-          await fbUser.getIdToken();
-        } catch {
-          // Periodic token check failed - session expired
-          await logout();
-          window.location.href = "/sign-in?expired=true";
+    const intervalId = setInterval(
+      async () => {
+        const fbUser = firebaseAuth.currentUser;
+        if (fbUser) {
+          try {
+            // This will automatically refresh if token is expired
+            await fbUser.getIdToken();
+          } catch {
+            // Periodic token check failed - session expired
+            await logout();
+            window.location.href = "/sign-in?expired=true";
+          }
         }
-      }
-    }, 4 * 60 * 1000); // 4 minutes
+      },
+      4 * 60 * 1000,
+    ); // 4 minutes
 
     return () => clearInterval(intervalId);
   }, [logout]);
@@ -161,6 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         loading: loading || isLoggingIn,
         logout,
         sessionExpired,
+        setSignupInProgress,
       }}
     >
       {children}

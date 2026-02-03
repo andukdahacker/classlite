@@ -6,6 +6,15 @@ import {
   ChangePasswordSchema,
   ChangeRoleRequestSchema,
   ChangeRoleResponseSchema,
+  CsvExecuteRequestSchema,
+  CsvExecuteResponseSchema,
+  CsvImportDetailsResponseSchema,
+  CsvImportHistoryQuerySchema,
+  CsvImportHistoryResponseSchema,
+  CsvImportStatusResponseSchema,
+  CsvRetryRequestSchema,
+  CsvRetryResponseSchema,
+  CsvValidationResponseSchema,
   ErrorResponseSchema,
   InvitationListQuerySchema,
   InvitationListResponseSchema,
@@ -16,23 +25,14 @@ import {
   UserListResponseSchema,
   UserProfileResponseSchema,
   UserStatusResponseSchema,
-  CsvValidationResponseSchema,
-  CsvExecuteRequestSchema,
-  CsvExecuteResponseSchema,
-  CsvImportStatusResponseSchema,
-  CsvImportHistoryQuerySchema,
-  CsvImportHistoryResponseSchema,
-  CsvImportDetailsResponseSchema,
-  CsvRetryRequestSchema,
-  CsvRetryResponseSchema,
   type BulkUserActionRequest,
   type ChangePasswordInput,
   type ChangeRoleRequest,
-  type UpdateProfileInput,
-  type UserListQuery,
   type CsvExecuteRequest,
   type CsvImportHistoryQuery,
   type CsvRetryRequest,
+  type UpdateProfileInput,
+  type UserListQuery,
 } from "@workspace/types";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -40,10 +40,10 @@ import { z } from "zod";
 import Env from "../../env.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireRole } from "../../middlewares/role.middleware.js";
-import { UsersController } from "./users.controller.js";
-import { UsersService } from "./users.service.js";
 import { CsvImportController } from "./csv-import.controller.js";
 import { CsvImportService } from "./csv-import.service.js";
+import { UsersController } from "./users.controller.js";
+import { UsersService } from "./users.service.js";
 
 export async function usersRoutes(fastify: FastifyInstance) {
   const api = fastify.withTypeProvider<ZodTypeProvider>();
@@ -628,7 +628,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
         .header("Content-Type", "text/csv")
         .header(
           "Content-Disposition",
-          'attachment; filename="classlite-import-template.csv"'
+          'attachment; filename="classlite-import-template.csv"',
         )
         .send(template);
     },
@@ -681,7 +681,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
         const result = await csvImportController.validateCsv(
           buffer,
           fileName,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -707,12 +707,12 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Body: CsvExecuteRequest }>,
-      reply
+      reply,
     ) => {
       try {
         const result = await csvImportController.executeImport(
           request.body,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -743,12 +743,12 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Params: { importLogId: string } }>,
-      reply
+      reply,
     ) => {
       try {
         const result = await csvImportController.getImportStatus(
           request.params.importLogId,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -767,6 +767,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
       querystring: CsvImportHistoryQuerySchema,
       response: {
         200: CsvImportHistoryResponseSchema,
+        400: ErrorResponseSchema,
         401: ErrorResponseSchema,
         403: ErrorResponseSchema,
         500: ErrorResponseSchema,
@@ -775,12 +776,12 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Querystring: CsvImportHistoryQuery }>,
-      reply
+      reply,
     ) => {
       try {
         const result = await csvImportController.getImportHistory(
           request.query,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -808,12 +809,12 @@ export async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
       request: FastifyRequest<{ Params: { id: string } }>,
-      reply
+      reply,
     ) => {
       try {
         const result = await csvImportController.getImportDetails(
           request.params.id,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -844,14 +845,17 @@ export async function usersRoutes(fastify: FastifyInstance) {
     },
     preHandler: [requireRole(["OWNER", "ADMIN"])],
     handler: async (
-      request: FastifyRequest<{ Params: { id: string }; Body: CsvRetryRequest }>,
-      reply
+      request: FastifyRequest<{
+        Params: { id: string };
+        Body: CsvRetryRequest;
+      }>,
+      reply,
     ) => {
       try {
         const result = await csvImportController.retryImport(
           request.params.id,
           request.body,
-          request.jwtPayload!
+          request.jwtPayload!,
         );
         return reply.send(result);
       } catch (error: unknown) {
