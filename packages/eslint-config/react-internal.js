@@ -1,5 +1,6 @@
 import js from "@eslint/js"
 import eslintConfigPrettier from "eslint-config-prettier"
+import pluginJsxA11y from "eslint-plugin-jsx-a11y"
 import pluginReact from "eslint-plugin-react"
 import pluginReactHooks from "eslint-plugin-react-hooks"
 import globals from "globals"
@@ -36,6 +37,15 @@ export const config = [
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
+    },
+  },
+  // Accessibility rules - catches missing aria-labels at build time
+  {
+    plugins: {
+      "jsx-a11y": pluginJsxA11y,
+    },
+    rules: {
+      ...pluginJsxA11y.configs.recommended.rules,
     },
   },
 ]

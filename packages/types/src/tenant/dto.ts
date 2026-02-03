@@ -46,7 +46,7 @@ export const UpdateCenterSchema = z.object({
       try {
         Intl.DateTimeFormat(undefined, { timeZone: val });
         return true;
-      } catch (e) {
+      } catch {
         return false;
       }
     }, "Invalid IANA timezone")

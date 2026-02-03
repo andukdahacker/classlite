@@ -131,3 +131,62 @@ jobs:
         run: pnpm --filter backend test -- --run
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
+
+  test-e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: classlite_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @workspace/e2e exec playwright install chromium --with-deps
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Push database schema
+        run: pnpm --filter @workspace/db db:push
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      - name: Run E2E tests
+        run: pnpm test:e2e -- --project=chromium
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          E2E_BASE_URL: http://localhost:5173
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report/
+          retention-days: 7

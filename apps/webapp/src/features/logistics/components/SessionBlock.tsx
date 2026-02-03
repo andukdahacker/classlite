@@ -25,7 +25,19 @@ export function SessionBlock({
 
   return (
     <div
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
       className={cn(
         "cursor-pointer rounded-md px-2 py-1 text-xs transition-all",
         "border-l-4 shadow-sm hover:shadow-md",

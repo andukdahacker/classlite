@@ -89,6 +89,8 @@ export function NotificationBell() {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
+                  role="button"
+                  tabIndex={0}
                   className={cn(
                     "p-4 hover:bg-muted/50 cursor-pointer transition-colors",
                     !notification.read && "bg-primary/5"
@@ -96,6 +98,14 @@ export function NotificationBell() {
                   onClick={() => {
                     if (!notification.read) {
                       handleMarkAsRead(notification.id);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      if (!notification.read) {
+                        handleMarkAsRead(notification.id);
+                      }
                     }
                   }}
                 >
