@@ -4,12 +4,32 @@ import { UsersPage } from "./users-page";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router";
 
+// Mock auth context
+vi.mock("@/features/auth/auth-context", () => ({
+  useAuth: () => ({
+    user: { role: "OWNER" },
+    isLoading: false,
+  }),
+}));
+
 // Mock all complex child components
 vi.mock("./components/InviteUserModal", () => ({
   InviteUserModal: ({ onSuccess }: { onSuccess?: () => void }) => (
     <button onClick={onSuccess} data-testid="invite-user-button">
       Invite User
     </button>
+  ),
+}));
+
+vi.mock("./components/CsvImportModal", () => ({
+  CsvImportModal: () => (
+    <button data-testid="csv-import-button">Import CSV</button>
+  ),
+}));
+
+vi.mock("./components/ImportHistorySection", () => ({
+  ImportHistorySection: () => (
+    <div data-testid="import-history-section">Import History Section</div>
   ),
 }));
 

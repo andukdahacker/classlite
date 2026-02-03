@@ -1,14 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { client } from "@/core/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  BulkUserActionRequest,
+  ChangePasswordInput,
+  ChangeRoleRequest,
+  CsvExecuteRequest,
+  CsvImportDetailsResponse,
+  CsvImportHistoryQuery,
+  CsvImportHistoryResponse,
+  CsvRetryRequest,
+  CsvValidationResult,
+  InvitationListResponse,
+  UpdateProfileInput,
   UserListQuery,
   UserListResponse,
   UserProfileResponse,
-  ChangeRoleRequest,
-  BulkUserActionRequest,
-  InvitationListResponse,
-  UpdateProfileInput,
-  ChangePasswordInput,
 } from "@workspace/types";
 
 // Query keys
@@ -212,7 +218,7 @@ export function useResendInvitation() {
         "/api/v1/users/invitations/{id}/resend",
         {
           params: { path: { id: invitationId } },
-        }
+        },
       );
 
       if (result.error) {
@@ -284,7 +290,9 @@ export function useHasPassword() {
       const result = await client.GET("/api/v1/users/me/has-password");
 
       if (result.error) {
-        throw new Error(result.error.message || "Failed to check password status");
+        throw new Error(
+          result.error.message || "Failed to check password status",
+        );
       }
 
       return result.data;
@@ -328,7 +336,10 @@ export function useRequestDeletion() {
       // Update auth user cache with deletion timestamp
       queryClient.setQueryData(["auth-user"], (old: unknown) => {
         if (!old) return old;
-        return { ...(old as object), deletionRequestedAt: data.data.deletionRequestedAt };
+        return {
+          ...(old as object),
+          deletionRequestedAt: data.data.deletionRequestedAt,
+        };
       });
     },
   });
@@ -386,6 +397,244 @@ export function useUploadAvatar() {
         if (!old) return old;
         return { ...(old as object), avatarUrl: data?.data?.avatarUrl };
       });
+    },
+  });
+}
+
+// ============================================================
+// CSV Import API
+// ============================================================
+
+// CSV Import query keys
+export const csvImportKeys = {
+  all: ["csv-import"] as const,
+  history: (filters?: CsvImportHistoryQuery) =>
+    [...csvImportKeys.all, "history", filters] as const,
+  status: (importLogId: string) =>
+    [...csvImportKeys.all, "status", importLogId] as const,
+  details: (id: string) => [...csvImportKeys.all, "details", id] as const,
+};
+
+// Download CSV template
+export function useDownloadTemplate() {
+  return useMutation({
+    mutationFn: async () => {
+      // Use client.GET with type assertion since route isn't in schema yet
+      const result = await client.GET(
+        "/api/v1/users/import/template" as "/api/v1/users/",
+        {},
+      );
+
+      if (result.error) {
+        throw new Error("Failed to download template");
+      }
+
+      // The response is CSV text, trigger download
+      const blob = new Blob([result.data as unknown as string], {
+        type: "text/csv",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "classlite-import-template.csv";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    },
+  });
+}
+
+// Validate CSV file
+export function useValidateCsv() {
+  return useMutation({
+    mutationFn: async (file: File): Promise<CsvValidationResult> => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // Use client.POST with type assertion since route isn't in schema yet
+      const result = await client.POST("/api/v1/users/import/validate", {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        body: formData as any,
+      });
+
+      if (result.error) {
+        throw new Error(
+          (result.error as { message?: string }).message ||
+            "Failed to validate CSV",
+        );
+      }
+
+      return (result.data as { data: CsvValidationResult }).data;
+    },
+  });
+}
+
+// Execute import
+export function useExecuteImport() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (
+      input: CsvExecuteRequest,
+    ): Promise<{ jobId: string; importLogId: string }> => {
+      // Use client.POST with type assertion since route isn't in schema yet
+      const result = await client.POST("/api/v1/users/import/execute", {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        body: input as any,
+      });
+
+      if (result.error) {
+        throw new Error(
+          (result.error as { message?: string }).message ||
+            "Failed to execute import",
+        );
+      }
+
+      return (result.data as { data: { jobId: string; importLogId: string } })
+        .data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: csvImportKeys.all });
+    },
+  });
+}
+
+// Poll import status
+export function useImportStatus(importLogId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: csvImportKeys.status(importLogId ?? ""),
+    queryFn: async () => {
+      // Use client.GET with type assertion since route isn't in schema yet
+      if (!importLogId) {
+        throw new Error("importLogId is required");
+      }
+
+      const result = await client.GET(
+        "/api/v1/users/import/status/{importLogId}",
+        {
+          params: { path: { importLogId: importLogId } },
+        },
+      );
+
+      if (result.error) {
+        throw new Error(
+          (result.error as { message?: string }).message ||
+            "Failed to get status",
+        );
+      }
+
+      return (
+        result.data as {
+          data: {
+            status: string;
+            importedRows: number;
+            failedRows: number;
+            totalSelected: number;
+            isComplete: boolean;
+          };
+        }
+      ).data;
+    },
+    enabled: enabled && !!importLogId,
+    refetchInterval: (query) => {
+      // Poll every 2 seconds while not complete
+      if (query.state.data?.isComplete) {
+        return false;
+      }
+      return 2000;
+    },
+  });
+}
+
+// Get import history
+export function useImportHistory(query: CsvImportHistoryQuery) {
+  return useQuery({
+    queryKey: csvImportKeys.history(query),
+    queryFn: async (): Promise<CsvImportHistoryResponse["data"]> => {
+      // Use client.GET with type assertion since route isn't in schema yet
+      const result = await client.GET("/api/v1/users/import/history", {
+        params: {
+          query: {
+            page: query.page,
+            limit: query.limit,
+            ...(query.status ? { status: query.status } : {}),
+          },
+        },
+      });
+
+      if (result.error) {
+        throw new Error(
+          (result.error as { message?: string }).message ||
+            "Failed to get history",
+        );
+      }
+
+      return (result.data as { data: CsvImportHistoryResponse["data"] }).data;
+    },
+  });
+}
+
+// Get import details
+export function useImportDetails(id: string | null) {
+  return useQuery({
+    queryKey: csvImportKeys.details(id ?? ""),
+    queryFn: async (): Promise<CsvImportDetailsResponse["data"]> => {
+      // Use client.GET with type assertion since route isn't in schema yet
+      if (!id) {
+        throw new Error("id is required");
+      }
+      const result = await client.GET("/api/v1/users/import/{id}/details", {
+        params: { path: { id: id } },
+      });
+
+      if (result.error) {
+        throw new Error(
+          (result.error as { message?: string }).message ||
+            "Failed to get details",
+        );
+      }
+
+      return result.data.data;
+    },
+    enabled: !!id,
+  });
+}
+
+// Retry failed import
+export function useRetryImport() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      importLogId,
+      input,
+    }: {
+      importLogId: string;
+      input: CsvRetryRequest;
+    }): Promise<{
+      jobId: string;
+      importLogId: string;
+      rowsToRetry: number;
+    }> => {
+      // Use client.POST with type assertion since route isn't in schema yet
+      const result = await client.POST("/api/v1/users/import/{id}/retry", {
+        params: { path: { id: importLogId } },
+        body: input,
+      });
+
+      if (result.error) {
+        throw new Error(
+          (result.error as { message?: string }).message ||
+            "Failed to retry import",
+        );
+      }
+
+      return result.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: csvImportKeys.all });
+      queryClient.invalidateQueries({ queryKey: usersKeys.all });
     },
   });
 }

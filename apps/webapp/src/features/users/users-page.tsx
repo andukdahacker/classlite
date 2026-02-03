@@ -15,11 +15,14 @@ import {
 } from "@workspace/ui/components/tabs";
 import type { UserListQuery } from "@workspace/types";
 import { InviteUserModal } from "./components/InviteUserModal";
+import { CsvImportModal } from "./components/CsvImportModal";
 import { UserListTable } from "./components/UserListTable";
 import { PendingInvitationsTable } from "./components/PendingInvitationsTable";
 import { SearchFilterControls } from "./components/SearchFilterControls";
 import { BulkActionBar } from "./components/BulkActionBar";
+import { ImportHistorySection } from "./components/ImportHistorySection";
 import { useUsers } from "./users.api";
+import { useAuth } from "@/features/auth/auth-context";
 
 const DEFAULT_LIMIT = 20;
 
@@ -27,6 +30,10 @@ export function UsersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<string>("users");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const { user } = useAuth();
+
+  // Check if user can import (Owner or Admin only)
+  const canImport = user?.role === "OWNER" || user?.role === "ADMIN";
 
   // Parse filters from URL
   const filters: UserListQuery = {
@@ -72,7 +79,10 @@ export function UsersPage() {
               View and manage all users in your center
             </CardDescription>
           </div>
-          <InviteUserModal onSuccess={() => setActiveTab("invitations")} />
+          <div className="flex items-center gap-2">
+            {canImport && <CsvImportModal />}
+            <InviteUserModal onSuccess={() => setActiveTab("invitations")} />
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -107,6 +117,13 @@ export function UsersPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Import History Section - Owner/Admin only */}
+      {canImport && (
+        <Card className="mt-6">
+          <ImportHistorySection />
+        </Card>
+      )}
     </div>
   );
 }

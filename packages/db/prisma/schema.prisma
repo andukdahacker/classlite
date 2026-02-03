@@ -25,6 +25,7 @@ model User {
   classes         ClassStudent[]
   notifications   Notification[]
   teachingClasses Class[]            @relation("ClassTeacher")
+  csvImportLogs   CsvImportLog[]     @relation("CsvImportUser")
 }
 
 model AuthAccount {
@@ -58,7 +59,8 @@ model Center {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  memberships CenterMembership[]
+  memberships    CenterMembership[]
+  csvImportLogs  CsvImportLog[]
 }
 
 model CenterMembership {
@@ -242,4 +244,63 @@ model LoginAttempt {
   lastAttempt DateTime? @map("last_attempt")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
+}
+
+model CsvImportLog {
+  id            String          @id @default(cuid())
+  centerId      String          @map("center_id")
+  importedById  String          @map("imported_by_id")
+  fileName      String          @map("file_name")
+  totalRows     Int             @map("total_rows")
+  validRows     Int             @map("valid_rows")
+  duplicateRows Int             @map("duplicate_rows")
+  errorRows     Int             @map("error_rows")
+  importedRows  Int             @default(0) @map("imported_rows")
+  failedRows    Int             @default(0) @map("failed_rows")
+  status        CsvImportStatus @default(PENDING)
+  jobId         String?         @map("job_id")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  completedAt   DateTime?       @map("completed_at")
+
+  center     Center            @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  importedBy User              @relation("CsvImportUser", fields: [importedById], references: [id], onDelete: Cascade)
+  rows       CsvImportRowLog[]
+
+  @@index([centerId])
+  @@index([status])
+  @@map("csv_import_logs")
+}
+
+model CsvImportRowLog {
+  id           String             @id @default(cuid())
+  importLogId  String             @map("import_log_id")
+  rowNumber    Int                @map("row_number")
+  email        String
+  name         String
+  role         String
+  status       CsvImportRowStatus
+  errorMessage String?            @map("error_message")
+
+  importLog CsvImportLog @relation(fields: [importLogId], references: [id], onDelete: Cascade)
+
+  @@index([importLogId])
+  @@map("csv_import_row_logs")
+}
+
+enum CsvImportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  PARTIAL
+  FAILED
+}
+
+enum CsvImportRowStatus {
+  VALID
+  DUPLICATE_IN_CSV
+  DUPLICATE_IN_CENTER
+  ERROR
+  IMPORTED
+  SKIPPED
+  FAILED
 }

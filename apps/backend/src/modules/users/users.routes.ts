@@ -16,11 +16,23 @@ import {
   UserListResponseSchema,
   UserProfileResponseSchema,
   UserStatusResponseSchema,
+  CsvValidationResponseSchema,
+  CsvExecuteRequestSchema,
+  CsvExecuteResponseSchema,
+  CsvImportStatusResponseSchema,
+  CsvImportHistoryQuerySchema,
+  CsvImportHistoryResponseSchema,
+  CsvImportDetailsResponseSchema,
+  CsvRetryRequestSchema,
+  CsvRetryResponseSchema,
   type BulkUserActionRequest,
   type ChangePasswordInput,
   type ChangeRoleRequest,
   type UpdateProfileInput,
   type UserListQuery,
+  type CsvExecuteRequest,
+  type CsvImportHistoryQuery,
+  type CsvRetryRequest,
 } from "@workspace/types";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -30,12 +42,17 @@ import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireRole } from "../../middlewares/role.middleware.js";
 import { UsersController } from "./users.controller.js";
 import { UsersService } from "./users.service.js";
+import { CsvImportController } from "./csv-import.controller.js";
+import { CsvImportService } from "./csv-import.service.js";
 
 export async function usersRoutes(fastify: FastifyInstance) {
   const api = fastify.withTypeProvider<ZodTypeProvider>();
 
   const usersService = new UsersService(fastify.prisma);
   const usersController = new UsersController(usersService);
+
+  const csvImportService = new CsvImportService(fastify.prisma);
+  const csvImportController = new CsvImportController(csvImportService);
 
   // All user routes require authentication
   fastify.addHook("preHandler", authMiddleware);
@@ -587,6 +604,269 @@ export async function usersRoutes(fastify: FastifyInstance) {
         request.jwtPayload!,
       );
       return reply.send(result);
+    },
+  });
+
+  // ============================================================
+  // CSV Import Routes
+  // ============================================================
+
+  // GET /api/v1/users/import/template - Download CSV template
+  api.get("/import/template", {
+    schema: {
+      response: {
+        200: z.string(),
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN"])],
+    handler: async (_request, reply) => {
+      const template = csvImportController.getTemplate();
+      return reply
+        .header("Content-Type", "text/csv")
+        .header(
+          "Content-Disposition",
+          'attachment; filename="classlite-import-template.csv"'
+        )
+        .send(template);
+    },
+  });
+
+  // POST /api/v1/users/import/validate - Upload & validate CSV
+  api.post("/import/validate", {
+    schema: {
+      response: {
+        200: CsvValidationResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN"])],
+    handler: async (request, reply) => {
+      const data = await request.file();
+      if (!data) {
+        return reply.status(400).send({ message: "No file uploaded" });
+      }
+
+      // Validate file type
+      const allowedMimetypes = ["text/csv", "application/csv", "text/plain"];
+      if (!allowedMimetypes.includes(data.mimetype)) {
+        return reply.status(400).send({
+          message: "Invalid file type. Please upload a CSV file.",
+        });
+      }
+
+      // Validate file extension
+      const fileName = data.filename ?? "upload.csv";
+      if (!fileName.toLowerCase().endsWith(".csv")) {
+        return reply.status(400).send({
+          message: "Invalid file type. Please upload a CSV file.",
+        });
+      }
+
+      const buffer = await data.toBuffer();
+
+      // Validate file size (5MB)
+      if (buffer.length > 5 * 1024 * 1024) {
+        return reply.status(400).send({
+          message: "File too large. Maximum size is 5MB.",
+        });
+      }
+
+      try {
+        const result = await csvImportController.validateCsv(
+          buffer,
+          fileName,
+          request.jwtPayload!
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        const err = error as Error;
+        return reply.status(400).send({ message: err.message });
+      }
+    },
+  });
+
+  // POST /api/v1/users/import/execute - Queue import job
+  api.post("/import/execute", {
+    schema: {
+      body: CsvExecuteRequestSchema,
+      response: {
+        200: CsvExecuteResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN"])],
+    handler: async (
+      request: FastifyRequest<{ Body: CsvExecuteRequest }>,
+      reply
+    ) => {
+      try {
+        const result = await csvImportController.executeImport(
+          request.body,
+          request.jwtPayload!
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        const err = error as Error;
+        if (err.message === "Import not found") {
+          return reply.status(404).send({ message: err.message });
+        }
+        return reply.status(400).send({ message: err.message });
+      }
+    },
+  });
+
+  // GET /api/v1/users/import/status/:importLogId - Poll job progress
+  api.get("/import/status/:importLogId", {
+    schema: {
+      params: z.object({
+        importLogId: z.string(),
+      }),
+      response: {
+        200: CsvImportStatusResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { importLogId: string } }>,
+      reply
+    ) => {
+      try {
+        const result = await csvImportController.getImportStatus(
+          request.params.importLogId,
+          request.jwtPayload!
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        const err = error as Error;
+        if (err.message === "Import not found") {
+          return reply.status(404).send({ message: err.message });
+        }
+        return reply.status(400).send({ message: err.message });
+      }
+    },
+  });
+
+  // GET /api/v1/users/import/history - Paginated import history
+  api.get("/import/history", {
+    schema: {
+      querystring: CsvImportHistoryQuerySchema,
+      response: {
+        200: CsvImportHistoryResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN"])],
+    handler: async (
+      request: FastifyRequest<{ Querystring: CsvImportHistoryQuery }>,
+      reply
+    ) => {
+      try {
+        const result = await csvImportController.getImportHistory(
+          request.query,
+          request.jwtPayload!
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        const err = error as Error;
+        return reply.status(400).send({ message: err.message });
+      }
+    },
+  });
+
+  // GET /api/v1/users/import/:id/details - Single import details
+  api.get("/import/:id/details", {
+    schema: {
+      params: z.object({
+        id: z.string(),
+      }),
+      response: {
+        200: CsvImportDetailsResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { id: string } }>,
+      reply
+    ) => {
+      try {
+        const result = await csvImportController.getImportDetails(
+          request.params.id,
+          request.jwtPayload!
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        const err = error as Error;
+        if (err.message === "Import not found") {
+          return reply.status(404).send({ message: err.message });
+        }
+        return reply.status(400).send({ message: err.message });
+      }
+    },
+  });
+
+  // POST /api/v1/users/import/:id/retry - Retry failed rows
+  api.post("/import/:id/retry", {
+    schema: {
+      params: z.object({
+        id: z.string(),
+      }),
+      body: CsvRetryRequestSchema,
+      response: {
+        200: CsvRetryResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { id: string }; Body: CsvRetryRequest }>,
+      reply
+    ) => {
+      try {
+        const result = await csvImportController.retryImport(
+          request.params.id,
+          request.body,
+          request.jwtPayload!
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        const err = error as Error;
+        if (err.message === "Import not found") {
+          return reply.status(404).send({ message: err.message });
+        }
+        if (
+          err.message === "No failed rows to retry" ||
+          err.message === "No matching failed rows to retry"
+        ) {
+          return reply.status(400).send({ message: err.message });
+        }
+        return reply.status(400).send({ message: err.message });
+      }
     },
   });
 }

@@ -145,6 +145,13 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 ## Development Workflow
 
+### Schema Sync (Frontend)
+
+- **Rule:** ALWAYS run `pnpm --filter=webapp sync-schema-dev` after adding new backend routes.
+- **Prerequisite:** Backend must be running locally (`pnpm --filter=backend dev`).
+- **Reason:** The frontend uses `openapi-fetch` with auto-generated TypeScript types from the backend OpenAPI schema. New routes won't have type definitions until the schema is synced.
+- **Location:** Schema is generated to `apps/webapp/src/schema/schema.d.ts`.
+
 ### Commits
 
 - **Format:** Conventional Commits (`feat: add grading job`, `fix: auth redirect`).
