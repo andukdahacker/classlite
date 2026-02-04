@@ -48,14 +48,13 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: "pnpm --filter webapp dev",
-        url: "http://localhost:5173",
-        reuseExistingServer: !process.env.CI,
-        cwd: "../..",
-      },
+  webServer: {
+    command: "pnpm --filter webapp dev",
+    url: "http://localhost:5173",
+    reuseExistingServer: !process.env.CI,
+    cwd: "../..",
+    timeout: 120000, // 2 minutes for CI cold start
+  },
 
   /* Increase timeout for slower operations */
   timeout: 30000,
