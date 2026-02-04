@@ -83,8 +83,7 @@ describe("Tenanted Client Integration", () => {
 
         await prisma.user.create({ data: { id: userA2Id, email: "a2@test.com" } });
 
-        // Create membership WITHOUT specifying centerId
-        // @ts-expect-error - testing the injection (bypassing strict type check for test)
+        // Create membership WITHOUT specifying centerId (using `as any` to bypass type check)
         await dbA.centerMembership.create({
             data: {
                 userId: userA2Id,
