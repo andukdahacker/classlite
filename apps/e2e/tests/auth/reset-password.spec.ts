@@ -8,25 +8,31 @@ test.describe("Reset Password Page", () => {
   // 3. Test with a known valid token from test seed data
 
   test("shows invalid token error for missing token", async ({ page }) => {
+    // The page expects mode=resetPassword and oobCode parameters
     await page.goto("/reset-password");
 
     // Should show error about missing/invalid token
+    // The UI shows "Invalid link" as title and error message in description
     await expect(
-      page.locator('text="invalid"').or(
-        page.locator('text="expired"')
+      page.locator('text="Invalid link"').or(
+        page.locator('text="Missing password reset code"')
       ).or(
-        page.locator('text="token"')
+        page.locator('text="Invalid password reset link"')
       )
     ).toBeVisible({ timeout: 10000 });
   });
 
   test("shows invalid token error for malformed token", async ({ page }) => {
-    await page.goto("/reset-password?token=invalid-token-123");
+    // The page uses mode=resetPassword and oobCode, not token
+    await page.goto("/reset-password?mode=resetPassword&oobCode=invalid-token-123");
 
     // Should show error about invalid token
+    // Wait for the validation to complete (loading state first, then error)
     await expect(
-      page.locator('text="invalid"').or(
-        page.locator('text="expired"')
+      page.locator('text="Invalid link"').or(
+        page.locator('text="Link expired"')
+      ).or(
+        page.locator('text="invalid"')
       )
     ).toBeVisible({ timeout: 10000 });
   });
@@ -74,15 +80,15 @@ test.describe("Reset Password Page", () => {
       ).toBeVisible();
     });
 
-    test.skip("successful reset redirects to login with success message", async ({ page }) => {
+    test.skip("successful reset redirects to sign-in with success message", async ({ page }) => {
       await page.goto("/reset-password?token=VALID_TEST_TOKEN");
 
       await page.fill('input[name="password"]', "NewValidPassword123!");
       await page.fill('input[name="confirmPassword"]', "NewValidPassword123!");
       await page.click('button[type="submit"]');
 
-      // Should redirect to login page
-      await page.waitForURL(/.*login/);
+      // Should redirect to sign-in page
+      await page.waitForURL(/.*sign-in/);
 
       // Should show success message
       await expect(
