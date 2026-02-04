@@ -51,7 +51,7 @@ export default defineConfig({
   webServer: {
     command: "pnpm --filter webapp dev",
     url: "http://localhost:5173",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     cwd: "../..",
     timeout: 120000, // 2 minutes for CI cold start
     env: {
