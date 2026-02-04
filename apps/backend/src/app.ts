@@ -16,6 +16,7 @@ import { coursesRoutes } from "./modules/logistics/courses.routes.js";
 import { classesRoutes } from "./modules/logistics/classes.routes.js";
 import { schedulesRoutes } from "./modules/logistics/schedules.routes.js";
 import { sessionsRoutes } from "./modules/logistics/sessions.routes.js";
+import { attendanceRoutes } from "./modules/logistics/attendance.routes.js";
 import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
 import { usersRoutes } from "./modules/users/users.routes.js";
 import { inngestRoutes } from "./modules/inngest/inngest.routes.js";
@@ -196,6 +197,7 @@ export const buildApp = async () => {
   await app.register(classesRoutes, { prefix: "/api/v1/logistics/classes" });
   await app.register(schedulesRoutes, { prefix: "/api/v1/logistics/schedules" });
   await app.register(sessionsRoutes, { prefix: "/api/v1/logistics/sessions" });
+  await app.register(attendanceRoutes, { prefix: "/api/v1/logistics" });
   await app.register(notificationsRoutes, { prefix: "/api/v1/notifications" });
   await app.register(usersRoutes, { prefix: "/api/v1/users" });
 

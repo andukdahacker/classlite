@@ -17,6 +17,7 @@ import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { SessionBlock } from "./SessionBlock";
 import { SessionDetailsPopover } from "./SessionDetailsPopover";
 import { ConflictDrawer } from "./ConflictDrawer";
+import { AttendanceModal } from "./AttendanceModal";
 import { RBACWrapper } from "@/features/auth/components/RBACWrapper";
 import { cn } from "@workspace/ui/lib/utils";
 import { useConflictCheck } from "../hooks/use-conflict-check";
@@ -61,6 +62,10 @@ export function WeeklyCalendar({
   // Conflict drawer state
   const [conflictDrawerOpen, setConflictDrawerOpen] = useState(false);
   const [conflictSession, setConflictSession] = useState<ClassSessionWithConflicts | null>(null);
+
+  // Attendance modal state
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [attendanceSession, setAttendanceSession] = useState<ClassSessionWithConflicts | null>(null);
 
   // Conflict checking for selected session
   const {
@@ -437,6 +442,12 @@ export function WeeklyCalendar({
     }
   };
 
+  // Handle opening attendance modal
+  const handleMarkAttendance = useCallback((session: ClassSessionWithConflicts) => {
+    setAttendanceSession(session);
+    setAttendanceModalOpen(true);
+  }, []);
+
   // Handle conflict icon click - fetch conflict details and show drawer
   const handleConflictClick = async (session: ClassSessionWithConflicts) => {
     setConflictSession(session);
@@ -500,6 +511,7 @@ export function WeeklyCalendar({
       }}
       onDelete={onSessionDelete}
       isDeleting={isDeleting}
+      onMarkAttendance={handleMarkAttendance}
     >
       <div
         className={cn(
@@ -827,6 +839,18 @@ export function WeeklyCalendar({
         suggestions={suggestions}
         onApplySuggestion={handleApplySuggestionFromDrawer}
         onForceSave={handleForceSaveFromDrawer}
+      />
+
+      {/* Attendance Modal */}
+      <AttendanceModal
+        session={attendanceSession}
+        open={attendanceModalOpen}
+        onOpenChange={(open) => {
+          setAttendanceModalOpen(open);
+          if (!open) {
+            setAttendanceSession(null);
+          }
+        }}
       />
     </div>
   );

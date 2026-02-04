@@ -20,12 +20,14 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  authAccounts    AuthAccount[]
-  memberships     CenterMembership[]
-  classes         ClassStudent[]
-  notifications   Notification[]
-  teachingClasses Class[]            @relation("ClassTeacher")
-  csvImportLogs   CsvImportLog[]     @relation("CsvImportUser")
+  authAccounts      AuthAccount[]
+  memberships       CenterMembership[]
+  classes           ClassStudent[]
+  notifications     Notification[]
+  teachingClasses   Class[]            @relation("ClassTeacher")
+  csvImportLogs     CsvImportLog[]     @relation("CsvImportUser")
+  attendanceRecords Attendance[]       @relation("AttendanceStudent")
+  attendanceMarked  Attendance[]       @relation("AttendanceMarker")
 }
 
 model AuthAccount {
@@ -204,8 +206,9 @@ model ClassSession {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  class    Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
-  schedule ClassSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  class      Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  schedule   ClassSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  attendance Attendance[]
 
   @@unique([id, centerId])
   @@index([centerId])
@@ -218,6 +221,33 @@ enum SessionStatus {
   SCHEDULED
   CANCELLED
   COMPLETED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  sessionId String           @map("session_id")
+  studentId String           @map("student_id")
+  status    AttendanceStatus
+  markedBy  String           @map("marked_by")
+  centerId  String           @map("center_id")
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  session ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student User         @relation("AttendanceStudent", fields: [studentId], references: [id])
+  marker  User         @relation("AttendanceMarker", fields: [markedBy], references: [id])
+
+  @@unique([sessionId, studentId])
+  @@index([studentId, centerId])
+  @@index([sessionId])
+  @@map("attendance")
 }
 
 model Notification {

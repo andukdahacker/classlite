@@ -7,7 +7,7 @@ import {
 } from "@workspace/ui/components/popover";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import { Calendar, Clock, MapPin, Users, User, Trash2 } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, User, Trash2, ClipboardList } from "lucide-react";
 import { RBACWrapper } from "@/features/auth/components/RBACWrapper";
 
 type SessionWithDetails = ClassSession & {
@@ -26,6 +26,7 @@ interface SessionDetailsPopoverProps {
   onOpenChange?: (open: boolean) => void;
   onDelete?: (sessionId: string) => void;
   isDeleting?: boolean;
+  onMarkAttendance?: (session: SessionWithDetails) => void;
 }
 
 export function SessionDetailsPopover({
@@ -35,6 +36,7 @@ export function SessionDetailsPopover({
   onOpenChange,
   onDelete,
   isDeleting,
+  onMarkAttendance,
 }: SessionDetailsPopoverProps) {
   const startTime = new Date(session.startTime);
   const endTime = new Date(session.endTime);
@@ -122,11 +124,31 @@ export function SessionDetailsPopover({
           </div>
 
           {/* Actions */}
-          <RBACWrapper requiredRoles={["OWNER", "ADMIN"]}>
-            <div className="flex justify-end pt-2 border-t">
+          <div className="flex flex-col gap-2 pt-2 border-t">
+            {/* Mark Attendance - Only for non-cancelled sessions */}
+            {session.status !== "CANCELLED" && onMarkAttendance && (
+              <RBACWrapper requiredRoles={["OWNER", "ADMIN", "TEACHER"]}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    onMarkAttendance?.(session);
+                    onOpenChange?.(false);
+                  }}
+                >
+                  <ClipboardList className="size-4 mr-1" />
+                  Mark Attendance
+                </Button>
+              </RBACWrapper>
+            )}
+
+            {/* Delete - Admin/Owner only */}
+            <RBACWrapper requiredRoles={["OWNER", "ADMIN"]}>
               <Button
                 variant="destructive"
                 size="sm"
+                className="w-full"
                 onClick={() => {
                   if (confirm("Are you sure you want to delete this session?")) {
                     onDelete?.(session.id);
@@ -137,8 +159,8 @@ export function SessionDetailsPopover({
                 <Trash2 className="size-4 mr-1" />
                 {isDeleting ? "Deleting..." : "Delete"}
               </Button>
-            </div>
-          </RBACWrapper>
+            </RBACWrapper>
+          </div>
         </div>
       </PopoverContent>
     </Popover>

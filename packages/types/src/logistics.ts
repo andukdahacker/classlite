@@ -299,3 +299,110 @@ export const ClassSessionWithConflictsSchema = ClassSessionSchema.extend({
 });
 
 export type ClassSessionWithConflicts = z.infer<typeof ClassSessionWithConflictsSchema>;
+
+// --- Attendance ---
+
+export const AttendanceStatusSchema = z.enum(["PRESENT", "ABSENT", "LATE", "EXCUSED"]);
+export type AttendanceStatus = z.infer<typeof AttendanceStatusSchema>;
+
+export const AttendanceSchema = z.object({
+  id: z.string(),
+  sessionId: z.string(),
+  studentId: z.string(),
+  status: AttendanceStatusSchema,
+  markedBy: z.string(),
+  centerId: z.string(),
+  createdAt: z.union([z.date(), z.string()]),
+  updatedAt: z.union([z.date(), z.string()]),
+});
+
+export type Attendance = z.infer<typeof AttendanceSchema>;
+
+export const CreateAttendanceInputSchema = z.object({
+  studentId: z.string(),
+  status: AttendanceStatusSchema,
+});
+
+export type CreateAttendanceInput = z.infer<typeof CreateAttendanceInputSchema>;
+
+export const BulkAttendanceInputSchema = z.object({
+  status: z.enum(["PRESENT", "ABSENT"]), // Only PRESENT/ABSENT for bulk
+});
+
+export type BulkAttendanceInput = z.infer<typeof BulkAttendanceInputSchema>;
+
+export const StudentWithAttendanceSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  email: z.string().nullable(),
+  image: z.string().nullable().optional(),
+  attendance: z.object({
+    status: AttendanceStatusSchema,
+    markedAt: z.union([z.date(), z.string()]),
+  }).nullable(),
+});
+
+export type StudentWithAttendance = z.infer<typeof StudentWithAttendanceSchema>;
+
+export const SessionAttendanceResponseSchema = z.object({
+  session: z.object({
+    id: z.string(),
+    startTime: z.union([z.date(), z.string()]),
+    endTime: z.union([z.date(), z.string()]),
+    status: SessionStatusEnum,
+    class: z.object({
+      name: z.string(),
+      course: z.object({
+        name: z.string(),
+        color: z.string().nullable().optional(),
+      }),
+    }),
+  }),
+  students: z.array(StudentWithAttendanceSchema),
+});
+
+export type SessionAttendanceResponse = z.infer<typeof SessionAttendanceResponseSchema>;
+
+export const SessionAttendanceDataResponseSchema = createResponseSchema(SessionAttendanceResponseSchema);
+export type SessionAttendanceDataResponse = z.infer<typeof SessionAttendanceDataResponseSchema>;
+
+export const AttendanceResponseSchema = createResponseSchema(AttendanceSchema);
+export type AttendanceResponse = z.infer<typeof AttendanceResponseSchema>;
+
+export const BulkAttendanceResponseSchema = createResponseSchema(
+  z.object({
+    count: z.number(),
+    markedStudents: z.array(z.string()),
+  }),
+);
+export type BulkAttendanceResponse = z.infer<typeof BulkAttendanceResponseSchema>;
+
+export const AttendanceStatsResponseSchema = createResponseSchema(
+  z.object({
+    attendancePercentage: z.number(),
+    presentCount: z.number(),
+    absentCount: z.number(),
+    lateCount: z.number(),
+    excusedCount: z.number(),
+    totalSessions: z.number(),
+  }),
+);
+export type AttendanceStatsResponse = z.infer<typeof AttendanceStatsResponseSchema>;
+
+export const AttendanceWithSessionSchema = AttendanceSchema.extend({
+  session: z.object({
+    id: z.string(),
+    startTime: z.union([z.date(), z.string()]),
+    class: z.object({
+      name: z.string(),
+      course: z.object({ name: z.string() }),
+    }),
+  }),
+});
+
+export type AttendanceWithSession = z.infer<typeof AttendanceWithSessionSchema>;
+
+export const AttendanceHistoryResponseSchema = createResponseSchema(
+  z.array(AttendanceWithSessionSchema),
+);
+export type AttendanceHistoryResponse = z.infer<typeof AttendanceHistoryResponseSchema>;
