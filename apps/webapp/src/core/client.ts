@@ -34,6 +34,7 @@ const authMiddleware: Middleware = {
 export class UnauthorizedError extends Error {}
 
 export const client = createClient<paths>({
+  // eslint-disable-next-line turbo/no-undeclared-env-vars
   baseUrl: import.meta.env.PROD
     ? "https://api.classlite.app"
     : "http://localhost:4000",

@@ -33,8 +33,8 @@ const deepDisable = (children: React.ReactNode): React.ReactNode => {
       return child;
     }
 
-    const typedChild = child as React.ReactElement<any>;
-    const props: any = { disabled: true };
+    const typedChild = child as React.ReactElement<Record<string, unknown>>;
+    const props: Record<string, unknown> = { disabled: true };
 
     // If it's a Fragment, we need to recurse into its children
     if (typedChild.type === React.Fragment) {

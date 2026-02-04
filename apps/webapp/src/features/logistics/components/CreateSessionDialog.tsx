@@ -197,7 +197,7 @@ export function CreateSessionDialog({
       form.reset();
       clearConflicts();
       setForceSubmit(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to create session");
       setForceSubmit(false);
     }

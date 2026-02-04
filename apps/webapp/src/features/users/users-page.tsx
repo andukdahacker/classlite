@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router";
 import {
   Card,
@@ -35,14 +35,14 @@ export function UsersPage() {
   // Check if user can import (Owner or Admin only)
   const canImport = user?.role === "OWNER" || user?.role === "ADMIN";
 
-  // Parse filters from URL
-  const filters: UserListQuery = {
+  // Parse filters from URL - memoized to prevent unnecessary re-renders
+  const filters: UserListQuery = useMemo(() => ({
     page: parseInt(searchParams.get("page") || "1", 10),
     limit: parseInt(searchParams.get("limit") || String(DEFAULT_LIMIT), 10),
     search: searchParams.get("search") || undefined,
     role: (searchParams.get("role") as UserListQuery["role"]) || undefined,
     status: (searchParams.get("status") as UserListQuery["status"]) || undefined,
-  };
+  }), [searchParams]);
 
   const { data, isLoading } = useUsers(filters);
 

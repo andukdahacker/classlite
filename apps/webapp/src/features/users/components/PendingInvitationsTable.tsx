@@ -22,7 +22,6 @@ import {
 } from "@workspace/ui/components/alert-dialog";
 import { Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import type { InvitationListItem } from "@workspace/types";
 import { useInvitations, useResendInvitation, useRevokeInvitation } from "../users.api";
 
 const INVITATION_EXPIRY_HOURS = 48;

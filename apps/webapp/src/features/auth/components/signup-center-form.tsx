@@ -48,8 +48,8 @@ export function SignupCenterForm() {
       await signup(data);
       toast.success("Center registered successfully!");
       navigate("/dashboard/owner");
-    } catch (error: any) {
-      toast.error(error.message || "Signup failed");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Signup failed");
     }
   };
 
@@ -84,12 +84,12 @@ export function SignupCenterForm() {
       setSignupInProgress(false);
       toast.success("Center registered successfully with Google!");
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error) {
       console.log("Signup error caught:", error);
       setSignupInProgress(false);
       // Force sign out if registration fails so user state doesn't get stuck
       await signOut(firebaseAuth);
-      toast.error(error.message || "Google signup failed");
+      toast.error(error instanceof Error ? error.message : "Google signup failed");
     }
   };
 

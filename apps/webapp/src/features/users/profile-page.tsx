@@ -164,7 +164,7 @@ export function ProfilePage() {
       <div className="container max-w-2xl py-8">
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            User not found or you don't have permission to view this profile.
+            User not found or you don&apos;t have permission to view this profile.
           </CardContent>
         </Card>
       </div>

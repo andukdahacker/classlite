@@ -48,6 +48,7 @@ describe("DashboardPage", () => {
     vi.mocked(useAuth).mockReturnValue({
       user: { role: "OWNER", centerId: "center-1" },
       loading: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
     render(
@@ -65,6 +66,7 @@ describe("DashboardPage", () => {
     vi.mocked(useAuth).mockReturnValue({
       user: { role: "TEACHER", centerId: "center-1" },
       loading: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
     render(
@@ -80,6 +82,7 @@ describe("DashboardPage", () => {
     vi.mocked(useAuth).mockReturnValue({
       user: { role: "STUDENT", centerId: "center-1" },
       loading: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
     render(
@@ -95,6 +98,7 @@ describe("DashboardPage", () => {
     vi.mocked(useAuth).mockReturnValue({
       user: { role: "STUDENT", centerId: "center-1" },
       loading: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
     render(

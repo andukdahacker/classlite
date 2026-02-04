@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import type { ClassSession, ClassSessionWithConflicts, Suggestion } from "@workspace/types";
+import type { ClassSessionWithConflicts, Suggestion } from "@workspace/types";
 import {
   format,
   addWeeks,
@@ -454,10 +454,6 @@ export function WeeklyCalendar({
   // Handle applying a suggestion from the conflict drawer
   const handleApplySuggestionFromDrawer = useCallback((suggestion: Suggestion) => {
     if (!conflictSession || !onSessionMove) return;
-
-    const currentDuration =
-      new Date(conflictSession.endTime).getTime() -
-      new Date(conflictSession.startTime).getTime();
 
     if (suggestion.type === "time" && suggestion.startTime && suggestion.endTime) {
       // Apply time suggestion - move session to the suggested time

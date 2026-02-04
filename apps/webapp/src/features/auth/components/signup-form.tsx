@@ -54,9 +54,9 @@ export function SignupForm() {
 
       // The onAuthStateChanged listener in AuthProvider will handle the backend sync
       toast.success("Account created successfully!");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Signup failed:", error);
-      toast.error(error.message || "Failed to create account");
+      toast.error(error instanceof Error ? error.message : "Failed to create account");
     } finally {
       setIsLoading(false);
     }

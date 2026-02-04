@@ -60,19 +60,22 @@ vi.mock("./users.api", () => ({
   }),
 }));
 
-const createWrapper = () => {
+function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   });
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>{children}</BrowserRouter>
-    </QueryClientProvider>
-  );
-};
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>{children}</BrowserRouter>
+      </QueryClientProvider>
+    );
+  }
+  return Wrapper;
+}
 
 describe("UsersPage", () => {
   it("renders page title and description", () => {

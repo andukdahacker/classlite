@@ -60,7 +60,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const { data, error } = await client.POST("/api/v1/tenants/{id}/logo", {
       params: { path: { id: user.centerId } },
-      body: formData as any,
+      body: formData as unknown,
     });
 
     if (error) throw error;
@@ -131,8 +131,8 @@ function hexToHslVariables(hex: string): string {
   const max = Math.max(r, g, b),
     min = Math.min(r, g, b);
   let h = 0,
-    s = 0,
-    l = (max + min) / 2;
+    s = 0;
+  const l = (max + min) / 2;
 
   if (max !== min) {
     const d = max - min;

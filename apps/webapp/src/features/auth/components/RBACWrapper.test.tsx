@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { RBACWrapper } from "./RBACWrapper";
 import { useAuth } from "../auth-context";
 
@@ -8,13 +8,15 @@ vi.mock("../auth-context", () => ({
   useAuth: vi.fn(),
 }));
 
+const mockUseAuth = useAuth as Mock;
+
 describe("RBACWrapper", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("renders children when user has required role", () => {
-    (useAuth as any).mockReturnValue({
+    mockUseAuth.mockReturnValue({
       user: { role: "ADMIN" },
       loading: false,
     });
@@ -29,7 +31,7 @@ describe("RBACWrapper", () => {
   });
 
   it("renders null when user does not have required role and mode is 'hide' (default)", () => {
-    (useAuth as any).mockReturnValue({
+    mockUseAuth.mockReturnValue({
       user: { role: "STUDENT" },
       loading: false,
     });
@@ -44,7 +46,7 @@ describe("RBACWrapper", () => {
   });
 
   it("renders null when loading is true", () => {
-    (useAuth as any).mockReturnValue({
+    mockUseAuth.mockReturnValue({
       user: { role: "ADMIN" },
       loading: true,
     });
@@ -59,7 +61,7 @@ describe("RBACWrapper", () => {
   });
 
   it("disables child when user does not have required role and mode is 'disable'", () => {
-    (useAuth as any).mockReturnValue({
+    mockUseAuth.mockReturnValue({
       user: { role: "STUDENT" },
       loading: false,
     });
@@ -76,7 +78,7 @@ describe("RBACWrapper", () => {
   });
 
   it("renders null when user is not logged in", () => {
-    (useAuth as any).mockReturnValue({
+    mockUseAuth.mockReturnValue({
       user: null,
       loading: false,
     });
@@ -91,7 +93,7 @@ describe("RBACWrapper", () => {
   });
 
   it("works with multiple required roles", () => {
-    (useAuth as any).mockReturnValue({
+    mockUseAuth.mockReturnValue({
       user: { role: "TEACHER" },
       loading: false,
     });
@@ -106,7 +108,7 @@ describe("RBACWrapper", () => {
   });
 
   it("handles multiple children and non-element children in 'disable' mode", () => {
-    (useAuth as any).mockReturnValue({
+    mockUseAuth.mockReturnValue({
       user: { role: "STUDENT" },
       loading: false,
     });
@@ -125,7 +127,7 @@ describe("RBACWrapper", () => {
   });
 
   it("handles React.Fragment children in 'disable' mode", () => {
-    (useAuth as any).mockReturnValue({
+    mockUseAuth.mockReturnValue({
       user: { role: "STUDENT" },
       loading: false,
     });
@@ -142,7 +144,7 @@ describe("RBACWrapper", () => {
   });
 
   it("handles nested elements in 'disable' mode (Deep Disable)", () => {
-    (useAuth as any).mockReturnValue({
+    mockUseAuth.mockReturnValue({
       user: { role: "STUDENT" },
       loading: false,
     });

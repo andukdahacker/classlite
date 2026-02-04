@@ -1,7 +1,6 @@
 import client from "@/core/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
-  ClassSession,
   ClassSessionWithConflicts,
   CreateClassSessionInput,
   GenerateSessionsInput,

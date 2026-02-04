@@ -3,7 +3,6 @@ import {
   getNavigationConfig,
   getMobileNavItems,
   getOverflowNavItems,
-  type NavItemConfig,
 } from "./navigation";
 
 describe("navigation config", () => {

@@ -61,11 +61,13 @@ export const getTenantedClient = (prisma: PrismaClient, centerId: string) => {
             ) {
               const modelKey = model.charAt(0).toLowerCase() + model.slice(1);
               if (operation === "findUnique") {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return (prisma as any)[modelKey].findFirst({
                   ...queryArgs,
                   where: { ...queryArgs.where, centerId },
                 });
               } else {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return (prisma as any)[modelKey].findFirstOrThrow({
                   ...queryArgs,
                   where: { ...queryArgs.where, centerId },

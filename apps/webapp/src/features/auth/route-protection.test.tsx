@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router";
 import { ProtectedRoute } from "./protected-route";
@@ -17,10 +17,8 @@ describe("Route Protection", () => {
     mockUser: { role: string; centerId: string } | null,
     allowedRoles: string[]
   ) => {
-    vi.mocked(useAuth).mockReturnValue({
-      user: mockUser,
-      loading: false,
-    } as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useAuth).mockReturnValue({ user: mockUser, loading: false } as any);
 
     return render(
       <MemoryRouter initialEntries={[initialPath]}>
@@ -29,7 +27,7 @@ describe("Route Protection", () => {
           <Route
             path="/:centerId/dashboard/settings"
             element={
-              <ProtectedRoute allowedRoles={allowedRoles as any}>
+              <ProtectedRoute allowedRoles={allowedRoles as unknown[]}>
                 <TestPage name="Settings" />
               </ProtectedRoute>
             }
@@ -37,7 +35,7 @@ describe("Route Protection", () => {
           <Route
             path="/:centerId/dashboard/grading"
             element={
-              <ProtectedRoute allowedRoles={allowedRoles as any}>
+              <ProtectedRoute allowedRoles={allowedRoles as unknown[]}>
                 <TestPage name="Grading" />
               </ProtectedRoute>
             }
@@ -45,7 +43,7 @@ describe("Route Protection", () => {
           <Route
             path="/:centerId/dashboard/students"
             element={
-              <ProtectedRoute allowedRoles={allowedRoles as any}>
+              <ProtectedRoute allowedRoles={allowedRoles as unknown[]}>
                 <TestPage name="Students" />
               </ProtectedRoute>
             }

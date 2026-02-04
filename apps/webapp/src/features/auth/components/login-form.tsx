@@ -179,7 +179,7 @@ export function LoginForm() {
         </Button>
         {redirectPath && (
           <p className="text-center text-xs text-muted-foreground">
-            You'll be redirected after login
+            You&apos;ll be redirected after login
           </p>
         )}
         <p className="text-center text-xs text-muted-foreground">

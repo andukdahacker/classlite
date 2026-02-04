@@ -49,7 +49,7 @@ export function RosterManager({ classId, centerId }: RosterManagerProps) {
     try {
       await addStudent({ studentId });
       toast.success("Student added to class");
-    } catch (error) {
+    } catch {
       toast.error("Failed to add student");
     }
   };
@@ -58,7 +58,7 @@ export function RosterManager({ classId, centerId }: RosterManagerProps) {
     try {
       await removeStudent(studentId);
       toast.success("Student removed from class");
-    } catch (error) {
+    } catch {
       toast.error("Failed to remove student");
     }
   };

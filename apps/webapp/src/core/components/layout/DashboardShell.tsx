@@ -168,7 +168,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AISidebarContent({ onClose }: { onClose: () => void }) {
+function AISidebarContent(_: { onClose: () => void }) {
+  void _; // Satisfy unused param lint
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b p-4">
@@ -180,7 +181,7 @@ function AISidebarContent({ onClose }: { onClose: () => void }) {
       <div className="flex-1 p-4">
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <p className="text-sm text-muted-foreground">
-            Hello! I'm your ClassLite AI assistant. How can I help you today?
+            Hello! I&apos;m your ClassLite AI assistant. How can I help you today?
           </p>
         </div>
       </div>

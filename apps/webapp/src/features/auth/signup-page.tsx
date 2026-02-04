@@ -42,7 +42,7 @@ export function SignupPage() {
             </Link>
           </div>
           <div className="text-center text-sm">
-            Don't have a center yet?{" "}
+            Don&apos;t have a center yet?{" "}
             <Link to="/sign-up/center" className="underline underline-offset-4">
               Register Center
             </Link>

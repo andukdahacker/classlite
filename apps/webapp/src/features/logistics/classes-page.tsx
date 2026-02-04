@@ -52,7 +52,7 @@ export const ClassesPage = () => {
       try {
         await deleteClass(id);
         toast.success("Class deleted successfully");
-      } catch (error) {
+      } catch {
         toast.error("Failed to delete class");
       }
     }

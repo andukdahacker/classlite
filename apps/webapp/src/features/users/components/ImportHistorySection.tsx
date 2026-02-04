@@ -151,7 +151,7 @@ export function ImportHistorySection() {
               <Upload className="mx-auto h-12 w-12 mb-4 opacity-50" />
               <p>No imports yet.</p>
               <p className="text-sm">
-                Import your first roster using the "Import CSV" button above.
+                Import your first roster using the &quot;Import CSV&quot; button above.
               </p>
             </div>
           ) : (

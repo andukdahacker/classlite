@@ -18,17 +18,18 @@ vi.mock("../users.api", () => ({
   }),
 }));
 
-const createWrapper = () => {
+function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   });
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-};
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  }
+  return Wrapper;
+}
 
 describe("BulkActionBar", () => {
   const mockOnClear = vi.fn();

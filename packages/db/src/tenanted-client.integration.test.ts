@@ -46,7 +46,7 @@ describe("Tenanted Client Integration", () => {
             await prisma.centerMembership.create({
                 data: { centerId: centerBId, userId: userBId, role: "STUDENT" }
             });
-        } catch (e) {
+        } catch {
             console.warn("Database integration test setup failed - likely no DB connection or config. Skipping tests.");
             setupFailed = true;
         }
@@ -54,7 +54,7 @@ describe("Tenanted Client Integration", () => {
 
     afterAll(async () => {
         if (prisma) {
-            try { await prisma.$disconnect(); } catch { }
+            try { await prisma.$disconnect(); } catch { /* ignore disconnect errors */ }
         }
     });
 
@@ -84,11 +84,12 @@ describe("Tenanted Client Integration", () => {
         await prisma.user.create({ data: { id: userA2Id, email: "a2@test.com" } });
 
         // Create membership WITHOUT specifying centerId
-        // @ts-ignore - testing the injection (bypassing strict type check for test)
+        // @ts-expect-error - testing the injection (bypassing strict type check for test)
         await dbA.centerMembership.create({
             data: {
                 userId: userA2Id,
                 role: "TEACHER"
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any
         });
 

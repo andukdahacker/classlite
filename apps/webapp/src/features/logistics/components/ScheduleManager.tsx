@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { addWeeks, format, setHours, setMinutes, startOfWeek } from "date-fns";
+import { format, setHours, setMinutes } from "date-fns";
 import { Clock, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -103,7 +103,7 @@ export function ScheduleManager({ classId, centerId, onScheduleCreated }: Schedu
       toast.success("Schedule added and sessions generated");
       form.reset();
       setIsAdding(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to add schedule");
     }
   }
@@ -113,7 +113,7 @@ export function ScheduleManager({ classId, centerId, onScheduleCreated }: Schedu
     try {
       await deleteSchedule(scheduleId);
       toast.success("Schedule deleted");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete schedule");
     }
   }
@@ -213,7 +213,7 @@ export function ScheduleManager({ classId, centerId, onScheduleCreated }: Schedu
       ) : (
         !isAdding && (
           <div className="text-sm text-muted-foreground py-4 text-center border rounded-lg border-dashed">
-            No recurring schedules. Add one to enable "Generate Sessions".
+            No recurring schedules. Add one to enable &quot;Generate Sessions&quot;.
           </div>
         )
       )}

@@ -85,7 +85,7 @@ export function CourseDrawer({
         toast.success("Course created successfully");
       }
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to save course");
     }
   };

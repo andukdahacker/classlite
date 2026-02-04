@@ -47,7 +47,7 @@ export const useCourses = (centerId?: string | null) => {
       id: string;
       input: UpdateCourseInput;
     }) => {
-      // @ts-ignore
+      // @ts-expect-error - openapi-fetch type inference issue
       const { data, error } = await client.PATCH(
         "/api/v1/logistics/courses/{id}",
         {
@@ -99,7 +99,7 @@ export const useClasses = (centerId?: string) => {
 
   const createClassMutation = useMutation({
     mutationFn: async (input: CreateClassInput) => {
-      // @ts-ignore
+      // @ts-expect-error - openapi-fetch type inference issue
       const { data, error } = await client.POST("/api/v1/logistics/classes/", {
         body: input,
       });
@@ -161,7 +161,7 @@ export const useRoster = (classId?: string, centerId?: string) => {
   const rosterQuery = useQuery({
     queryKey: ["roster", classId],
     queryFn: async () => {
-      // @ts-ignore
+      // @ts-expect-error - openapi-fetch type inference issue
       const { data, error } = await client.GET(
         "/api/v1/logistics/classes/{id}/students",
         {
@@ -193,7 +193,7 @@ export const useRoster = (classId?: string, centerId?: string) => {
 
   const removeStudentMutation = useMutation({
     mutationFn: async (studentId: string) => {
-      // @ts-ignore
+      // @ts-expect-error - openapi-fetch type inference issue
       const { error } = await client.DELETE(
         "/api/v1/logistics/classes/{id}/students/{studentId}",
         {
@@ -216,7 +216,8 @@ export const useRoster = (classId?: string, centerId?: string) => {
   };
 };
 
-export const useSchedules = (classId?: string, centerId?: string) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const useSchedules = (classId?: string, _centerId?: string) => {
   const queryClient = useQueryClient();
 
   const schedulesQuery = useQuery({

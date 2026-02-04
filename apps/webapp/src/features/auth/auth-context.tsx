@@ -121,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     return unsubscribe;
-  }, []);
+  }, [queryClient]);
 
   // Silent token refresh listener
   useEffect(() => {

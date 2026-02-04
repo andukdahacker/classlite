@@ -45,7 +45,7 @@ export const CenterSettingsPage: React.FC = () => {
     try {
       await updateBranding(values);
       toast.success("Center settings updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update center settings");
     }
   };
@@ -85,7 +85,7 @@ export const CenterSettingsPage: React.FC = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Center Settings</h1>
         <p className="text-muted-foreground">
-          Manage your center's branding and regional settings.
+          Manage your center&apos;s branding and regional settings.
         </p>
       </div>
 
@@ -159,7 +159,7 @@ export const CenterSettingsPage: React.FC = () => {
                     <Input {...field} className="font-mono" />
                   </div>
                   <FormDescription>
-                    Your center's primary color. Used for buttons and
+                    Your center&apos;s primary color. Used for buttons and
                     highlights.
                   </FormDescription>
                   <FormMessage />

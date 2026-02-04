@@ -70,7 +70,7 @@ export function ForgotPasswordPage() {
           {isSubmitted ? (
             <div className="space-y-4">
               <div className="rounded-lg border border-primary/50 bg-primary/10 p-4 text-sm text-primary">
-                If an account exists for this email, you'll receive a password
+                If an account exists for this email, you&apos;ll receive a password
                 reset link shortly.
               </div>
               <div className="text-center">

@@ -37,7 +37,7 @@ export const CoursesPage = () => {
       try {
         await deleteCourse(id);
         toast.success("Course deleted successfully");
-      } catch (error) {
+      } catch {
         toast.error("Failed to delete course");
       }
     }
@@ -57,7 +57,7 @@ export const CoursesPage = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Courses</h1>
           <p className="text-muted-foreground">
-            Manage your center's educational programs and courses.
+            Manage your center&apos;s educational programs and courses.
           </p>
         </div>
         <RBACWrapper requiredRoles={["OWNER", "ADMIN"]}>

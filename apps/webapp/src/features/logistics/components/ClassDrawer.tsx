@@ -105,7 +105,7 @@ export function ClassDrawer({
         toast.success("Class created successfully");
       }
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to save class");
     }
   };

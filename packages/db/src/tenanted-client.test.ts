@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getTenantedClient } from "./tenanted-client";
 
 describe("tenanted-client", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockPrisma: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let extensionDefinition: any;
 
   beforeEach(() => {

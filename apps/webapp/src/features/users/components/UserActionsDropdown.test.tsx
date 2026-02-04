@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { UserActionsDropdown } from "./UserActionsDropdown";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -69,19 +69,22 @@ const mockCurrentUser: UserListItem = {
   id: "current-user-id", // Same as auth context user
 };
 
-const createWrapper = () => {
+function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   });
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>{children}</BrowserRouter>
-    </QueryClientProvider>
-  );
-};
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>{children}</BrowserRouter>
+      </QueryClientProvider>
+    );
+  }
+  return Wrapper;
+}
 
 describe("UserActionsDropdown", () => {
   beforeEach(() => {

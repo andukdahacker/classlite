@@ -28,17 +28,18 @@ const mockUser: UserListItem = {
   lastActiveAt: "2024-01-15T00:00:00Z",
 };
 
-const createWrapper = () => {
+function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   });
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-};
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  }
+  return Wrapper;
+}
 
 describe("RoleChangeModal", () => {
   const mockOnOpenChange = vi.fn();
