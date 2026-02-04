@@ -34,7 +34,14 @@ export const getTenantedClient = (prisma: PrismaClient, centerId: string) => {
   return prisma.$extends({
     query: {
       $allModels: {
-        async $allOperations({ model, operation, args, query }) {
+        async $allOperations({ model, operation, args, query }: {
+          model: string;
+          operation: string;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          args: Record<string, any>;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          query: (args: any) => Promise<any>;
+        }) {
           // Robust check: Only apply if the model is explicitly marked as tenanted
           if (TENANTED_MODELS.includes(model as string)) {
             // Force type assertion to allow dynamic property access

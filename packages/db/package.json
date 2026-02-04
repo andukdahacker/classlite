@@ -1,10 +1,11 @@
 {
   "name": "@workspace/db",
   "version": "0.1.0",
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc && cp -r src/generated dist/",
+    "build": "prisma generate && tsc && cp -r src/generated dist/",
     "dev": "prisma generate && tsc -w && cp -r src/generated dist/",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
