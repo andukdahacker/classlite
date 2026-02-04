@@ -77,20 +77,22 @@ async function seedFirebaseUsers() {
 
   const projectId = process.env.FIREBASE_PROJECT_ID || "claite-87848";
 
+  // Clear all existing accounts to reset any lockout state
+  try {
+    const clearResponse = await fetch(
+      `http://${emulatorHost}/emulator/v1/projects/${projectId}/accounts`,
+      { method: "DELETE" }
+    );
+    if (clearResponse.ok) {
+      console.log("   ✓ Cleared existing Firebase accounts");
+    }
+  } catch {
+    // Ignore errors - emulator might not have any accounts yet
+  }
+
   for (const user of TEST_USERS) {
     try {
-      // Use the emulator's REST API to create users
-      // First, try to delete existing user (ignore errors)
-      await fetch(
-        `http://${emulatorHost}/emulator/v1/projects/${projectId}/accounts`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ localId: user.firebaseUid }),
-        }
-      ).catch(() => {});
-
-      // Create user via emulator's signUp endpoint with custom UID
+      // Create user via emulator's signUp endpoint
       // The emulator accepts requests to the identitytoolkit endpoint
       const signUpResponse = await fetch(
         `http://${emulatorHost}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key`,
@@ -148,6 +150,13 @@ async function seedDatabase() {
   console.log("🗄️  Seeding database...");
 
   try {
+    // Clear login attempts for test users (reset any lockout state)
+    const testEmails = TEST_USERS.map((u) => u.email.toLowerCase());
+    await prisma.loginAttempt.deleteMany({
+      where: { email: { in: testEmails } },
+    });
+    console.log("   ✓ Cleared login attempts for test users");
+
     // Create or update test center
     await prisma.center.upsert({
       where: { id: TEST_CENTER.id },
@@ -244,6 +253,49 @@ async function seedDatabase() {
   }
 }
 
+async function verifyFirebaseLogin() {
+  const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+  if (!emulatorHost) return;
+
+  const projectId = process.env.FIREBASE_PROJECT_ID || "claite-87848";
+
+  // Try to look up users by email using the emulator's lookup endpoint
+  console.log("🔍 Verifying Firebase users exist...");
+  for (const user of TEST_USERS) {
+    try {
+      // Use accounts:lookup to check if user exists
+      const response = await fetch(
+        `http://${emulatorHost}/identitytoolkit.googleapis.com/v1/accounts:lookup?key=fake-api-key`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: [user.email],
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.users && data.users.length > 0) {
+          console.log(`   ✓ Found ${user.email} (uid: ${data.users[0].localId})`);
+        } else {
+          console.log(`   ✗ User not found: ${user.email}`);
+        }
+      } else {
+        const error = await response.text();
+        console.log(`   ✗ Lookup failed for ${user.email}: ${error}`);
+      }
+    } catch (error) {
+      console.log(`   ✗ Error looking up ${user.email}:`, error);
+    }
+  }
+
+  // Note: REST API verification may fail due to project context issues
+  // The browser's Firebase SDK works correctly with the emulator
+  console.log("   Note: If browser tests pass, the emulator is working correctly.");
+}
+
 async function main() {
   console.log("\n🌱 E2E Test Data Seeding\n");
 
@@ -251,6 +303,8 @@ async function main() {
     await seedFirebaseUsers();
     console.log("");
     await seedDatabase();
+    console.log("");
+    await verifyFirebaseLogin();
   } catch (error) {
     console.error("\n❌ Seeding failed:", error);
     process.exit(1);

@@ -211,4 +211,41 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
     },
   );
+
+  // Reset login attempts for an email (E2E testing only - dev mode)
+  // This endpoint allows E2E tests to clear lockouts before each test
+  typedFastify.delete(
+    "/login-attempt/:email",
+    {
+      schema: {
+        params: z.object({
+          email: z.string(),
+        }),
+        response: {
+          200: z.object({ message: z.string() }),
+          403: ErrorResponseSchema,
+          500: ErrorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      // Only allow in development/test mode
+      if (process.env.NODE_ENV === "production") {
+        return reply.status(403).send({
+          message: "This endpoint is only available in development mode",
+        });
+      }
+
+      try {
+        const { email } = request.params;
+        await authService.resetLoginAttempts(email);
+        return reply.status(200).send({ message: "Login attempts reset" });
+      } catch (error: any) {
+        request.log.error(error);
+        return reply.status(500).send({
+          message: error.message || "Failed to reset login attempts",
+        });
+      }
+    },
+  );
 }

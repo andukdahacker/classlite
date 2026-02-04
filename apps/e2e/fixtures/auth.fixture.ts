@@ -1,6 +1,24 @@
 import { test as base, Page, BrowserContext } from "@playwright/test";
 
 /**
+ * E2E Test Center ID - must match seed-e2e.ts
+ */
+export const E2E_CENTER_ID = "e2e-test-center";
+
+/**
+ * Helper to construct URLs with the center ID prefix
+ */
+export function getAppUrl(path: string): string {
+  // Paths like /dashboard, /settings/users, /courses, etc.
+  // become /{centerId}/dashboard, /{centerId}/dashboard/settings/users, etc.
+  if (path.startsWith("/dashboard")) {
+    return `/${E2E_CENTER_ID}${path}`;
+  }
+  // Other paths get nested under dashboard
+  return `/${E2E_CENTER_ID}/dashboard${path}`;
+}
+
+/**
  * User roles supported by the application.
  */
 export type UserRole = "OWNER" | "ADMIN" | "TEACHER" | "STUDENT";
@@ -48,12 +66,31 @@ export const TEST_USERS: Record<UserRole, TestUser> = {
 };
 
 /**
+ * Reset login attempts for an email via the backend API.
+ * This prevents lockouts during parallel E2E test execution.
+ */
+async function resetLoginAttempts(email: string): Promise<void> {
+  const backendUrl = process.env.VITE_API_URL || "http://localhost:4000";
+  try {
+    await fetch(`${backendUrl}/auth/login-attempt/${encodeURIComponent(email)}`, {
+      method: "DELETE",
+    });
+  } catch {
+    // Ignore errors - endpoint might not be available
+  }
+}
+
+/**
  * Login as a specific user.
  * @param page - Playwright page object
  * @param user - Test user to log in as
  */
 export async function loginAs(page: Page, user: TestUser): Promise<void> {
-  await page.goto("/login");
+  // Reset any login attempt lockouts before logging in
+  // This prevents flaky tests due to parallel execution
+  await resetLoginAttempts(user.email);
+
+  await page.goto("/sign-in");
 
   // Wait for the login form to be visible
   await page.waitForSelector('input[type="email"]');
@@ -65,8 +102,15 @@ export async function loginAs(page: Page, user: TestUser): Promise<void> {
   // Click the login button
   await page.click('button[type="submit"]');
 
-  // Wait for navigation to complete (should redirect to dashboard)
-  await page.waitForURL(/\/(dashboard|$)/, { timeout: 10000 });
+  // Wait for either dashboard redirect OR error message
+  try {
+    await page.waitForURL(/.*\/dashboard/, { timeout: 10000 });
+  } catch {
+    // If we didn't redirect to dashboard, check for error
+    const errorText = await page.locator('.text-destructive').textContent().catch(() => null);
+    const currentUrl = page.url();
+    throw new Error(`Login failed for ${user.email}. Error: ${errorText || 'unknown'}. Current URL: ${currentUrl}`);
+  }
 }
 
 /**
@@ -80,8 +124,8 @@ export async function logout(page: Page): Promise<void> {
   // Click logout button
   await page.click('[data-testid="logout-button"]');
 
-  // Wait for redirect to login page
-  await page.waitForURL("**/login");
+  // Wait for redirect to sign-in page
+  await page.waitForURL("**/sign-in");
 }
 
 /**
