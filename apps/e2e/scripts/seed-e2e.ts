@@ -170,15 +170,17 @@ async function seedDatabase() {
       });
 
       // Create auth account (Firebase link)
-      await prisma.authAccount.upsert({
+      // First, delete any existing auth account for this email to handle UID changes
+      await prisma.authAccount.deleteMany({
         where: {
-          provider_providerUserId: {
-            provider: "FIREBASE",
-            providerUserId: user.firebaseUid,
-          },
+          provider: "FIREBASE",
+          email: user.email,
         },
-        update: { email: user.email },
-        create: {
+      });
+
+      // Then create the new auth account
+      await prisma.authAccount.create({
+        data: {
           userId: user.id,
           provider: "FIREBASE",
           providerUserId: user.firebaseUid,
