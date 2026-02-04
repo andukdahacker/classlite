@@ -10,7 +10,8 @@
     "test:e2e": "pnpm --filter @workspace/e2e test",
     "test:e2e:chromium": "pnpm --filter @workspace/e2e test:chromium",
     "test:e2e:ui": "pnpm --filter @workspace/e2e test:ui",
-    "test:e2e:headed": "pnpm --filter @workspace/e2e test:headed"
+    "test:e2e:headed": "pnpm --filter @workspace/e2e test:headed",
+    "test:e2e:seed": "pnpm --filter @workspace/e2e seed"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
