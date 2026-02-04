@@ -1,6 +1,6 @@
 # Story 2.4: Attendance Tracking
 
-Status: review
+Status: done
 
 ## Story
 
