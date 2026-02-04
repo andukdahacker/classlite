@@ -1,56 +1,72 @@
-import { test, expect, TEST_USERS, loginAs } from "../../fixtures/auth.fixture";
+import {
+  expect,
+  getAppUrl,
+  loginAs,
+  test,
+  TEST_USERS,
+} from "../../fixtures/auth.fixture";
 
 test.describe("Protected Routes", () => {
   test.describe("Unauthenticated Access", () => {
-    test("redirects to login when accessing dashboard without auth", async ({ page }) => {
-      await page.goto("/dashboard");
+    test("redirects to sign-in when accessing dashboard without auth", async ({
+      page,
+    }) => {
+      await page.goto(getAppUrl("/dashboard"));
 
-      // Should redirect to login
-      await page.waitForURL(/.*login/);
-      expect(page.url()).toContain("login");
+      // Should redirect to sign-in
+      await page.waitForURL(/.*sign-in/);
+      expect(page.url()).toContain("sign-in");
     });
 
-    test("redirects to login when accessing settings without auth", async ({ page }) => {
-      await page.goto("/settings");
+    test("redirects to sign-in when accessing settings without auth", async ({
+      page,
+    }) => {
+      await page.goto(getAppUrl("/settings"));
 
-      await page.waitForURL(/.*login/);
-      expect(page.url()).toContain("login");
+      await page.waitForURL(/.*sign-in/);
+      expect(page.url()).toContain("sign-in");
     });
 
-    test("redirects to login when accessing users page without auth", async ({ page }) => {
-      await page.goto("/users");
+    test("redirects to sign-in when accessing users page without auth", async ({
+      page,
+    }) => {
+      await page.goto(getAppUrl("/settings/users"));
 
-      await page.waitForURL(/.*login/);
-      expect(page.url()).toContain("login");
+      await page.waitForURL(/.*sign-in/);
+      expect(page.url()).toContain("sign-in");
     });
 
-    test("redirects to login when accessing courses page without auth", async ({ page }) => {
-      await page.goto("/courses");
+    test("redirects to sign-in when accessing courses page without auth", async ({
+      page,
+    }) => {
+      await page.goto(getAppUrl("/courses"));
 
-      await page.waitForURL(/.*login/);
-      expect(page.url()).toContain("login");
+      await page.waitForURL(/.*sign-in/);
+      expect(page.url()).toContain("sign-in");
     });
 
-    test("redirects to login when accessing classes page without auth", async ({ page }) => {
-      await page.goto("/classes");
+    test("redirects to sign-in when accessing classes page without auth", async ({
+      page,
+    }) => {
+      await page.goto(getAppUrl("/classes"));
 
-      await page.waitForURL(/.*login/);
-      expect(page.url()).toContain("login");
+      await page.waitForURL(/.*sign-in/);
+      expect(page.url()).toContain("sign-in");
     });
   });
 
   test.describe("Role-Based Access - Owner", () => {
     test("owner can access dashboard", async ({ page }) => {
       await loginAs(page, TEST_USERS.OWNER);
-      await page.goto("/dashboard");
 
-      // Should stay on dashboard
-      await expect(page.url()).not.toContain("login");
+      // After login, we're already on dashboard
+      expect(page.url()).toContain("dashboard");
+      expect(page.url()).not.toContain("sign-in");
     });
 
     test("owner can access user management", async ({ page }) => {
       await loginAs(page, TEST_USERS.OWNER);
-      await page.goto("/users");
+      await page.goto(getAppUrl("/settings/users"));
 
       // Should be able to access users page
       await expect(page.url()).toContain("users");
@@ -58,7 +74,7 @@ test.describe("Protected Routes", () => {
 
     test("owner can access settings", async ({ page }) => {
       await loginAs(page, TEST_USERS.OWNER);
-      await page.goto("/settings");
+      await page.goto(getAppUrl("/settings"));
 
       // Should be able to access settings
       await expect(page.url()).toContain("settings");
@@ -68,14 +84,15 @@ test.describe("Protected Routes", () => {
   test.describe("Role-Based Access - Admin", () => {
     test("admin can access dashboard", async ({ page }) => {
       await loginAs(page, TEST_USERS.ADMIN);
-      await page.goto("/dashboard");
 
-      await expect(page.url()).not.toContain("login");
+      // After login, we're already on dashboard
+      expect(page.url()).toContain("dashboard");
+      expect(page.url()).not.toContain("sign-in");
     });
 
     test("admin can access user management", async ({ page }) => {
       await loginAs(page, TEST_USERS.ADMIN);
-      await page.goto("/users");
+      await page.goto(getAppUrl("/settings/users"));
 
       await expect(page.url()).toContain("users");
     });
@@ -84,75 +101,74 @@ test.describe("Protected Routes", () => {
   test.describe("Role-Based Access - Teacher", () => {
     test("teacher can access dashboard", async ({ page }) => {
       await loginAs(page, TEST_USERS.TEACHER);
-      await page.goto("/dashboard");
 
-      await expect(page.url()).not.toContain("login");
+      // After login, we're already on dashboard
+      expect(page.url()).toContain("dashboard");
+      expect(page.url()).not.toContain("sign-in");
     });
 
     test("teacher cannot access user management", async ({ page }) => {
       await loginAs(page, TEST_USERS.TEACHER);
-      await page.goto("/users");
+      await page.goto(getAppUrl("/settings/users"));
 
-      // Should be redirected or show access denied
-      // Check for either redirect to dashboard or access denied message
+      // Should be redirected (settings requires OWNER or ADMIN)
+      await page.waitForLoadState("networkidle");
       const url = page.url();
-      const hasAccessDenied = await page.locator('text="access denied"').or(
-        page.locator('text="permission"')
-      ).count() > 0;
 
-      expect(url.includes("users") && !hasAccessDenied).toBeFalsy();
+      // Teacher should be redirected away from settings
+      expect(url.includes("settings/users")).toBeFalsy();
     });
   });
 
   test.describe("Role-Based Access - Student", () => {
     test("student can access dashboard", async ({ page }) => {
       await loginAs(page, TEST_USERS.STUDENT);
-      await page.goto("/dashboard");
 
-      await expect(page.url()).not.toContain("login");
+      // After login, we're already on dashboard
+      expect(page.url()).toContain("dashboard");
+      expect(page.url()).not.toContain("sign-in");
     });
 
     test("student cannot access user management", async ({ page }) => {
       await loginAs(page, TEST_USERS.STUDENT);
-      await page.goto("/users");
+      await page.goto(getAppUrl("/settings/users"));
 
-      // Should be redirected or show access denied
+      // Should be redirected (settings requires OWNER or ADMIN)
+      await page.waitForLoadState("networkidle");
       const url = page.url();
-      const hasAccessDenied = await page.locator('text="access denied"').or(
-        page.locator('text="permission"')
-      ).count() > 0;
 
-      expect(url.includes("users") && !hasAccessDenied).toBeFalsy();
+      // Student should be redirected away from settings
+      expect(url.includes("settings/users")).toBeFalsy();
     });
 
     test("student cannot access courses management", async ({ page }) => {
       await loginAs(page, TEST_USERS.STUDENT);
-      await page.goto("/courses");
+      await page.goto(getAppUrl("/courses"));
 
+      // Should be redirected (courses requires OWNER, ADMIN, or TEACHER)
+      await page.waitForLoadState("networkidle");
       const url = page.url();
-      const hasAccessDenied = await page.locator('text="access denied"').or(
-        page.locator('text="permission"')
-      ).count() > 0;
 
-      expect(url.includes("courses") && !hasAccessDenied).toBeFalsy();
+      // Student should be redirected away from courses
+      expect(url.includes("/courses")).toBeFalsy();
     });
   });
 
   test.describe("Return URL Handling", () => {
-    test("preserves return URL after login", async ({ page }) => {
+    test("preserves return URL after sign-in", async ({ page }) => {
       // Try to access a protected page
-      await page.goto("/users");
+      await page.goto(getAppUrl("/settings/users"));
 
-      // Should redirect to login with return URL
-      await page.waitForURL(/.*login/);
+      // Should redirect to sign-in with return URL
+      await page.waitForURL(/.*sign-in/);
 
       // Login
       await page.fill('input[type="email"]', TEST_USERS.OWNER.email);
       await page.fill('input[type="password"]', TEST_USERS.OWNER.password);
       await page.click('button[type="submit"]');
 
-      // Should redirect back to the originally requested page
-      await page.waitForURL(/\/(users|dashboard)/, { timeout: 10000 });
+      // Should redirect back to the originally requested page or dashboard
+      await page.waitForURL(/.*\/(users|dashboard)/, { timeout: 10000 });
     });
   });
 });

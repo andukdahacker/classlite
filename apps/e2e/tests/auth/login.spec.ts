@@ -3,7 +3,7 @@ import { waitForToast, getUrlPath } from "../../utils/test-helpers";
 
 test.describe("Login Page", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
+    await page.goto("/sign-in");
   });
 
   test("displays login form correctly", async ({ page }) => {
@@ -23,9 +23,9 @@ test.describe("Login Page", () => {
     await page.fill('input[type="password"]', user.password);
     await page.click('button[type="submit"]');
 
-    // Should redirect to dashboard
-    await page.waitForURL(/\/(dashboard|$)/);
-    expect(getUrlPath(page)).toMatch(/\/(dashboard|$)/);
+    // Should redirect to /{centerId}/dashboard
+    await page.waitForURL(/.*\/dashboard/);
+    expect(getUrlPath(page)).toMatch(/.*\/dashboard/);
   });
 
   test("invalid credentials show error message", async ({ page }) => {
@@ -33,15 +33,15 @@ test.describe("Login Page", () => {
     await page.fill('input[type="password"]', "wrongpassword");
     await page.click('button[type="submit"]');
 
-    // Should show error toast or message
+    // Should show error message
     await expect(
-      page.locator('text="Invalid email or password"').or(
+      page.locator('text="Email or password is incorrect"').or(
         page.locator('[data-sonner-toast]')
       )
     ).toBeVisible({ timeout: 10000 });
 
-    // Should stay on login page
-    expect(page.url()).toContain("/login");
+    // Should stay on sign-in page
+    expect(page.url()).toContain("/sign-in");
   });
 
   test("email field validation", async ({ page }) => {
@@ -50,7 +50,7 @@ test.describe("Login Page", () => {
     await page.click('button[type="submit"]');
 
     // Should show validation error or prevent submission
-    expect(page.url()).toContain("/login");
+    expect(page.url()).toContain("/sign-in");
   });
 
   test("password field validation", async ({ page }) => {
@@ -59,7 +59,7 @@ test.describe("Login Page", () => {
     await page.click('button[type="submit"]');
 
     // Should show validation error or prevent submission
-    expect(page.url()).toContain("/login");
+    expect(page.url()).toContain("/sign-in");
   });
 
   test("forgot password link navigates correctly", async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe("Account Lockout", () => {
     // This test is skipped by default as it may affect test user state
     // Enable when running against a test environment with reset capability
 
-    await page.goto("/login");
+    await page.goto("/sign-in");
 
     // Attempt login with wrong password multiple times
     for (let i = 0; i < 5; i++) {
@@ -114,8 +114,8 @@ test.describe("Session Persistence", () => {
     // Refresh the page
     await page.reload();
 
-    // Should still be on dashboard (not redirected to login)
+    // Should still be on dashboard (not redirected to sign-in)
     await page.waitForLoadState("networkidle");
-    expect(page.url()).not.toContain("/login");
+    expect(page.url()).not.toContain("/sign-in");
   });
 });
