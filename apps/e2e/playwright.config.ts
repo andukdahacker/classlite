@@ -54,6 +54,10 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     cwd: "../..",
     timeout: 120000, // 2 minutes for CI cold start
+    env: {
+      ...process.env,
+      VITE_USE_FIREBASE_EMULATOR: process.env.VITE_USE_FIREBASE_EMULATOR || "false",
+    },
   },
 
   /* Increase timeout for slower operations */

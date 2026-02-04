@@ -8,9 +8,22 @@
  *   pnpm --filter @workspace/e2e seed
  */
 
-import { PrismaClient } from "@workspace/db/generated/client";
+import { PrismaClient } from "@workspace/db";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient();
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  console.error("❌ DATABASE_URL environment variable is required");
+  process.exit(1);
+}
+
+const adapter = new PrismaPg({
+  connectionString: DATABASE_URL,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 // Test users configuration - must match fixtures/auth.fixture.ts
 const TEST_CENTER = {
@@ -62,12 +75,12 @@ async function seedFirebaseUsers() {
 
   console.log(`🔥 Seeding Firebase Auth Emulator at ${emulatorHost}...`);
 
-  const baseUrl = `http://${emulatorHost}/identitytoolkit.googleapis.com/v1`;
   const projectId = process.env.FIREBASE_PROJECT_ID || "claite-87848";
 
   for (const user of TEST_USERS) {
     try {
-      // Delete existing user if present (ignore errors)
+      // Use the emulator's REST API to create users
+      // First, try to delete existing user (ignore errors)
       await fetch(
         `http://${emulatorHost}/emulator/v1/projects/${projectId}/accounts`,
         {
@@ -77,29 +90,50 @@ async function seedFirebaseUsers() {
         }
       ).catch(() => {});
 
-      // Create user in Firebase Auth emulator
-      const response = await fetch(
-        `${baseUrl}/projects/${projectId}/accounts`,
+      // Create user via emulator's signUp endpoint with custom UID
+      // The emulator accepts requests to the identitytoolkit endpoint
+      const signUpResponse = await fetch(
+        `http://${emulatorHost}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            localId: user.firebaseUid,
             email: user.email,
             password: TEST_PASSWORD,
             displayName: user.name,
-            emailVerified: true,
+            returnSecureToken: true,
           }),
         }
       );
 
-      if (response.ok) {
-        console.log(`   ✓ Created Firebase user: ${user.email}`);
+      if (signUpResponse.ok) {
+        const data = await signUpResponse.json();
+        console.log(`   ✓ Created Firebase user: ${user.email} (uid: ${data.localId})`);
+        // Store the actual Firebase UID for database seeding
+        user.firebaseUid = data.localId;
       } else {
-        const error = await response.text();
-        // User might already exist, which is fine
-        if (error.includes("EMAIL_EXISTS") || error.includes("DUPLICATE_LOCAL_ID")) {
-          console.log(`   ✓ Firebase user exists: ${user.email}`);
+        const error = await signUpResponse.text();
+        if (error.includes("EMAIL_EXISTS")) {
+          // User exists, try to sign in to get the UID
+          const signInResponse = await fetch(
+            `http://${emulatorHost}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: user.email,
+                password: TEST_PASSWORD,
+                returnSecureToken: true,
+              }),
+            }
+          );
+          if (signInResponse.ok) {
+            const data = await signInResponse.json();
+            user.firebaseUid = data.localId;
+            console.log(`   ✓ Firebase user exists: ${user.email} (uid: ${data.localId})`);
+          } else {
+            console.log(`   ✗ Failed to get existing user ${user.email}`);
+          }
         } else {
           console.log(`   ✗ Failed to create ${user.email}: ${error}`);
         }
