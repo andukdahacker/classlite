@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -7,6 +7,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Use process.env with fallback for CI builds where prisma generate
+    // doesn't need actual database connection
+    url: process.env.DATABASE_URL || "postgresql://localhost:5432/placeholder",
   },
 });
