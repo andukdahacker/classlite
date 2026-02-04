@@ -87,6 +87,7 @@ export function ForgotPasswordPage() {
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4"
+                noValidate
               >
                 <FormField
                   control={form.control}
