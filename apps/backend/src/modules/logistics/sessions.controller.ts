@@ -5,6 +5,8 @@ import {
   GenerateSessionsInput,
   GenerateSessionsResponse,
   UpdateClassSessionInput,
+  ConflictCheckInput,
+  ConflictResultResponse,
 } from "@workspace/types";
 import { format } from "date-fns";
 import { JwtPayload } from "jsonwebtoken";
@@ -22,16 +24,24 @@ export class SessionsController {
     startDate: string,
     endDate: string,
     classId?: string,
+    includeConflicts?: boolean,
   ): Promise<ClassSessionListResponse> {
     const centerId = user.centerId;
     if (!centerId) throw new Error("Center ID missing from token");
 
-    const sessions = await this.sessionsService.listSessions(
-      centerId,
-      new Date(startDate),
-      new Date(endDate),
-      classId,
-    );
+    const sessions = includeConflicts
+      ? await this.sessionsService.listSessionsWithConflicts(
+          centerId,
+          new Date(startDate),
+          new Date(endDate),
+          classId,
+        )
+      : await this.sessionsService.listSessions(
+          centerId,
+          new Date(startDate),
+          new Date(endDate),
+          classId,
+        );
     return {
       data: sessions,
       message: "Sessions retrieved successfully",
@@ -79,7 +89,6 @@ export class SessionsController {
     if (!centerId) throw new Error("Center ID missing from token");
 
     const session = await this.sessionsService.createSession(centerId, input);
-    console.log("Created session:", session);
     return {
       data: session,
       message: "Session created successfully",
@@ -160,6 +169,22 @@ export class SessionsController {
     return {
       data: result,
       message: `Generated ${result.generatedCount} sessions successfully`,
+    };
+  }
+
+  async checkConflicts(
+    input: ConflictCheckInput,
+    user: JwtPayload,
+  ): Promise<ConflictResultResponse> {
+    const centerId = user.centerId;
+    if (!centerId) throw new Error("Center ID missing from token");
+
+    const result = await this.sessionsService.checkConflicts(centerId, input);
+    return {
+      data: result,
+      message: result.hasConflicts
+        ? "Scheduling conflicts detected"
+        : "No conflicts detected",
     };
   }
 }

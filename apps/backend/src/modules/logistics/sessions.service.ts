@@ -4,6 +4,10 @@ import {
   UpdateClassSessionInput,
   ClassSession,
   GenerateSessionsInput,
+  ConflictCheckInput,
+  ConflictResult,
+  ConflictingSession,
+  Suggestion,
 } from "@workspace/types";
 import {
   startOfWeek,
@@ -335,5 +339,350 @@ export class SessionsService {
       teacherId: classData.teacherId,
       studentIds: classData.students.map((s) => s.studentId),
     };
+  }
+
+  /**
+   * Check for scheduling conflicts (room double-booking or teacher double-booking)
+   * Time Overlap Formula: (session1.startTime < session2.endTime) AND (session1.endTime > session2.startTime)
+   */
+  async checkConflicts(
+    centerId: string,
+    input: ConflictCheckInput,
+  ): Promise<ConflictResult> {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const startTime = typeof input.startTime === "string"
+      ? new Date(input.startTime)
+      : input.startTime;
+    const endTime = typeof input.endTime === "string"
+      ? new Date(input.endTime)
+      : input.endTime;
+
+    const roomConflicts: ConflictingSession[] = [];
+    const teacherConflicts: ConflictingSession[] = [];
+
+    // Check for room conflicts (only if roomName is provided and not null/empty)
+    if (input.roomName) {
+      const roomConflictSessions = await db.classSession.findMany({
+        where: {
+          roomName: input.roomName,
+          ...(input.excludeSessionId && { id: { not: input.excludeSessionId } }),
+          status: { not: "CANCELLED" },
+          startTime: { lt: endTime },
+          endTime: { gt: startTime },
+        },
+        include: {
+          class: {
+            include: {
+              course: true,
+              teacher: {
+                select: { id: true, name: true },
+              },
+            },
+          },
+        },
+      });
+
+      for (const session of roomConflictSessions) {
+        roomConflicts.push({
+          id: session.id,
+          classId: session.classId,
+          startTime: session.startTime,
+          endTime: session.endTime,
+          roomName: session.roomName,
+          className: session.class?.name,
+          courseName: session.class?.course?.name,
+          teacherName: session.class?.teacher?.name,
+        });
+      }
+    }
+
+    // Get teacherId from the class being scheduled
+    const classData = await db.class.findUnique({
+      where: { id: input.classId },
+      select: { teacherId: true },
+    });
+    const teacherId = classData?.teacherId;
+
+    // Check for teacher conflicts (only if teacher is assigned)
+    if (teacherId) {
+      const teacherConflictSessions = await db.classSession.findMany({
+        where: {
+          class: { teacherId },
+          ...(input.excludeSessionId && { id: { not: input.excludeSessionId } }),
+          status: { not: "CANCELLED" },
+          startTime: { lt: endTime },
+          endTime: { gt: startTime },
+        },
+        include: {
+          class: {
+            include: {
+              course: true,
+              teacher: {
+                select: { id: true, name: true },
+              },
+            },
+          },
+        },
+      });
+
+      for (const session of teacherConflictSessions) {
+        teacherConflicts.push({
+          id: session.id,
+          classId: session.classId,
+          startTime: session.startTime,
+          endTime: session.endTime,
+          roomName: session.roomName,
+          className: session.class?.name,
+          courseName: session.class?.course?.name,
+          teacherName: session.class?.teacher?.name,
+        });
+      }
+    }
+
+    const hasConflicts = roomConflicts.length > 0 || teacherConflicts.length > 0;
+
+    // Generate suggestions if conflicts exist
+    let suggestions: Suggestion[] | undefined;
+    if (hasConflicts) {
+      suggestions = await this.suggestNextAvailable(centerId, {
+        classId: input.classId,
+        startTime,
+        endTime,
+        roomName: input.roomName,
+      });
+    }
+
+    return {
+      hasConflicts,
+      roomConflicts,
+      teacherConflicts,
+      suggestions,
+    };
+  }
+
+  /**
+   * Suggest alternative time slots or rooms when conflicts are detected
+   */
+  async suggestNextAvailable(
+    centerId: string,
+    input: {
+      classId: string;
+      startTime: Date;
+      endTime: Date;
+      roomName?: string | null;
+    },
+  ): Promise<Suggestion[]> {
+    const db = getTenantedClient(this.prisma, centerId);
+    const suggestions: Suggestion[] = [];
+
+    const duration = input.endTime.getTime() - input.startTime.getTime();
+    const targetDate = input.startTime;
+
+    // Get teacherId for the class
+    const classData = await db.class.findUnique({
+      where: { id: input.classId },
+      select: { teacherId: true },
+    });
+    const teacherId = classData?.teacherId;
+
+    // Get start and end of the target day
+    const dayStart = new Date(targetDate);
+    dayStart.setHours(8, 0, 0, 0); // Business hours start at 8am
+    const dayEnd = new Date(targetDate);
+    dayEnd.setHours(20, 0, 0, 0); // Business hours end at 8pm
+
+    // Get all sessions on the same day that might conflict (teacher or room)
+    const sessionsOnDay = await db.classSession.findMany({
+      where: {
+        status: { not: "CANCELLED" },
+        startTime: { gte: dayStart, lt: dayEnd },
+        OR: [
+          ...(teacherId ? [{ class: { teacherId } }] : []),
+          ...(input.roomName ? [{ roomName: input.roomName }] : []),
+        ],
+      },
+      orderBy: { startTime: "asc" },
+    });
+
+    // Find available time slots on the same day
+    const busySlots = sessionsOnDay.map((s) => ({
+      start: s.startTime.getTime(),
+      end: s.endTime.getTime(),
+    }));
+
+    // Sort by start time
+    busySlots.sort((a, b) => a.start - b.start);
+
+    // Find gaps in schedule after the requested time
+    let searchStart = Math.max(input.startTime.getTime(), dayStart.getTime());
+    const maxSuggestions = 3;
+    let foundTimeSlots = 0;
+
+    // Check if the slot before the first busy slot is available
+    if (busySlots.length === 0) {
+      // No sessions, any time works
+      if (searchStart + duration <= dayEnd.getTime()) {
+        const suggestedStart = new Date(searchStart);
+        const suggestedEnd = new Date(searchStart + duration);
+        suggestions.push({
+          type: "time",
+          value: `${suggestedStart.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} - ${suggestedEnd.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`,
+          startTime: suggestedStart,
+          endTime: suggestedEnd,
+        });
+        foundTimeSlots++;
+      }
+    } else {
+      // Find gaps between busy slots
+      for (let i = 0; i <= busySlots.length && foundTimeSlots < maxSuggestions; i++) {
+        const gapStart = i === 0 ? searchStart : busySlots[i - 1]!.end;
+        const gapEnd = i === busySlots.length ? dayEnd.getTime() : busySlots[i]!.start;
+
+        // Check if gap is large enough and after the search start
+        if (gapStart >= searchStart && gapEnd - gapStart >= duration) {
+          const suggestedStart = new Date(gapStart);
+          const suggestedEnd = new Date(gapStart + duration);
+          suggestions.push({
+            type: "time",
+            value: `${suggestedStart.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} - ${suggestedEnd.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`,
+            startTime: suggestedStart,
+            endTime: suggestedEnd,
+          });
+          foundTimeSlots++;
+        }
+      }
+    }
+
+    // Find alternative rooms that are free during the requested time
+    if (input.roomName) {
+      // Get all distinct room names used in this center
+      const allRooms = await db.classSession.findMany({
+        where: {
+          roomName: { not: null },
+        },
+        select: { roomName: true },
+        distinct: ["roomName"],
+      });
+
+      const roomNames = allRooms
+        .map((r) => r.roomName)
+        .filter((name): name is string => name !== null && name !== input.roomName);
+
+      // Check which rooms are free during the requested time
+      for (const roomName of roomNames.slice(0, 3)) {
+        const conflictingSession = await db.classSession.findFirst({
+          where: {
+            roomName,
+            status: { not: "CANCELLED" },
+            startTime: { lt: input.endTime },
+            endTime: { gt: input.startTime },
+          },
+        });
+
+        if (!conflictingSession) {
+          suggestions.push({
+            type: "room",
+            value: roomName,
+          });
+        }
+      }
+    }
+
+    return suggestions;
+  }
+
+  /**
+   * Efficiently check conflicts for multiple sessions at once.
+   * Used by calendar to mark existing sessions with conflict icons.
+   * Returns a Map of sessionId -> hasConflicts boolean.
+   */
+  async checkBatchConflicts(
+    centerId: string,
+    sessions: { id: string; classId: string; startTime: Date; endTime: Date; roomName: string | null }[],
+  ): Promise<Map<string, boolean>> {
+    const db = getTenantedClient(this.prisma, centerId);
+    const conflictMap = new Map<string, boolean>();
+
+    if (sessions.length === 0) {
+      return conflictMap;
+    }
+
+    // Get all class data to know teacher assignments
+    const classIds = [...new Set(sessions.map((s) => s.classId))];
+    const classes = await db.class.findMany({
+      where: { id: { in: classIds } },
+      select: { id: true, teacherId: true },
+    });
+    const classTeacherMap = new Map(classes.map((c) => [c.id, c.teacherId]));
+
+    // Check each session for conflicts
+    for (const session of sessions) {
+      let hasConflict = false;
+
+      // Check room conflicts (if room is assigned)
+      if (session.roomName) {
+        const roomConflict = sessions.find(
+          (other) =>
+            other.id !== session.id &&
+            other.roomName === session.roomName &&
+            new Date(other.startTime) < new Date(session.endTime) &&
+            new Date(other.endTime) > new Date(session.startTime),
+        );
+        if (roomConflict) {
+          hasConflict = true;
+        }
+      }
+
+      // Check teacher conflicts (if teacher is assigned)
+      if (!hasConflict) {
+        const teacherId = classTeacherMap.get(session.classId);
+        if (teacherId) {
+          const teacherConflict = sessions.find(
+            (other) =>
+              other.id !== session.id &&
+              classTeacherMap.get(other.classId) === teacherId &&
+              new Date(other.startTime) < new Date(session.endTime) &&
+              new Date(other.endTime) > new Date(session.startTime),
+          );
+          if (teacherConflict) {
+            hasConflict = true;
+          }
+        }
+      }
+
+      conflictMap.set(session.id, hasConflict);
+    }
+
+    return conflictMap;
+  }
+
+  /**
+   * List sessions with optional conflict status computation
+   */
+  async listSessionsWithConflicts(
+    centerId: string,
+    startDate: Date,
+    endDate: Date,
+    classId?: string,
+  ): Promise<(ClassSession & { hasConflicts?: boolean })[]> {
+    const sessions = await this.listSessions(centerId, startDate, endDate, classId);
+
+    // Compute conflicts for all sessions
+    const sessionData = sessions.map((s) => ({
+      id: s.id,
+      classId: s.classId,
+      startTime: new Date(s.startTime),
+      endTime: new Date(s.endTime),
+      roomName: s.roomName ?? null,
+    }));
+
+    const conflictMap = await this.checkBatchConflicts(centerId, sessionData);
+
+    // Add hasConflicts flag to each session
+    return sessions.map((session) => ({
+      ...session,
+      hasConflicts: conflictMap.get(session.id) ?? false,
+    }));
   }
 }

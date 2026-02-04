@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect, useRef } from "react";
-import type { ClassSession } from "@workspace/types";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import type { ClassSession, ClassSessionWithConflicts, Suggestion } from "@workspace/types";
 import {
   format,
   addWeeks,
@@ -16,11 +16,13 @@ import { Button } from "@workspace/ui/components/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { SessionBlock } from "./SessionBlock";
 import { SessionDetailsPopover } from "./SessionDetailsPopover";
+import { ConflictDrawer } from "./ConflictDrawer";
 import { RBACWrapper } from "@/features/auth/components/RBACWrapper";
 import { cn } from "@workspace/ui/lib/utils";
+import { useConflictCheck } from "../hooks/use-conflict-check";
 
 interface WeeklyCalendarProps {
-  sessions: ClassSession[];
+  sessions: ClassSessionWithConflicts[];
   weekStart: Date;
   onWeekChange: (newWeekStart: Date) => void;
   onSessionMove?: (
@@ -49,16 +51,29 @@ export function WeeklyCalendar({
   isUpdating,
   isDeleting,
 }: WeeklyCalendarProps) {
-  const [selectedSession, setSelectedSession] = useState<ClassSession | null>(
+  const [selectedSession, setSelectedSession] = useState<ClassSessionWithConflicts | null>(
     null,
   );
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
 
+  // Conflict drawer state
+  const [conflictDrawerOpen, setConflictDrawerOpen] = useState(false);
+  const [conflictSession, setConflictSession] = useState<ClassSessionWithConflicts | null>(null);
+
+  // Conflict checking for selected session
+  const {
+    roomConflicts,
+    teacherConflicts,
+    suggestions,
+    checkConflictsImmediate,
+    clearConflicts,
+  } = useConflictCheck();
+
   // Drag state
   const [isDragging, setIsDragging] = useState(false);
-  const [draggedSession, setDraggedSession] = useState<ClassSession | null>(
+  const [draggedSession, setDraggedSession] = useState<ClassSessionWithConflicts | null>(
     null,
   );
   const [dragPreview, setDragPreview] = useState<{
@@ -68,6 +83,9 @@ export function WeeklyCalendar({
     hours: number;
     minutes: number;
   } | null>(null);
+
+  // Conflict slots during drag - stores "dayKey-hour-minutes" keys that would cause conflicts
+  const [conflictSlots, setConflictSlots] = useState<Set<string>>(new Set());
 
   // Refs for drag calculations
   const dragStartRef = useRef<{
@@ -108,7 +126,7 @@ export function WeeklyCalendar({
 
   // Group sessions by day
   const sessionsByDay = useMemo(() => {
-    const grouped: Record<string, ClassSession[]> = {};
+    const grouped: Record<string, ClassSessionWithConflicts[]> = {};
     weekDays.forEach((day) => {
       const dayKey = format(day, "yyyy-MM-dd");
       grouped[dayKey] = sessions.filter((session) =>
@@ -118,8 +136,78 @@ export function WeeklyCalendar({
     return grouped;
   }, [sessions, weekDays]);
 
+  // Compute conflict slots for a dragged session using interval-based approach
+  // Returns Set of "dayKey-hour-minutes" keys that would cause conflicts
+  // Optimized: Instead of checking every slot, we compute conflict intervals directly
+  const computeConflictSlots = useCallback((draggedSess: ClassSessionWithConflicts) => {
+    const conflicts = new Set<string>();
+    const draggedDuration = new Date(draggedSess.endTime).getTime() - new Date(draggedSess.startTime).getTime();
+
+    // Get teacher and room of dragged session
+    const draggedTeacherId = draggedSess.class?.teacher?.id;
+    const draggedRoomName = draggedSess.roomName;
+
+    // If no room and no teacher, no conflicts possible
+    if (!draggedRoomName && !draggedTeacherId) {
+      return conflicts;
+    }
+
+    // For each day, find conflicting intervals directly from sessions
+    weekDays.forEach((day) => {
+      const dayKey = format(day, "yyyy-MM-dd");
+      const daySessions = sessions.filter(
+        (s) => s.id !== draggedSess.id && isSameDay(new Date(s.startTime), day),
+      );
+
+      // Find sessions that could cause conflicts (same room or same teacher)
+      const conflictingSessions = daySessions.filter((session) => {
+        if (draggedRoomName && session.roomName === draggedRoomName) return true;
+        if (draggedTeacherId && session.class?.teacher?.id === draggedTeacherId) return true;
+        return false;
+      });
+
+      // For each conflicting session, mark the slots that would overlap
+      conflictingSessions.forEach((session) => {
+        const sessStart = new Date(session.startTime);
+        const sessEnd = new Date(session.endTime);
+        const dayStart = setMinutes(setHours(startOfDay(day), START_HOUR), 0);
+
+        // Calculate the range of slots that would conflict with this session
+        // A slot at time T conflicts if: T < sessEnd && T + duration > sessStart
+        // Rearranged: T > sessStart - duration && T < sessEnd
+        const conflictWindowStart = new Date(sessStart.getTime() - draggedDuration);
+        const conflictWindowEnd = sessEnd;
+
+        // Convert to slot indices
+        const startSlotMinutes = Math.max(
+          0,
+          differenceInMinutes(conflictWindowStart, dayStart)
+        );
+        const endSlotMinutes = Math.min(
+          (END_HOUR - START_HOUR) * 60,
+          differenceInMinutes(conflictWindowEnd, dayStart)
+        );
+
+        // Snap to slot boundaries
+        const startSlot = Math.floor(startSlotMinutes / SLOT_MINUTES) * SLOT_MINUTES;
+        const endSlot = Math.ceil(endSlotMinutes / SLOT_MINUTES) * SLOT_MINUTES;
+
+        // Mark all slots in the conflict window
+        for (let slotMin = startSlot; slotMin < endSlot; slotMin += SLOT_MINUTES) {
+          if (slotMin >= 0 && slotMin < (END_HOUR - START_HOUR) * 60) {
+            const hour = START_HOUR + Math.floor(slotMin / 60);
+            const min = slotMin % 60;
+            conflicts.add(`${dayKey}-${hour}-${min}`);
+          }
+        }
+      });
+    });
+
+    return conflicts;
+  }, [weekDays, sessions]);
+
   // Calculate session position and height
-  const getSessionStyle = (session: ClassSession) => {
+  const getSessionStyle = (session: ClassSessionWithConflicts) => {
     const start = new Date(session.startTime);
     const end = new Date(session.endTime);
     const dayStart = setMinutes(setHours(startOfDay(start), START_HOUR), 0);
@@ -134,7 +222,7 @@ export function WeeklyCalendar({
   };
 
   // Calculate layout for overlapping sessions
-  const getSessionsLayout = (daySessions: ClassSession[]) => {
+  const getSessionsLayout = (daySessions: ClassSessionWithConflicts[]) => {
     if (daySessions.length === 0) return new Map<string, { column: number; totalColumns: number }>();
 
     // Sort sessions by start time, then by duration (longer first)
@@ -208,7 +296,7 @@ export function WeeklyCalendar({
   // Handle drag start
   const handleDragStart = (
     e: React.DragEvent<HTMLDivElement>,
-    session: ClassSession,
+    session: ClassSessionWithConflicts,
   ) => {
     // Set drag data
     e.dataTransfer.setData("text/plain", session.id);
@@ -239,6 +327,10 @@ export function WeeklyCalendar({
 
     setDraggedSession(session);
     setIsDragging(true);
+
+    // Compute conflict slots for visual feedback
+    const conflicts = computeConflictSlots(session);
+    setConflictSlots(conflicts);
 
     // Set initial preview at current position
     const dayKey = format(sessionStart, "yyyy-MM-dd");
@@ -330,6 +422,7 @@ export function WeeklyCalendar({
     setIsDragging(false);
     setDraggedSession(null);
     setDragPreview(null);
+    setConflictSlots(new Set());
     dragStartRef.current = null;
   };
 
@@ -337,19 +430,69 @@ export function WeeklyCalendar({
     onWeekChange(startOfWeek(new Date(), { weekStartsOn: 1 }));
   };
 
-  const handleSessionClick = (session: ClassSession) => {
+  const handleSessionClick = (session: ClassSessionWithConflicts) => {
     if (!isDragging) {
       setSelectedSession(session);
       setPopoverOpen(true);
     }
   };
 
+  // Handle conflict icon click - fetch conflict details and show drawer
+  const handleConflictClick = async (session: ClassSessionWithConflicts) => {
+    setConflictSession(session);
+    // Fetch fresh conflict details
+    await checkConflictsImmediate({
+      classId: session.classId,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      roomName: session.roomName,
+      excludeSessionId: session.id,
+    });
+    setConflictDrawerOpen(true);
+  };
+
+  // Handle applying a suggestion from the conflict drawer
+  const handleApplySuggestionFromDrawer = useCallback((suggestion: Suggestion) => {
+    if (!conflictSession || !onSessionMove) return;
+
+    const currentDuration =
+      new Date(conflictSession.endTime).getTime() -
+      new Date(conflictSession.startTime).getTime();
+
+    if (suggestion.type === "time" && suggestion.startTime && suggestion.endTime) {
+      // Apply time suggestion - move session to the suggested time
+      const newStartTime = new Date(suggestion.startTime);
+      const newEndTime = new Date(suggestion.endTime);
+      onSessionMove(conflictSession.id, newStartTime, newEndTime);
+      setConflictDrawerOpen(false);
+      setConflictSession(null);
+      clearConflicts();
+    } else if (suggestion.type === "room") {
+      // For room suggestions, we need to update the session's room
+      // Since onSessionMove only handles time changes, we'll close the drawer
+      // and the user can use the session details to update the room
+      // In a full implementation, we'd add an onSessionUpdate prop
+      setConflictDrawerOpen(false);
+      setConflictSession(null);
+      clearConflicts();
+    }
+  }, [conflictSession, onSessionMove, clearConflicts]);
+
+  // Handle force save from conflict drawer (keeps existing session with conflicts)
+  const handleForceSaveFromDrawer = useCallback(() => {
+    // Force save means accepting the session as-is with conflicts
+    // Just close the drawer - the session already exists and conflicts are acknowledged
+    setConflictDrawerOpen(false);
+    setConflictSession(null);
+    clearConflicts();
+  }, [clearConflicts]);
+
   // Mobile: get the selected day
   const mobileSelectedDay = weekDays[selectedDayIndex] ?? weekDays[0];
 
   // Render a session block
   const renderSessionBlock = (
-    session: ClassSession,
+    session: ClassSessionWithConflicts,
     canDrag: boolean = false,
   ) => (
     <SessionDetailsPopover
@@ -376,6 +519,8 @@ export function WeeklyCalendar({
           onClick={() => handleSessionClick(session)}
           isDragging={isDragging && draggedSession?.id === session.id}
           className="h-full overflow-hidden"
+          hasConflicts={session.hasConflicts}
+          onConflictClick={() => handleConflictClick(session)}
         />
       </div>
     </SessionDetailsPopover>
@@ -589,22 +734,39 @@ export function WeeklyCalendar({
                   >
                     {renderGridLines()}
 
-                    {/* Drag preview ghost */}
-                    {dragPreview && dragPreview.dayKey === dayKey && (
-                      <div
-                        className="absolute left-1 right-1 z-20 pointer-events-none"
-                        style={{
-                          top: dragPreview.topPosition,
-                          height: dragPreview.height,
-                        }}
-                      >
-                        <div className="h-full rounded-md border-2 border-dashed border-primary bg-primary/20 flex items-center justify-center">
-                          <span className="text-xs font-medium text-primary truncate px-1">
-                            {draggedSession?.class?.name || "Session"}
-                          </span>
+                    {/* Drag preview ghost with conflict highlighting */}
+                    {dragPreview && dragPreview.dayKey === dayKey && (() => {
+                      const slotKey = `${dayKey}-${dragPreview.hours}-${dragPreview.minutes}`;
+                      const hasConflict = conflictSlots.has(slotKey);
+                      return (
+                        <div
+                          className="absolute left-1 right-1 z-20 pointer-events-none"
+                          style={{
+                            top: dragPreview.topPosition,
+                            height: dragPreview.height,
+                          }}
+                        >
+                          <div
+                            className={cn(
+                              "h-full rounded-md border-2 border-dashed flex items-center justify-center",
+                              hasConflict
+                                ? "border-red-500 bg-red-100/50"
+                                : "border-green-500 bg-green-100/50",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "text-xs font-medium truncate px-1",
+                                hasConflict ? "text-red-700" : "text-green-700",
+                              )}
+                            >
+                              {draggedSession?.class?.name || "Session"}
+                              {hasConflict && " (Conflict)"}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Sessions (draggable) */}
                     {daySessions.map((session) => {
@@ -648,6 +810,28 @@ export function WeeklyCalendar({
           <div className="text-muted-foreground">Updating...</div>
         </div>
       )}
+
+      {/* Conflict Drawer */}
+      <ConflictDrawer
+        open={conflictDrawerOpen}
+        onOpenChange={(open) => {
+          setConflictDrawerOpen(open);
+          if (!open) {
+            setConflictSession(null);
+            clearConflicts();
+          }
+        }}
+        sessionName={
+          conflictSession
+            ? `${conflictSession.class?.course?.name ?? "Course"} - ${conflictSession.class?.name ?? "Class"}`
+            : undefined
+        }
+        roomConflicts={roomConflicts}
+        teacherConflicts={teacherConflicts}
+        suggestions={suggestions}
+        onApplySuggestion={handleApplySuggestionFromDrawer}
+        onForceSave={handleForceSaveFromDrawer}
+      />
     </div>
   );
 }

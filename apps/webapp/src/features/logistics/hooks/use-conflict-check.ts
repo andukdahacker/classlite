@@ -1,0 +1,81 @@
+import client from "@/core/client";
+import { useMutation } from "@tanstack/react-query";
+import type { ConflictCheckInput, ConflictResult } from "@workspace/types";
+import { useDebouncedCallback } from "use-debounce";
+import { useCallback, useState } from "react";
+
+/**
+ * Hook for checking scheduling conflicts (room and teacher double-booking)
+ * Provides both immediate and debounced conflict checking
+ */
+export const useConflictCheck = () => {
+  const [conflictResult, setConflictResult] = useState<ConflictResult | null>(
+    null,
+  );
+
+  const checkConflictsMutation = useMutation({
+    mutationFn: async (input: ConflictCheckInput) => {
+      const { data, error } = await client.POST(
+        "/api/v1/logistics/sessions/check-conflicts",
+        {
+          body: {
+            ...input,
+            startTime:
+              typeof input.startTime === "string"
+                ? input.startTime
+                : input.startTime.toISOString(),
+            endTime:
+              typeof input.endTime === "string"
+                ? input.endTime
+                : input.endTime.toISOString(),
+          },
+        },
+      );
+      if (error) throw error;
+      return data?.data as ConflictResult;
+    },
+    onSuccess: (result) => {
+      setConflictResult(result);
+    },
+  });
+
+  // Debounced version for real-time form validation (300ms delay)
+  const debouncedCheckConflicts = useDebouncedCallback(
+    (input: ConflictCheckInput) => {
+      checkConflictsMutation.mutate(input);
+    },
+    300,
+  );
+
+  // Clear conflict state
+  const clearConflicts = useCallback(() => {
+    setConflictResult(null);
+  }, []);
+
+  // Immediate check (for final validation before submit)
+  const checkConflictsImmediate = useCallback(
+    async (input: ConflictCheckInput) => {
+      const result = await checkConflictsMutation.mutateAsync(input);
+      return result;
+    },
+    [checkConflictsMutation],
+  );
+
+  return {
+    // Conflict result state
+    conflictResult,
+    hasConflicts: conflictResult?.hasConflicts ?? false,
+    roomConflicts: conflictResult?.roomConflicts ?? [],
+    teacherConflicts: conflictResult?.teacherConflicts ?? [],
+    suggestions: conflictResult?.suggestions ?? [],
+
+    // Actions
+    checkConflicts: debouncedCheckConflicts,
+    checkConflictsImmediate,
+    clearConflicts,
+
+    // Loading states
+    isChecking: checkConflictsMutation.isPending,
+    checkError: checkConflictsMutation.error,
+  };
+};

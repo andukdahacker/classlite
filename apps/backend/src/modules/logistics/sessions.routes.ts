@@ -9,6 +9,9 @@ import {
   UpdateClassSessionInput,
   CreateClassSessionInput,
   GenerateSessionsInput,
+  ConflictCheckInputSchema,
+  ConflictCheckInput,
+  ConflictResultResponseSchema,
 } from "@workspace/types";
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -38,6 +41,7 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
         startDate: z.string(),
         endDate: z.string(),
         classId: z.string().optional(),
+        includeConflicts: z.enum(["true", "false"]).optional(),
       }),
       response: {
         200: ClassSessionListResponseSchema,
@@ -47,7 +51,7 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
     },
     handler: async (
       request: FastifyRequest<{
-        Querystring: { startDate: string; endDate: string; classId?: string };
+        Querystring: { startDate: string; endDate: string; classId?: string; includeConflicts?: string };
       }>,
       reply,
     ) => {
@@ -56,6 +60,7 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
         request.query.startDate,
         request.query.endDate,
         request.query.classId,
+        request.query.includeConflicts === "true",
       );
       return reply.send(result);
     },
@@ -217,6 +222,31 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
         request.jwtPayload!,
       );
       return reply.status(201).send(result);
+    },
+  });
+
+  // Check for scheduling conflicts (room and teacher double-booking)
+  api.post("/check-conflicts", {
+    schema: {
+      body: ConflictCheckInputSchema,
+      response: {
+        200: ConflictResultResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (
+      request: FastifyRequest<{ Body: ConflictCheckInput }>,
+      reply,
+    ) => {
+      const result = await sessionsController.checkConflicts(
+        request.body,
+        request.jwtPayload!,
+      );
+      return reply.send(result);
     },
   });
 }

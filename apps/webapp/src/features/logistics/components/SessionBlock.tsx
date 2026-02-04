@@ -1,12 +1,15 @@
 import type { ClassSession } from "@workspace/types";
 import { format } from "date-fns";
 import { cn } from "@workspace/ui/lib/utils";
+import { AlertTriangle } from "lucide-react";
 
 interface SessionBlockProps {
   session: ClassSession;
   onClick?: () => void;
   isDragging?: boolean;
   className?: string;
+  hasConflicts?: boolean;
+  onConflictClick?: () => void;
 }
 
 export function SessionBlock({
@@ -14,6 +17,8 @@ export function SessionBlock({
   onClick,
   isDragging,
   className,
+  hasConflicts,
+  onConflictClick,
 }: SessionBlockProps) {
   const startTime = new Date(session.startTime);
   const endTime = new Date(session.endTime);
@@ -39,7 +44,7 @@ export function SessionBlock({
           : undefined
       }
       className={cn(
-        "cursor-pointer rounded-md px-2 py-1 text-xs transition-all",
+        "relative cursor-pointer rounded-md px-2 py-1 text-xs transition-all",
         "border-l-4 shadow-sm hover:shadow-md",
         isDragging && "opacity-50 shadow-lg",
         className
@@ -49,6 +54,20 @@ export function SessionBlock({
         borderLeftColor: courseColor,
       }}
     >
+      {/* Conflict indicator icon */}
+      {hasConflicts && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onConflictClick?.();
+          }}
+          className="absolute -top-1 -right-1 p-0.5 bg-amber-100 rounded-full hover:bg-amber-200 transition-colors"
+          aria-label="View scheduling conflicts"
+        >
+          <AlertTriangle className="size-3 text-amber-600" />
+        </button>
+      )}
       <div className="font-medium truncate" style={{ color: courseColor }}>
         {courseName}
       </div>

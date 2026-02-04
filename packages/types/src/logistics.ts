@@ -246,3 +246,56 @@ export const UnreadCountResponseSchema = createResponseSchema(
   }),
 );
 export type UnreadCountResponse = z.infer<typeof UnreadCountResponseSchema>;
+
+// --- Conflict Detection ---
+
+export const ConflictCheckInputSchema = z.object({
+  classId: z.string(),
+  startTime: z.union([z.date(), z.string()]),
+  endTime: z.union([z.date(), z.string()]),
+  roomName: z.string().nullable().optional(),
+  excludeSessionId: z.string().optional(),
+});
+
+export type ConflictCheckInput = z.infer<typeof ConflictCheckInputSchema>;
+
+export const ConflictingSessionSchema = z.object({
+  id: z.string(),
+  classId: z.string(),
+  startTime: z.union([z.date(), z.string()]),
+  endTime: z.union([z.date(), z.string()]),
+  roomName: z.string().nullable().optional(),
+  className: z.string().optional(),
+  courseName: z.string().optional(),
+  teacherName: z.string().nullable().optional(),
+});
+
+export type ConflictingSession = z.infer<typeof ConflictingSessionSchema>;
+
+export const SuggestionSchema = z.object({
+  type: z.enum(["time", "room"]),
+  value: z.string(),
+  startTime: z.union([z.date(), z.string()]).optional(),
+  endTime: z.union([z.date(), z.string()]).optional(),
+});
+
+export type Suggestion = z.infer<typeof SuggestionSchema>;
+
+export const ConflictResultSchema = z.object({
+  hasConflicts: z.boolean(),
+  roomConflicts: z.array(ConflictingSessionSchema),
+  teacherConflicts: z.array(ConflictingSessionSchema),
+  suggestions: z.array(SuggestionSchema).optional(),
+});
+
+export type ConflictResult = z.infer<typeof ConflictResultSchema>;
+
+export const ConflictResultResponseSchema = createResponseSchema(ConflictResultSchema);
+export type ConflictResultResponse = z.infer<typeof ConflictResultResponseSchema>;
+
+// Extended ClassSession with conflict flag for calendar display
+export const ClassSessionWithConflictsSchema = ClassSessionSchema.extend({
+  hasConflicts: z.boolean().optional(),
+});
+
+export type ClassSessionWithConflicts = z.infer<typeof ClassSessionWithConflictsSchema>;

@@ -2640,6 +2640,7 @@ export interface paths {
                     startDate: string;
                     endDate: string;
                     classId?: string;
+                    includeConflicts?: "true" | "false";
                 };
                 header?: never;
                 path?: never;
@@ -3376,6 +3377,119 @@ export interface paths {
                 };
                 /** @description Default Response */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/logistics/sessions/check-conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        classId: string;
+                        startTime: string;
+                        endTime: string;
+                        roomName?: string | null;
+                        excludeSessionId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                hasConflicts: boolean;
+                                roomConflicts: {
+                                    id: string;
+                                    classId: string;
+                                    startTime: string;
+                                    endTime: string;
+                                    roomName?: string | null;
+                                    className?: string;
+                                    courseName?: string;
+                                    teacherName?: string | null;
+                                }[];
+                                teacherConflicts: {
+                                    id: string;
+                                    classId: string;
+                                    startTime: string;
+                                    endTime: string;
+                                    roomName?: string | null;
+                                    className?: string;
+                                    courseName?: string;
+                                    teacherName?: string | null;
+                                }[];
+                                suggestions?: {
+                                    /** @enum {string} */
+                                    type: "time" | "room";
+                                    value: string;
+                                    startTime?: string;
+                                    endTime?: string;
+                                }[];
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
                     headers: {
                         [name: string]: unknown;
                     };

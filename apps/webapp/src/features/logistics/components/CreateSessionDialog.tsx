@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useState, useEffect, useRef } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, setHours, setMinutes } from "date-fns";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +38,9 @@ import {
 import { toast } from "sonner";
 import { Plus, CalendarIcon } from "lucide-react";
 import { cn } from "@workspace/ui/lib/utils";
-import type { Class, CreateClassSessionInput } from "@workspace/types";
+import type { Class, CreateClassSessionInput, Suggestion } from "@workspace/types";
+import { useConflictCheck } from "../hooks/use-conflict-check";
+import { ConflictWarningBanner } from "./ConflictWarningBanner";
 
 const createSessionSchema = z.object({
   classId: z.string().min(1, "Please select a class"),
@@ -61,6 +64,14 @@ export function CreateSessionDialog({
   isCreating,
 }: CreateSessionDialogProps) {
   const [open, setOpen] = useState(false);
+  const [forceSubmit, setForceSubmit] = useState(false);
+  const { user } = useAuth();
+
+  // Track if we have valid form data to avoid premature conflict clearing
+  const hasValidFormData = useRef(false);
+
+  // Check if user can force-save conflicts
+  const canForceSave = user?.role === "OWNER" || user?.role === "ADMIN";
 
   const form = useForm<CreateSessionFormValues>({
     resolver: zodResolver(createSessionSchema),
@@ -71,6 +82,82 @@ export function CreateSessionDialog({
       roomName: "",
     },
   });
+
+  // Conflict checking
+  const {
+    hasConflicts,
+    roomConflicts,
+    teacherConflicts,
+    suggestions,
+    checkConflicts,
+    clearConflicts,
+    isChecking,
+  } = useConflictCheck();
+
+  // Watch form values for debounced conflict checking
+  const watchedValues = useWatch({
+    control: form.control,
+  });
+
+  // Check for conflicts when form values change
+  useEffect(() => {
+    const { classId, date, startTime, endTime, roomName } = watchedValues;
+
+    // Only check if we have enough data
+    if (!classId || !date || !startTime || !endTime) {
+      hasValidFormData.current = false;
+      // Don't clear immediately - only clear if we previously had valid data
+      // This prevents flickering during rapid field changes
+      return;
+    }
+
+    // Parse times
+    const [startHour, startMin] = startTime.split(":").map(Number);
+    const [endHour, endMin] = endTime.split(":").map(Number);
+
+    const startDateTime = setMinutes(setHours(date, startHour), startMin);
+    const endDateTime = setMinutes(setHours(date, endHour), endMin);
+
+    // Only check if end is after start
+    if (endDateTime <= startDateTime) {
+      hasValidFormData.current = false;
+      return;
+    }
+
+    hasValidFormData.current = true;
+
+    // Debounced conflict check
+    checkConflicts({
+      classId,
+      startTime: startDateTime.toISOString(),
+      endTime: endDateTime.toISOString(),
+      roomName: roomName || undefined,
+    });
+  }, [watchedValues, checkConflicts]);
+
+  // Handle applying a suggestion
+  const handleApplySuggestion = (suggestion: Suggestion) => {
+    if (suggestion.type === "time" && suggestion.startTime && suggestion.endTime) {
+      const start = new Date(suggestion.startTime);
+      const end = new Date(suggestion.endTime);
+      form.setValue(
+        "startTime",
+        `${start.getHours().toString().padStart(2, "0")}:${start.getMinutes().toString().padStart(2, "0")}`,
+      );
+      form.setValue(
+        "endTime",
+        `${end.getHours().toString().padStart(2, "0")}:${end.getMinutes().toString().padStart(2, "0")}`,
+      );
+    } else if (suggestion.type === "room") {
+      form.setValue("roomName", suggestion.value);
+    }
+  };
+
+  // Handle force save (submit despite conflicts)
+  const handleForceSave = () => {
+    setForceSubmit(true);
+    form.handleSubmit(onSubmit)();
+  };
 
   async function onSubmit(values: CreateSessionFormValues) {
     try {
@@ -87,6 +174,17 @@ export function CreateSessionDialog({
         return;
       }
 
+      // Block submission with conflicts unless force-saving (admins only)
+      if (hasConflicts && !forceSubmit) {
+        if (!canForceSave) {
+          toast.error("Please resolve scheduling conflicts before creating the session");
+          return;
+        }
+        // For admins, show a warning but allow them to use Force Save button
+        toast.warning("Scheduling conflicts detected. Use 'Force Save' to override.");
+        return;
+      }
+
       await onCreateSession({
         classId: values.classId,
         startTime: startTime.toISOString(),
@@ -97,8 +195,11 @@ export function CreateSessionDialog({
       toast.success("Session created successfully");
       setOpen(false);
       form.reset();
+      clearConflicts();
+      setForceSubmit(false);
     } catch (error) {
       toast.error("Failed to create session");
+      setForceSubmit(false);
     }
   }
 
@@ -265,9 +366,21 @@ export function CreateSessionDialog({
               )}
             />
 
+            {/* Conflict Warning Banner */}
+            {hasConflicts && (
+              <ConflictWarningBanner
+                roomConflicts={roomConflicts}
+                teacherConflicts={teacherConflicts}
+                suggestions={suggestions}
+                onApplySuggestion={handleApplySuggestion}
+                onForceSave={handleForceSave}
+                isForcing={isCreating && forceSubmit}
+              />
+            )}
+
             <div className="flex justify-end pt-4">
-              <Button type="submit" disabled={isCreating}>
-                {isCreating ? "Creating..." : "Create Session"}
+              <Button type="submit" disabled={isCreating || isChecking}>
+                {isCreating ? "Creating..." : isChecking ? "Checking..." : "Create Session"}
               </Button>
             </div>
           </form>

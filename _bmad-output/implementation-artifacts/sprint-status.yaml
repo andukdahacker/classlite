@@ -68,7 +68,7 @@ development_status:
   epic-2: in-progress
   2-1-course-class-management: done
   2-2-visual-weekly-scheduler: done
-  2-3-conflict-detection: backlog
+  2-3-conflict-detection: review
   2-4-attendance-tracking: backlog
   2-5-class-session-crud: backlog # NEW
   2-6-schedule-change-notifications-email: backlog # NEW

@@ -2,13 +2,14 @@ import client from "@/core/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   ClassSession,
+  ClassSessionWithConflicts,
   CreateClassSessionInput,
   GenerateSessionsInput,
   UpdateClassSessionInput,
 } from "@workspace/types";
 import { endOfWeek, format, startOfWeek } from "date-fns";
 
-export const useSessions = (centerId?: string | null, weekStart?: Date) => {
+export const useSessions = (centerId?: string | null, weekStart?: Date, includeConflicts: boolean = true) => {
   const queryClient = useQueryClient();
 
   // Calculate week boundaries
@@ -18,18 +19,19 @@ export const useSessions = (centerId?: string | null, weekStart?: Date) => {
   const weekEndDate = endOfWeek(weekStartDate, { weekStartsOn: 1 });
 
   const sessionsQuery = useQuery({
-    queryKey: ["sessions", centerId, format(weekStartDate, "yyyy-MM-dd")],
+    queryKey: ["sessions", centerId, format(weekStartDate, "yyyy-MM-dd"), includeConflicts],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/v1/logistics/sessions/", {
         params: {
           query: {
             startDate: weekStartDate.toISOString(),
             endDate: weekEndDate.toISOString(),
+            includeConflicts: includeConflicts ? "true" : "false",
           },
         },
       });
       if (error) throw error;
-      return data?.data;
+      return data?.data as ClassSessionWithConflicts[] | undefined;
     },
     enabled: !!centerId,
   });
@@ -69,16 +71,17 @@ export const useSessions = (centerId?: string | null, weekStart?: Date) => {
       await queryClient.cancelQueries({ queryKey: ["sessions", centerId] });
 
       // Snapshot previous value
-      const previousSessions = queryClient.getQueryData<ClassSession[]>([
+      const previousSessions = queryClient.getQueryData<ClassSessionWithConflicts[]>([
         "sessions",
         centerId,
         format(weekStartDate, "yyyy-MM-dd"),
+        includeConflicts,
       ]);
 
       // Optimistically update the session
       if (previousSessions) {
-        queryClient.setQueryData<ClassSession[]>(
-          ["sessions", centerId, format(weekStartDate, "yyyy-MM-dd")],
+        queryClient.setQueryData<ClassSessionWithConflicts[]>(
+          ["sessions", centerId, format(weekStartDate, "yyyy-MM-dd"), includeConflicts],
           previousSessions.map((session) =>
             session.id === id
               ? {
@@ -112,7 +115,7 @@ export const useSessions = (centerId?: string | null, weekStart?: Date) => {
       // Rollback on error
       if (context?.previousSessions) {
         queryClient.setQueryData(
-          ["sessions", centerId, format(weekStartDate, "yyyy-MM-dd")],
+          ["sessions", centerId, format(weekStartDate, "yyyy-MM-dd"), includeConflicts],
           context.previousSessions,
         );
       }
@@ -188,7 +191,7 @@ export const useSessions = (centerId?: string | null, weekStart?: Date) => {
   });
 
   return {
-    sessions: sessionsQuery.data ?? [],
+    sessions: (sessionsQuery.data ?? []) as ClassSessionWithConflicts[],
     isLoading: sessionsQuery.isLoading,
     weekStart: weekStartDate,
     weekEnd: weekEndDate,
