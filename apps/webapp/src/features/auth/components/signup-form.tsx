@@ -86,6 +86,7 @@ export function SignupForm() {
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input
+                  type="email"
                   placeholder="name@example.com"
                   {...field}
                   readOnly={!!invitedEmail}

@@ -96,6 +96,7 @@ export function ForgotPasswordPage() {
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input
+                          type="email"
                           placeholder="name@example.com"
                           autoComplete="email"
                           {...field}
