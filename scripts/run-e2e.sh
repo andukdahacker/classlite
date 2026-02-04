@@ -66,7 +66,30 @@ wait_for_service() {
 
     echo -n "Waiting for $name"
     while [ $attempt -le $max_attempts ]; do
-        if curl -s "$url" > /dev/null 2>&1; then
+        # Use curl with different options to handle various server types
+        if curl -s -o /dev/null -w "%{http_code}" "$url" 2>/dev/null | grep -q "200\|304\|404"; then
+            echo -e " ${GREEN}ready${NC}"
+            return 0
+        fi
+        echo -n "."
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+
+    echo -e " ${RED}timeout${NC}"
+    return 1
+}
+
+wait_for_port() {
+    local port=$1
+    local name=$2
+    local max_attempts=${3:-30}
+    local attempt=1
+
+    echo -n "Waiting for $name on port $port"
+    while [ $attempt -le $max_attempts ]; do
+        # Check both IPv4 and IPv6, also use lsof as fallback
+        if nc -z localhost $port 2>/dev/null || lsof -i:$port -sTCP:LISTEN >/dev/null 2>&1; then
             echo -e " ${GREEN}ready${NC}"
             return 0
         fi
@@ -93,7 +116,7 @@ echo -e "${YELLOW}Step 1: Starting Firebase Auth Emulator...${NC}"
 firebase emulators:start --only auth --project $FIREBASE_PROJECT_ID > /tmp/firebase-emulator.log 2>&1 &
 FIREBASE_PID=$!
 
-if ! wait_for_service "http://127.0.0.1:${FIREBASE_AUTH_EMULATOR_PORT}" "Firebase Auth Emulator" 30; then
+if ! wait_for_port $FIREBASE_AUTH_EMULATOR_PORT "Firebase Auth Emulator" 30; then
     echo -e "${RED}Failed to start Firebase emulator${NC}"
     cat /tmp/firebase-emulator.log
     exit 1
@@ -104,13 +127,10 @@ echo -e "${YELLOW}Step 2: Starting Backend...${NC}"
 pnpm --filter backend dev > /tmp/backend.log 2>&1 &
 BACKEND_PID=$!
 
-if ! wait_for_service "http://127.0.0.1:${BACKEND_PORT}/health" "Backend" 60; then
-    # Try alternative health check
-    if ! wait_for_service "http://127.0.0.1:${BACKEND_PORT}/documentation" "Backend" 10; then
-        echo -e "${RED}Failed to start backend${NC}"
-        cat /tmp/backend.log
-        exit 1
-    fi
+if ! wait_for_port $BACKEND_PORT "Backend" 60; then
+    echo -e "${RED}Failed to start backend${NC}"
+    cat /tmp/backend.log
+    exit 1
 fi
 
 # Step 3: Start Webapp
@@ -118,7 +138,8 @@ echo -e "${YELLOW}Step 3: Starting Webapp...${NC}"
 pnpm --filter webapp dev > /tmp/webapp.log 2>&1 &
 WEBAPP_PID=$!
 
-if ! wait_for_service "http://127.0.0.1:${WEBAPP_PORT}" "Webapp" 60; then
+# Use port check for Vite dev server
+if ! wait_for_port $WEBAPP_PORT "Webapp" 60; then
     echo -e "${RED}Failed to start webapp${NC}"
     cat /tmp/webapp.log
     exit 1
