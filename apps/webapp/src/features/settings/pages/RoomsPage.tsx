@@ -132,6 +132,7 @@ export function RoomsPage() {
                       if (e.key === "Escape") cancelEditing();
                     }}
                     className="max-w-sm"
+                    // eslint-disable-next-line jsx-a11y/no-autofocus
                     autoFocus
                   />
                   <Button
@@ -171,9 +172,9 @@ export function RoomsPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Room</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete "{room.name}"?
+                            Are you sure you want to delete &quot;{room.name}&quot;?
                             Existing sessions using this room will keep their
-                            room name but it won't appear in the dropdown.
+                            room name but it won&apos;t appear in the dropdown.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

@@ -68,7 +68,7 @@ export function SchedulerPage() {
         },
       });
       toast.success("Session rescheduled successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to reschedule session");
     }
   };
@@ -80,7 +80,7 @@ export function SchedulerPage() {
         endDate: weekEnd,
       });
       toast.success(`Generated ${result?.generatedCount ?? 0} sessions`);
-    } catch (error) {
+    } catch {
       toast.error("Failed to generate sessions");
     }
   };
@@ -95,7 +95,7 @@ export function SchedulerPage() {
         input: updates,
       });
       toast.success("Session updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update session");
     }
   };
@@ -104,7 +104,7 @@ export function SchedulerPage() {
     try {
       await deleteSession(sessionId);
       toast.success("Session deleted");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete session");
     }
   };
@@ -113,7 +113,7 @@ export function SchedulerPage() {
     try {
       const result = await deleteFutureSessions(sessionId);
       toast.success(`Deleted ${result?.deletedCount ?? 0} future session(s)`);
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete future sessions");
     }
   };

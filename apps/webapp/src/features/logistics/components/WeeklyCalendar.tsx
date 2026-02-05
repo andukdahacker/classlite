@@ -811,6 +811,8 @@ export function WeeklyCalendar({
                       return (
                         <div
                           key={`create-slot-${slot.hours}-${slot.minutes}`}
+                          role="button"
+                          tabIndex={0}
                           className="absolute left-0 right-0 z-[5] hover:bg-primary/5 cursor-pointer transition-colors"
                           style={{
                             top: slotIndex * SLOT_HEIGHT,
