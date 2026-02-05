@@ -13,12 +13,14 @@ import {
   startOfWeek,
   endOfWeek,
   addDays,
+  addWeeks,
   setHours,
   setMinutes,
   eachDayOfInterval,
   isSameDay,
   parseISO,
   isValid,
+  format,
 } from "date-fns";
 
 export class SessionsService {
@@ -102,7 +104,7 @@ export class SessionsService {
       ? new Date(input.endTime)
       : input.endTime;
 
-    return await db.classSession.create({
+    const primarySession = await db.classSession.create({
       data: {
         classId: input.classId,
         scheduleId: input.scheduleId,
@@ -126,6 +128,54 @@ export class SessionsService {
         },
       },
     });
+
+    // Handle recurrence: generate additional sessions for 12 weeks
+    if (input.recurrence && input.recurrence !== "none") {
+      const intervalWeeks = input.recurrence === "biweekly" ? 2 : 1;
+      const totalInstances = input.recurrence === "biweekly" ? 6 : 12;
+
+      // Create a ClassSchedule record to group recurring sessions
+      const schedule = await db.classSchedule.create({
+        data: {
+          classId: input.classId,
+          dayOfWeek: startTime.getDay(),
+          startTime: format(startTime, "HH:mm"),
+          endTime: format(endTime, "HH:mm"),
+          roomName: input.roomName ?? null,
+          centerId,
+        },
+      });
+
+      // Link primary session to the schedule
+      await db.classSession.update({
+        where: { id: primarySession.id },
+        data: { scheduleId: schedule.id },
+      });
+
+      // Generate future sessions
+      const sessionsToCreate = [];
+      for (let i = 1; i < totalInstances; i++) {
+        const weekOffset = i * intervalWeeks;
+        const futureStart = addWeeks(startTime, weekOffset);
+        const futureEnd = addWeeks(endTime, weekOffset);
+
+        sessionsToCreate.push({
+          classId: input.classId,
+          scheduleId: schedule.id,
+          startTime: futureStart,
+          endTime: futureEnd,
+          roomName: input.roomName ?? null,
+          status: "SCHEDULED" as const,
+          centerId,
+        });
+      }
+
+      if (sessionsToCreate.length > 0) {
+        await db.classSession.createMany({ data: sessionsToCreate });
+      }
+    }
+
+    return primarySession;
   }
 
   async updateSession(
@@ -188,6 +238,39 @@ export class SessionsService {
     await db.classSession.delete({
       where: { id },
     });
+  }
+
+  async deleteFutureSessions(
+    centerId: string,
+    sessionId: string,
+  ): Promise<{ deletedCount: number; classId: string }> {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const session = await db.classSession.findUniqueOrThrow({
+      where: { id: sessionId },
+    });
+
+    if (!session.scheduleId) {
+      throw new Error("Session is not part of a recurring series");
+    }
+
+    const result = await db.classSession.deleteMany({
+      where: {
+        scheduleId: session.scheduleId,
+        startTime: { gte: session.startTime },
+        centerId,
+      },
+    });
+
+    // Clean up orphaned ClassSchedule if no sessions remain
+    const remainingCount = await db.classSession.count({
+      where: { scheduleId: session.scheduleId },
+    });
+    if (remainingCount === 0) {
+      await db.classSchedule.delete({ where: { id: session.scheduleId } });
+    }
+
+    return { deletedCount: result.count, classId: session.classId };
   }
 
   /**

@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { startOfWeek } from "date-fns";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { useSessions } from "./hooks/use-sessions";
 import { useClasses } from "./hooks/use-logistics";
+import { useRooms } from "./hooks/use-rooms";
 import { WeeklyCalendar } from "./components/WeeklyCalendar";
 import { CreateSessionDialog } from "./components/CreateSessionDialog";
+import { EditSessionDialog } from "./components/EditSessionDialog";
 import { Button } from "@workspace/ui/components/button";
 import { RBACWrapper } from "@/features/auth/components/RBACWrapper";
+import type { ClassSessionWithConflicts } from "@workspace/types";
 
 export function SchedulerPage() {
   const { user } = useAuth();
@@ -27,11 +30,25 @@ export function SchedulerPage() {
     isUpdating,
     deleteSession,
     isDeleting,
+    deleteFutureSessions,
     generateSessions,
     isGenerating,
   } = useSessions(user?.centerId, currentWeekStart);
 
   const { classes } = useClasses(user?.centerId ?? undefined);
+  const { rooms } = useRooms(user?.centerId);
+
+  // Create dialog state (for slot click / drag-to-create)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createDefaults, setCreateDefaults] = useState<{
+    date?: Date;
+    startTime?: string;
+    endTime?: string;
+  }>({});
+
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editSession, setEditSession] = useState<ClassSessionWithConflicts | null>(null);
 
   const handleWeekChange = (newWeekStart: Date) => {
     setCurrentWeekStart(newWeekStart);
@@ -53,7 +70,6 @@ export function SchedulerPage() {
       toast.success("Session rescheduled successfully");
     } catch (error) {
       toast.error("Failed to reschedule session");
-      console.error("Failed to move session:", error);
     }
   };
 
@@ -66,7 +82,6 @@ export function SchedulerPage() {
       toast.success(`Generated ${result?.generatedCount ?? 0} sessions`);
     } catch (error) {
       toast.error("Failed to generate sessions");
-      console.error("Failed to generate sessions:", error);
     }
   };
 
@@ -91,9 +106,37 @@ export function SchedulerPage() {
       toast.success("Session deleted");
     } catch (error) {
       toast.error("Failed to delete session");
-      console.error("Failed to delete session:", error);
     }
   };
+
+  const handleDeleteFuture = async (sessionId: string) => {
+    try {
+      const result = await deleteFutureSessions(sessionId);
+      toast.success(`Deleted ${result?.deletedCount ?? 0} future session(s)`);
+    } catch (error) {
+      toast.error("Failed to delete future sessions");
+    }
+  };
+
+  const handleEdit = useCallback((session: ClassSessionWithConflicts) => {
+    setEditSession(session);
+    setEditDialogOpen(true);
+  }, []);
+
+  const handleSlotClick = useCallback((date: Date, startTime: string) => {
+    // Calculate end time 1 hour after start
+    const [h, m] = startTime.split(":").map(Number);
+    const endH = h + 1;
+    const endTime = `${endH.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+
+    setCreateDefaults({ date, startTime, endTime });
+    setCreateDialogOpen(true);
+  }, []);
+
+  const handleDragCreate = useCallback((date: Date, startTime: string, endTime: string) => {
+    setCreateDefaults({ date, startTime, endTime });
+    setCreateDialogOpen(true);
+  }, []);
 
   if (isLoading) {
     return (
@@ -116,6 +159,7 @@ export function SchedulerPage() {
           <div className="flex items-center gap-2">
             <CreateSessionDialog
               classes={classes}
+              rooms={rooms}
               onCreateSession={createSession}
               isCreating={isCreating}
             />
@@ -144,10 +188,43 @@ export function SchedulerPage() {
           onSessionMove={handleSessionMove}
           onSessionUpdate={handleSessionUpdate}
           onSessionDelete={handleSessionDelete}
+          onDeleteFuture={handleDeleteFuture}
+          onEdit={handleEdit}
+          onSlotClick={handleSlotClick}
+          onDragCreate={handleDragCreate}
           isUpdating={isUpdating}
           isDeleting={isDeleting}
         />
       </div>
+
+      {/* Create dialog opened by slot click / drag-to-create */}
+      <CreateSessionDialog
+        classes={classes}
+        rooms={rooms}
+        onCreateSession={createSession}
+        isCreating={isCreating}
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        defaultDate={createDefaults.date}
+        defaultStartTime={createDefaults.startTime}
+        defaultEndTime={createDefaults.endTime}
+        hideTrigger
+      />
+
+      {/* Edit dialog */}
+      {editSession && (
+        <EditSessionDialog
+          session={editSession}
+          rooms={rooms}
+          onUpdateSession={updateSession}
+          isUpdating={isUpdating}
+          open={editDialogOpen}
+          onOpenChange={(open) => {
+            setEditDialogOpen(open);
+            if (!open) setEditSession(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -20,6 +20,8 @@ describe("SessionsService", () => {
         createMany: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
+        deleteMany: vi.fn(),
+        count: vi.fn(),
       },
       class: {
         findUniqueOrThrow: vi.fn(),
@@ -28,6 +30,8 @@ describe("SessionsService", () => {
       },
       classSchedule: {
         findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn(),
+        delete: vi.fn(),
       },
     };
 
@@ -732,6 +736,192 @@ describe("SessionsService", () => {
       const result = await sessionsService.checkBatchConflicts(centerId, sessions);
 
       expect(result.get("session-1")).toBe(true); // Conflict with external session
+    });
+  });
+
+  describe("deleteFutureSessions", () => {
+    it("should delete all future sessions with the same scheduleId", async () => {
+      const sessionId = "session-5";
+      const scheduleId = "schedule-1";
+      const classId = "class-1";
+      const sessionStartTime = new Date("2026-02-10T09:00:00Z");
+
+      mockTenantedClient.classSession.findUniqueOrThrow.mockResolvedValue({
+        id: sessionId,
+        scheduleId,
+        classId,
+        startTime: sessionStartTime,
+        centerId,
+      });
+      mockTenantedClient.classSession.deleteMany.mockResolvedValue({ count: 5 });
+      mockTenantedClient.classSession.count.mockResolvedValue(3); // 3 earlier sessions remain
+
+      const result = await sessionsService.deleteFutureSessions(centerId, sessionId);
+
+      expect(result.deletedCount).toBe(5);
+      expect(result.classId).toBe(classId);
+      expect(mockTenantedClient.classSession.deleteMany).toHaveBeenCalledWith({
+        where: {
+          scheduleId,
+          startTime: { gte: sessionStartTime },
+          centerId,
+        },
+      });
+      // Should NOT delete ClassSchedule since 3 sessions remain
+      expect(mockTenantedClient.classSchedule.delete).not.toHaveBeenCalled();
+    });
+
+    it("should throw when session has no scheduleId", async () => {
+      mockTenantedClient.classSession.findUniqueOrThrow.mockResolvedValue({
+        id: "session-solo",
+        scheduleId: null,
+        classId: "class-1",
+        startTime: new Date(),
+        centerId,
+      });
+
+      await expect(
+        sessionsService.deleteFutureSessions(centerId, "session-solo")
+      ).rejects.toThrow("Session is not part of a recurring series");
+    });
+
+    it("should delete orphaned ClassSchedule when no sessions remain", async () => {
+      const sessionId = "session-last";
+      const scheduleId = "schedule-orphan";
+
+      mockTenantedClient.classSession.findUniqueOrThrow.mockResolvedValue({
+        id: sessionId,
+        scheduleId,
+        classId: "class-1",
+        startTime: new Date("2026-02-10T09:00:00Z"),
+        centerId,
+      });
+      mockTenantedClient.classSession.deleteMany.mockResolvedValue({ count: 1 });
+      mockTenantedClient.classSession.count.mockResolvedValue(0); // No sessions remain
+      mockTenantedClient.classSchedule.delete.mockResolvedValue({ id: scheduleId });
+
+      await sessionsService.deleteFutureSessions(centerId, sessionId);
+
+      expect(mockTenantedClient.classSchedule.delete).toHaveBeenCalledWith({
+        where: { id: scheduleId },
+      });
+    });
+
+    it("should keep ClassSchedule when earlier sessions still exist", async () => {
+      const sessionId = "session-mid";
+      const scheduleId = "schedule-keep";
+
+      mockTenantedClient.classSession.findUniqueOrThrow.mockResolvedValue({
+        id: sessionId,
+        scheduleId,
+        classId: "class-1",
+        startTime: new Date("2026-02-10T09:00:00Z"),
+        centerId,
+      });
+      mockTenantedClient.classSession.deleteMany.mockResolvedValue({ count: 3 });
+      mockTenantedClient.classSession.count.mockResolvedValue(5); // 5 earlier sessions remain
+
+      await sessionsService.deleteFutureSessions(centerId, sessionId);
+
+      expect(mockTenantedClient.classSchedule.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("createSession with recurrence", () => {
+    const baseInput = {
+      classId: "class-1",
+      startTime: "2026-02-10T09:00:00Z",
+      endTime: "2026-02-10T10:00:00Z",
+      roomName: "Room A",
+    };
+
+    const mockSessionInclude = {
+      class: {
+        include: {
+          course: true,
+          teacher: { select: { id: true, name: true } },
+          _count: { select: { students: true } },
+        },
+      },
+    };
+
+    it("should create a single session when recurrence is 'none'", async () => {
+      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({ id: "class-1" });
+      const mockSession = { id: "session-1", ...baseInput, centerId, status: "SCHEDULED" };
+      mockTenantedClient.classSession.create.mockResolvedValue(mockSession);
+
+      const result = await sessionsService.createSession(centerId, {
+        ...baseInput,
+        recurrence: "none",
+      });
+
+      expect(result).toEqual(mockSession);
+      // Should NOT create ClassSchedule or additional sessions
+      expect(mockTenantedClient.classSchedule.create).not.toHaveBeenCalled();
+      expect(mockTenantedClient.classSession.createMany).not.toHaveBeenCalled();
+    });
+
+    it("should create a single session when no recurrence is specified", async () => {
+      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({ id: "class-1" });
+      const mockSession = { id: "session-1", ...baseInput, centerId, status: "SCHEDULED" };
+      mockTenantedClient.classSession.create.mockResolvedValue(mockSession);
+
+      const result = await sessionsService.createSession(centerId, baseInput);
+
+      expect(result).toEqual(mockSession);
+      expect(mockTenantedClient.classSchedule.create).not.toHaveBeenCalled();
+      expect(mockTenantedClient.classSession.createMany).not.toHaveBeenCalled();
+    });
+
+    it("should generate 12 sessions for weekly recurrence", async () => {
+      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({ id: "class-1" });
+      const mockPrimarySession = { id: "session-primary", ...baseInput, centerId, status: "SCHEDULED" };
+      mockTenantedClient.classSession.create.mockResolvedValue(mockPrimarySession);
+      mockTenantedClient.classSchedule.create.mockResolvedValue({ id: "schedule-new" });
+      mockTenantedClient.classSession.update.mockResolvedValue(mockPrimarySession);
+      mockTenantedClient.classSession.createMany.mockResolvedValue({ count: 11 });
+
+      const result = await sessionsService.createSession(centerId, {
+        ...baseInput,
+        recurrence: "weekly",
+      });
+
+      expect(mockTenantedClient.classSchedule.create).toHaveBeenCalled();
+      expect(mockTenantedClient.classSession.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "session-primary" },
+          data: { scheduleId: "schedule-new" },
+        }),
+      );
+      expect(mockTenantedClient.classSession.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            classId: "class-1",
+            scheduleId: "schedule-new",
+            centerId,
+          }),
+        ]),
+      });
+      // 11 additional sessions (total 12 - 1 primary)
+      const createManyCall = mockTenantedClient.classSession.createMany.mock.calls[0][0];
+      expect(createManyCall.data).toHaveLength(11);
+    });
+
+    it("should generate 6 sessions for biweekly recurrence", async () => {
+      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({ id: "class-1" });
+      const mockPrimarySession = { id: "session-primary", ...baseInput, centerId, status: "SCHEDULED" };
+      mockTenantedClient.classSession.create.mockResolvedValue(mockPrimarySession);
+      mockTenantedClient.classSchedule.create.mockResolvedValue({ id: "schedule-new" });
+      mockTenantedClient.classSession.update.mockResolvedValue(mockPrimarySession);
+      mockTenantedClient.classSession.createMany.mockResolvedValue({ count: 5 });
+
+      await sessionsService.createSession(centerId, {
+        ...baseInput,
+        recurrence: "biweekly",
+      });
+
+      const createManyCall = mockTenantedClient.classSession.createMany.mock.calls[0][0];
+      expect(createManyCall.data).toHaveLength(5); // 6 total - 1 primary = 5 additional
     });
   });
 });

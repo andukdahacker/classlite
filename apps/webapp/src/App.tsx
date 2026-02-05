@@ -27,6 +27,7 @@ import { SettingsLayout } from "./features/settings/components/SettingsLayout";
 import { GeneralSettingsPage } from "./features/settings/pages/GeneralSettingsPage";
 import { IntegrationsPage } from "./features/settings/pages/IntegrationsPage";
 import { PrivacyPage } from "./features/settings/pages/PrivacyPage";
+import { RoomsPage } from "./features/settings/pages/RoomsPage";
 
 function App() {
   const queryClient = new QueryClient({
@@ -103,6 +104,7 @@ function App() {
                   >
                     <Route index element={<GeneralSettingsPage />} />
                     <Route path="users" element={<UsersPage />} />
+                    <Route path="rooms" element={<RoomsPage />} />
                     <Route path="integrations" element={<IntegrationsPage />} />
                     <Route path="privacy" element={<PrivacyPage />} />
                   </Route>

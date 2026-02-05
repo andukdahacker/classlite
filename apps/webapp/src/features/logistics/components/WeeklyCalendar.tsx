@@ -33,6 +33,10 @@ interface WeeklyCalendarProps {
   ) => void;
   onSessionUpdate?: (sessionId: string, updates: { roomName?: string }) => void;
   onSessionDelete?: (sessionId: string) => void;
+  onDeleteFuture?: (sessionId: string) => void;
+  onEdit?: (session: ClassSessionWithConflicts) => void;
+  onSlotClick?: (date: Date, startTime: string) => void;
+  onDragCreate?: (date: Date, startTime: string, endTime: string) => void;
   isUpdating?: boolean;
   isDeleting?: boolean;
 }
@@ -51,6 +55,10 @@ export function WeeklyCalendar({
   onSessionMove,
   onSessionUpdate,
   onSessionDelete,
+  onDeleteFuture,
+  onEdit,
+  onSlotClick,
+  onDragCreate,
   isUpdating,
   isDeleting,
 }: WeeklyCalendarProps) {
@@ -68,6 +76,61 @@ export function WeeklyCalendar({
   // Attendance modal state
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [attendanceSession, setAttendanceSession] = useState<ClassSessionWithConflicts | null>(null);
+
+  // Drag-to-create state (mouse events on empty cells)
+  const [createDragState, setCreateDragState] = useState<{
+    isDragging: boolean;
+    dayIndex: number;
+    startSlot: number;
+    endSlot: number;
+  } | null>(null);
+
+  // Convert slot index to time string "HH:mm"
+  const slotToTime = useCallback((slotIndex: number): string => {
+    const totalMinutes = START_HOUR * 60 + slotIndex * SLOT_MINUTES;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+  }, []);
+
+  // Handle mouse events for drag-to-create on empty grid cells
+  const handleGridMouseDown = useCallback((dayIndex: number, slotIndex: number) => {
+    if (!onDragCreate && !onSlotClick) return;
+    setCreateDragState({ isDragging: true, dayIndex, startSlot: slotIndex, endSlot: slotIndex });
+  }, [onDragCreate, onSlotClick]);
+
+  const handleGridMouseMove = useCallback((slotIndex: number) => {
+    if (!createDragState?.isDragging) return;
+    setCreateDragState(prev => prev ? { ...prev, endSlot: Math.max(slotIndex, prev.startSlot) } : null);
+  }, [createDragState?.isDragging]);
+
+  const handleGridMouseUp = useCallback(() => {
+    if (!createDragState?.isDragging) return;
+    const { dayIndex, startSlot, endSlot } = createDragState;
+    const day = weekDays[dayIndex];
+    if (!day) { setCreateDragState(null); return; }
+
+    const startTime = slotToTime(startSlot);
+    const endTimeSlot = endSlot + 1; // end is exclusive
+    const endTime = slotToTime(endTimeSlot);
+
+    if (startSlot === endSlot && onSlotClick) {
+      // Single click (no drag distance)
+      onSlotClick(day, startTime);
+    } else if (onDragCreate) {
+      onDragCreate(day, startTime, endTime);
+    }
+
+    setCreateDragState(null);
+  }, [createDragState, weekDays, slotToTime, onSlotClick, onDragCreate]);
+
+  // Global mouseup listener for drag-to-create
+  useEffect(() => {
+    if (!createDragState?.isDragging) return;
+    const handler = () => handleGridMouseUp();
+    window.addEventListener("mouseup", handler);
+    return () => window.removeEventListener("mouseup", handler);
+  }, [createDragState?.isDragging, handleGridMouseUp]);
 
   // Conflict checking for selected session
   const {
@@ -508,8 +571,10 @@ export function WeeklyCalendar({
         if (!open) setSelectedSession(null);
       }}
       onDelete={onSessionDelete}
+      onDeleteFuture={onDeleteFuture}
       isDeleting={isDeleting}
       onMarkAttendance={handleMarkAttendance}
+      onEdit={onEdit}
     >
       <div
         className={cn(
@@ -739,6 +804,46 @@ export function WeeklyCalendar({
                     onDrop={handleDrop}
                   >
                     {renderGridLines()}
+
+                    {/* Slot interaction layer for click/drag-to-create (mouse events) */}
+                    {(onSlotClick || onDragCreate) && !isDragging && timeSlots.map((slot, slotIndex) => {
+                      const dayIndex = weekDays.findIndex(d => format(d, "yyyy-MM-dd") === dayKey);
+                      return (
+                        <div
+                          key={`create-slot-${slot.hours}-${slot.minutes}`}
+                          className="absolute left-0 right-0 z-[5] hover:bg-primary/5 cursor-pointer transition-colors"
+                          style={{
+                            top: slotIndex * SLOT_HEIGHT,
+                            height: SLOT_HEIGHT,
+                          }}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleGridMouseDown(dayIndex, slotIndex);
+                          }}
+                          onMouseMove={() => handleGridMouseMove(slotIndex)}
+                        />
+                      );
+                    })}
+
+                    {/* Drag-to-create ghost preview */}
+                    {createDragState?.isDragging && (() => {
+                      const createDayIndex = weekDays.findIndex(d => format(d, "yyyy-MM-dd") === dayKey);
+                      if (createDayIndex !== createDragState.dayIndex) return null;
+
+                      const top = createDragState.startSlot * SLOT_HEIGHT;
+                      const height = (createDragState.endSlot - createDragState.startSlot + 1) * SLOT_HEIGHT;
+
+                      return (
+                        <div
+                          className="absolute left-1 right-1 z-20 pointer-events-none border-2 border-dashed border-green-500 bg-green-100/50 rounded-md flex items-center justify-center"
+                          style={{ top, height }}
+                        >
+                          <span className="text-xs font-medium text-green-700 truncate px-1">
+                            {slotToTime(createDragState.startSlot)} - {slotToTime(createDragState.endSlot + 1)}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     {/* Drag preview ghost with conflict highlighting */}
                     {dragPreview && dragPreview.dayKey === dayKey && (() => {

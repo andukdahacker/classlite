@@ -12,6 +12,7 @@ import {
   ConflictCheckInputSchema,
   ConflictCheckInput,
   ConflictResultResponseSchema,
+  DeleteFutureSessionsResponseSchema,
 } from "@workspace/types";
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -170,6 +171,40 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
         request.jwtPayload!,
       );
       return reply.send(result);
+    },
+  });
+
+  api.delete("/:id/future", {
+    schema: {
+      params: z.object({
+        id: z.string(),
+      }),
+      response: {
+        200: DeleteFutureSessionsResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { id: string } }>,
+      reply,
+    ) => {
+      try {
+        const result = await sessionsController.deleteFutureSessions(
+          request.params.id,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error) {
+        if (error instanceof Error && error.message === "Session is not part of a recurring series") {
+          return reply.status(400).send({ message: error.message });
+        }
+        throw error;
+      }
     },
   });
 

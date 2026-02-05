@@ -70,7 +70,7 @@ development_status:
   2-2-visual-weekly-scheduler: done
   2-3-conflict-detection: done
   2-4-attendance-tracking: done
-  2-5-class-session-crud: backlog # NEW
+  2-5-class-session-crud: done # Completed 2026-02-05
   2-6-schedule-change-notifications-email: backlog # NEW
   epic-2-retrospective: optional
 

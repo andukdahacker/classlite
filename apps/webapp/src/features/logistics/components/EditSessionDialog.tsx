@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@workspace/ui/components/dialog";
 import {
   Form,
@@ -20,7 +19,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@workspace/ui/components/form";
-import { Input } from "@workspace/ui/components/input";
 import {
   Select,
   SelectContent,
@@ -29,7 +27,6 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Button } from "@workspace/ui/components/button";
-import { Calendar } from "@workspace/ui/components/calendar";
 import {
   Popover,
   PopoverContent,
@@ -44,97 +41,81 @@ import {
   CommandList,
 } from "@workspace/ui/components/command";
 import { toast } from "sonner";
-import { Plus, CalendarIcon, ChevronsUpDown, Check, Info } from "lucide-react";
+import { ChevronsUpDown, Check, CalendarIcon } from "lucide-react";
+import { Calendar } from "@workspace/ui/components/calendar";
 import { cn } from "@workspace/ui/lib/utils";
-import type { Class, CreateClassSessionInput, Room, Suggestion } from "@workspace/types";
+import type { ClassSession, Room, Suggestion, UpdateClassSessionInput } from "@workspace/types";
 import { useConflictCheck } from "../hooks/use-conflict-check";
 import { ConflictWarningBanner } from "./ConflictWarningBanner";
 
-const createSessionSchema = z.object({
-  classId: z.string().min(1, "Please select a class"),
+type SessionWithDetails = ClassSession & {
+  class?: {
+    name: string;
+    course?: { name: string; color?: string | null };
+    teacher?: { id: string; name: string | null } | null;
+    _count?: { students: number };
+  };
+};
+
+const editSessionSchema = z.object({
   date: z.date({ required_error: "Please select a date" }),
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().min(1, "End time is required"),
   roomName: z.string().optional(),
-  recurrence: z.enum(["none", "weekly", "biweekly"]).optional(),
 });
 
-type CreateSessionFormValues = z.infer<typeof createSessionSchema>;
+type EditSessionFormValues = z.infer<typeof editSessionSchema>;
 
-interface CreateSessionDialogProps {
-  classes: Class[];
+interface EditSessionDialogProps {
+  session: SessionWithDetails;
   rooms?: Room[];
-  onCreateSession: (input: CreateClassSessionInput) => Promise<unknown>;
-  isCreating: boolean;
-  /** Pre-fill from slot click or drag-to-create */
-  defaultDate?: Date;
-  defaultStartTime?: string;
-  defaultEndTime?: string;
-  /** Control open state externally */
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  /** Hide the trigger button (when opened programmatically) */
-  hideTrigger?: boolean;
+  onUpdateSession: (params: { id: string; input: UpdateClassSessionInput }) => Promise<unknown>;
+  isUpdating: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function CreateSessionDialog({
-  classes,
+export function EditSessionDialog({
+  session,
   rooms = [],
-  onCreateSession,
-  isCreating,
-  defaultDate,
-  defaultStartTime,
-  defaultEndTime,
-  open: controlledOpen,
-  onOpenChange: controlledOnOpenChange,
-  hideTrigger,
-}: CreateSessionDialogProps) {
-  const [internalOpen, setInternalOpen] = useState(false);
-  const open = controlledOpen ?? internalOpen;
-  const setOpen = controlledOnOpenChange ?? setInternalOpen;
-
+  onUpdateSession,
+  isUpdating,
+  open,
+  onOpenChange,
+}: EditSessionDialogProps) {
   const [forceSubmit, setForceSubmit] = useState(false);
   const [roomComboOpen, setRoomComboOpen] = useState(false);
   const { user } = useAuth();
-
-  // Track if we have valid form data to avoid premature conflict clearing
   const hasValidFormData = useRef(false);
-
-  // Check if user can force-save conflicts
   const canForceSave = user?.role === "OWNER" || user?.role === "ADMIN";
 
-  const form = useForm<CreateSessionFormValues>({
-    resolver: zodResolver(createSessionSchema),
+  const startDate = new Date(session.startTime);
+  const endDate = new Date(session.endTime);
+
+  const form = useForm<EditSessionFormValues>({
+    resolver: zodResolver(editSessionSchema),
     defaultValues: {
-      classId: "",
-      date: defaultDate,
-      startTime: defaultStartTime ?? "09:00",
-      endTime: defaultEndTime ?? "10:00",
-      roomName: "",
-      recurrence: "none",
+      date: startDate,
+      startTime: format(startDate, "HH:mm"),
+      endTime: format(endDate, "HH:mm"),
+      roomName: session.roomName ?? "",
     },
   });
 
-  // Reset form when dialog opens (e.g., new slot click or re-open)
+  // Reset when session changes
   useEffect(() => {
     if (open) {
+      const start = new Date(session.startTime);
+      const end = new Date(session.endTime);
       form.reset({
-        classId: "",
-        date: defaultDate,
-        startTime: defaultStartTime ?? "09:00",
-        endTime: defaultEndTime ?? "10:00",
-        roomName: "",
-        recurrence: "none",
+        date: start,
+        startTime: format(start, "HH:mm"),
+        endTime: format(end, "HH:mm"),
+        roomName: session.roomName ?? "",
       });
     }
-  }, [open, defaultDate, defaultStartTime, defaultEndTime, form]);
+  }, [open, session, form]);
 
-  // Derive teacher name from selected class
-  const selectedClassId = form.watch("classId");
-  const selectedClass = classes.find((c) => c.id === selectedClassId);
-  const teacherName = selectedClass?.teacher?.name ?? null;
-
-  // Conflict checking
   const {
     hasConflicts,
     roomConflicts,
@@ -146,29 +127,20 @@ export function CreateSessionDialog({
     checkError,
   } = useConflictCheck();
 
-  // Watch form values for debounced conflict checking
-  const watchedValues = useWatch({
-    control: form.control,
-  });
+  const watchedValues = useWatch({ control: form.control });
 
-  // Check for conflicts when form values change
   useEffect(() => {
-    const { classId, date, startTime, endTime, roomName } = watchedValues;
-
-    // Only check if we have enough data
-    if (!classId || !date || !startTime || !endTime) {
+    const { date, startTime, endTime, roomName } = watchedValues;
+    if (!date || !startTime || !endTime) {
       hasValidFormData.current = false;
       return;
     }
 
-    // Parse times
     const [startHour, startMin] = startTime.split(":").map(Number);
     const [endHour, endMin] = endTime.split(":").map(Number);
-
     const startDateTime = setMinutes(setHours(date, startHour), startMin);
     const endDateTime = setMinutes(setHours(date, endHour), endMin);
 
-    // Only check if end is after start
     if (endDateTime <= startDateTime) {
       hasValidFormData.current = false;
       return;
@@ -176,16 +148,15 @@ export function CreateSessionDialog({
 
     hasValidFormData.current = true;
 
-    // Debounced conflict check
     checkConflicts({
-      classId,
+      classId: session.classId,
       startTime: startDateTime.toISOString(),
       endTime: endDateTime.toISOString(),
       roomName: roomName || undefined,
+      excludeSessionId: session.id,
     });
-  }, [watchedValues, checkConflicts]);
+  }, [watchedValues, checkConflicts, session.classId, session.id]);
 
-  // Handle applying a suggestion
   const handleApplySuggestion = (suggestion: Suggestion) => {
     if (suggestion.type === "time" && suggestion.startTime && suggestion.endTime) {
       const start = new Date(suggestion.startTime);
@@ -203,128 +174,83 @@ export function CreateSessionDialog({
     }
   };
 
-  // Handle force save (submit despite conflicts)
   const handleForceSave = () => {
     setForceSubmit(true);
     form.handleSubmit(onSubmit)();
   };
 
-  async function onSubmit(values: CreateSessionFormValues) {
+  async function onSubmit(values: EditSessionFormValues) {
     try {
-      // Parse time strings and combine with date
       const [startHour, startMin] = values.startTime.split(":").map(Number);
       const [endHour, endMin] = values.endTime.split(":").map(Number);
 
-      const startTime = setMinutes(setHours(values.date, startHour), startMin);
-      const endTime = setMinutes(setHours(values.date, endHour), endMin);
+      const newStartTime = setMinutes(setHours(values.date, startHour), startMin);
+      const newEndTime = setMinutes(setHours(values.date, endHour), endMin);
 
-      // Validate end time is after start time
-      if (endTime <= startTime) {
+      if (newEndTime <= newStartTime) {
         form.setError("endTime", { message: "End time must be after start time" });
         return;
       }
 
-      // Block submission with conflicts unless force-saving (admins only)
       if (hasConflicts && !forceSubmit) {
         if (!canForceSave) {
-          toast.error("Please resolve scheduling conflicts before creating the session");
+          toast.error("Please resolve scheduling conflicts before saving");
           return;
         }
-        // For admins, show a warning but allow them to use Force Save button
         toast.warning("Scheduling conflicts detected. Use 'Force Save' to override.");
         return;
       }
 
-      await onCreateSession({
-        classId: values.classId,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        roomName: values.roomName || undefined,
-        recurrence: values.recurrence === "none" ? undefined : values.recurrence,
+      await onUpdateSession({
+        id: session.id,
+        input: {
+          startTime: newStartTime.toISOString(),
+          endTime: newEndTime.toISOString(),
+          roomName: values.roomName || undefined,
+        },
       });
 
-      const recurrenceLabel = values.recurrence === "weekly" ? " (12 weekly sessions)" :
-        values.recurrence === "biweekly" ? " (6 bi-weekly sessions)" : "";
-      toast.success(`Session created successfully${recurrenceLabel}`);
-      setOpen(false);
-      form.reset();
+      toast.success("Session updated successfully");
+      onOpenChange(false);
       clearConflicts();
       setForceSubmit(false);
     } catch {
-      toast.error("Failed to create session");
+      toast.error("Failed to update session");
       setForceSubmit(false);
     }
   }
 
-  // Generate time options (every 30 minutes from 6 AM to 10 PM)
+  // Generate time options
   const timeOptions = [];
   for (let hour = 6; hour <= 22; hour++) {
     for (const min of [0, 30]) {
-      if (hour === 22 && min === 30) continue; // Skip 22:30
+      if (hour === 22 && min === 30) continue;
       const time = `${hour.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`;
       const label = format(setMinutes(setHours(new Date(), hour), min), "h:mm a");
       timeOptions.push({ value: time, label });
     }
   }
 
-  const recurrence = form.watch("recurrence");
+  const courseName = session.class?.course?.name ?? "Course";
+  const className = session.class?.name ?? "Class";
+  const teacherName = session.class?.teacher?.name ?? null;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {!hideTrigger && (
-        <DialogTrigger asChild>
-          <Button variant="outline">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Session
-          </Button>
-        </DialogTrigger>
-      )}
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create Session</DialogTitle>
+          <DialogTitle>Edit Session</DialogTitle>
           <DialogDescription>
-            Schedule a new class session manually.
+            {courseName} - {className}
           </DialogDescription>
         </DialogHeader>
+        {teacherName && (
+          <div className="text-sm text-muted-foreground">
+            Teacher: <span className="font-medium text-foreground">{teacherName}</span>
+          </div>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="classId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Class</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a class" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {classes.map((cls) => (
-                        <SelectItem key={cls.id} value={cls.id}>
-                          {cls.name}
-                          {cls.course && (
-                            <span className="text-muted-foreground ml-2">
-                              ({cls.course.name})
-                            </span>
-                          )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Teacher (read-only, derived from class) */}
-            {teacherName && (
-              <div className="text-sm text-muted-foreground">
-                Teacher: <span className="font-medium text-foreground">{teacherName}</span>
-              </div>
-            )}
-
             <FormField
               control={form.control}
               name="date"
@@ -478,49 +404,12 @@ export function CreateSessionDialog({
               )}
             />
 
-            {/* Recurrence */}
-            <FormField
-              control={form.control}
-              name="recurrence"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Recurrence</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value ?? "none"}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="No recurrence" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Recurrence info */}
-            {recurrence && recurrence !== "none" && (
-              <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md p-3">
-                <Info className="h-4 w-4 mt-0.5 shrink-0" />
-                <span>
-                  This will create {recurrence === "weekly" ? "12 weekly" : "6 bi-weekly"} sessions
-                  starting from the selected date.
-                </span>
-              </div>
-            )}
-
-            {/* Conflict check error */}
             {checkError && (
               <p className="text-sm text-destructive">
                 Unable to check for conflicts. You may still save.
               </p>
             )}
 
-            {/* Conflict Warning Banner */}
             {hasConflicts && (
               <ConflictWarningBanner
                 roomConflicts={roomConflicts}
@@ -528,13 +417,13 @@ export function CreateSessionDialog({
                 suggestions={suggestions}
                 onApplySuggestion={handleApplySuggestion}
                 onForceSave={handleForceSave}
-                isForcing={isCreating && forceSubmit}
+                isForcing={isUpdating && forceSubmit}
               />
             )}
 
             <div className="flex justify-end pt-4">
-              <Button type="submit" disabled={isCreating || isChecking}>
-                {isCreating ? "Creating..." : isChecking ? "Checking..." : "Create Session"}
+              <Button type="submit" disabled={isUpdating || isChecking}>
+                {isUpdating ? "Saving..." : isChecking ? "Checking..." : "Save Changes"}
               </Button>
             </div>
           </form>

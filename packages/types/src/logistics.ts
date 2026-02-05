@@ -115,6 +115,36 @@ export const RosterResponseSchema = createResponseSchema(
 );
 export type RosterResponse = z.infer<typeof RosterResponseSchema>;
 
+// --- Room ---
+
+export const RoomSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1, "Room name is required"),
+  centerId: z.string(),
+  createdAt: z.union([z.date(), z.string()]),
+  updatedAt: z.union([z.date(), z.string()]),
+});
+
+export type Room = z.infer<typeof RoomSchema>;
+
+export const CreateRoomInputSchema = z.object({
+  name: z.string().min(1, "Room name is required").max(100),
+});
+
+export type CreateRoomInput = z.infer<typeof CreateRoomInputSchema>;
+
+export const UpdateRoomInputSchema = z.object({
+  name: z.string().min(1, "Room name is required").max(100),
+});
+
+export type UpdateRoomInput = z.infer<typeof UpdateRoomInputSchema>;
+
+export const RoomResponseSchema = createResponseSchema(RoomSchema);
+export type RoomResponse = z.infer<typeof RoomResponseSchema>;
+
+export const RoomListResponseSchema = createResponseSchema(z.array(RoomSchema));
+export type RoomListResponse = z.infer<typeof RoomListResponseSchema>;
+
 // --- ClassSchedule (Recurring) ---
 
 export const SessionStatusEnum = z.enum(["SCHEDULED", "CANCELLED", "COMPLETED"]);
@@ -173,6 +203,9 @@ export const ClassSessionSchema = z.object({
 
 export type ClassSession = z.infer<typeof ClassSessionSchema>;
 
+export const RecurrenceEnum = z.enum(["none", "weekly", "biweekly"]);
+export type Recurrence = z.infer<typeof RecurrenceEnum>;
+
 export const CreateClassSessionSchema = z.object({
   classId: z.string(),
   scheduleId: z.string().nullable().optional(),
@@ -180,6 +213,7 @@ export const CreateClassSessionSchema = z.object({
   endTime: z.union([z.date(), z.string()]),
   roomName: z.string().nullable().optional(),
   status: SessionStatusEnum.optional(),
+  recurrence: RecurrenceEnum.optional(),
 });
 
 export type CreateClassSessionInput = z.infer<typeof CreateClassSessionSchema>;
@@ -198,6 +232,15 @@ export type ClassSessionResponse = z.infer<typeof ClassSessionResponseSchema>;
 
 export const ClassSessionListResponseSchema = createResponseSchema(z.array(ClassSessionSchema));
 export type ClassSessionListResponse = z.infer<typeof ClassSessionListResponseSchema>;
+
+// --- Delete Future Sessions ---
+
+export const DeleteFutureSessionsResponseSchema = createResponseSchema(
+  z.object({
+    deletedCount: z.number(),
+  }),
+);
+export type DeleteFutureSessionsResponse = z.infer<typeof DeleteFutureSessionsResponseSchema>;
 
 // --- Session Generation ---
 

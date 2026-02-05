@@ -44,21 +44,23 @@ export const useSessions = (centerId?: string | null, weekStart?: Date, includeC
       input: UpdateClassSessionInput;
     }) => {
       // Convert Date objects to ISO strings for API
+      const body: Record<string, unknown> = { ...input };
+      if (input.startTime !== undefined) {
+        body.startTime = typeof input.startTime === "string"
+          ? input.startTime
+          : (input.startTime as Date).toISOString();
+      }
+      if (input.endTime !== undefined) {
+        body.endTime = typeof input.endTime === "string"
+          ? input.endTime
+          : (input.endTime as Date).toISOString();
+      }
+
       const { data, error } = await client.PATCH(
         "/api/v1/logistics/sessions/{id}",
         {
           params: { path: { id } },
-          body: {
-            ...input,
-            startTime:
-              input.startTime && typeof input.startTime === "string"
-                ? input.startTime
-                : (input.startTime as Date).toISOString(),
-            endTime:
-              input.endTime && typeof input.endTime === "string"
-                ? input.endTime
-                : (input.endTime as Date).toISOString(),
-          },
+          body,
         },
       );
       if (error) throw error;
@@ -163,6 +165,22 @@ export const useSessions = (centerId?: string | null, weekStart?: Date, includeC
     },
   });
 
+  const deleteFutureSessionsMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await client.DELETE(
+        "/api/v1/logistics/sessions/{id}/future",
+        {
+          params: { path: { id } },
+        },
+      );
+      if (error) throw error;
+      return data?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sessions", centerId] });
+    },
+  });
+
   const generateSessionsMutation = useMutation({
     mutationFn: async (input: GenerateSessionsInput) => {
       const { data, error } = await client.POST(
@@ -200,6 +218,8 @@ export const useSessions = (centerId?: string | null, weekStart?: Date, includeC
     isUpdating: updateSessionMutation.isPending,
     deleteSession: deleteSessionMutation.mutateAsync,
     isDeleting: deleteSessionMutation.isPending,
+    deleteFutureSessions: deleteFutureSessionsMutation.mutateAsync,
+    isDeletingFuture: deleteFutureSessionsMutation.isPending,
     generateSessions: generateSessionsMutation.mutateAsync,
     isGenerating: generateSessionsMutation.isPending,
     refetch: sessionsQuery.refetch,

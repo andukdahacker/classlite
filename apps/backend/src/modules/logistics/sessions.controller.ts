@@ -7,6 +7,7 @@ import {
   UpdateClassSessionInput,
   ConflictCheckInput,
   ConflictResultResponse,
+  DeleteFutureSessionsResponse,
 } from "@workspace/types";
 import { format } from "date-fns";
 import { JwtPayload } from "jsonwebtoken";
@@ -155,6 +156,42 @@ export class SessionsController {
     await this.sessionsService.deleteSession(centerId, id);
     return {
       message: "Session deleted successfully",
+    };
+  }
+
+  async deleteFutureSessions(
+    sessionId: string,
+    user: JwtPayload,
+  ): Promise<DeleteFutureSessionsResponse> {
+    const centerId = user.centerId;
+    if (!centerId) throw new Error("Center ID missing from token");
+
+    const { deletedCount, classId } =
+      await this.sessionsService.deleteFutureSessions(centerId, sessionId);
+
+    // Notify all class participants about cancellation
+    const participants = await this.sessionsService.getClassParticipants(
+      centerId,
+      classId,
+    );
+
+    const userIdsToNotify: string[] = [
+      ...participants.studentIds,
+      ...(participants.teacherId ? [participants.teacherId] : []),
+    ];
+
+    if (userIdsToNotify.length > 0) {
+      await this.notificationsService.createBulkNotifications(
+        centerId,
+        userIdsToNotify,
+        "Sessions Cancelled",
+        `${deletedCount} future session(s) have been cancelled`,
+      );
+    }
+
+    return {
+      data: { deletedCount },
+      message: `Deleted ${deletedCount} future session(s)`,
     };
   }
 
