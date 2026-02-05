@@ -30,7 +30,7 @@ export const useSessions = (centerId?: string | null, weekStart?: Date, includeC
         },
       });
       if (error) throw error;
-      return data?.data as ClassSessionWithConflicts[] | undefined;
+      return (data?.data ?? []) as ClassSessionWithConflicts[];
     },
     enabled: !!centerId,
   });

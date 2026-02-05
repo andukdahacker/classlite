@@ -31,6 +31,7 @@ interface WeeklyCalendarProps {
     newStartTime: Date,
     newEndTime: Date,
   ) => void;
+  onSessionUpdate?: (sessionId: string, updates: { roomName?: string }) => void;
   onSessionDelete?: (sessionId: string) => void;
   isUpdating?: boolean;
   isDeleting?: boolean;
@@ -48,6 +49,7 @@ export function WeeklyCalendar({
   weekStart,
   onWeekChange,
   onSessionMove,
+  onSessionUpdate,
   onSessionDelete,
   isUpdating,
   isDeleting,
@@ -464,26 +466,22 @@ export function WeeklyCalendar({
 
   // Handle applying a suggestion from the conflict drawer
   const handleApplySuggestionFromDrawer = useCallback((suggestion: Suggestion) => {
-    if (!conflictSession || !onSessionMove) return;
+    if (!conflictSession) return;
 
     if (suggestion.type === "time" && suggestion.startTime && suggestion.endTime) {
-      // Apply time suggestion - move session to the suggested time
+      if (!onSessionMove) return;
       const newStartTime = new Date(suggestion.startTime);
       const newEndTime = new Date(suggestion.endTime);
       onSessionMove(conflictSession.id, newStartTime, newEndTime);
-      setConflictDrawerOpen(false);
-      setConflictSession(null);
-      clearConflicts();
     } else if (suggestion.type === "room") {
-      // For room suggestions, we need to update the session's room
-      // Since onSessionMove only handles time changes, we'll close the drawer
-      // and the user can use the session details to update the room
-      // In a full implementation, we'd add an onSessionUpdate prop
-      setConflictDrawerOpen(false);
-      setConflictSession(null);
-      clearConflicts();
+      if (!onSessionUpdate) return;
+      onSessionUpdate(conflictSession.id, { roomName: suggestion.value });
     }
-  }, [conflictSession, onSessionMove, clearConflicts]);
+
+    setConflictDrawerOpen(false);
+    setConflictSession(null);
+    clearConflicts();
+  }, [conflictSession, onSessionMove, onSessionUpdate, clearConflicts]);
 
   // Handle force save from conflict drawer (keeps existing session with conflicts)
   const handleForceSaveFromDrawer = useCallback(() => {

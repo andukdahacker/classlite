@@ -634,10 +634,11 @@ describe("SessionsService", () => {
         },
       ];
 
-      mockTenantedClient.class.findMany.mockResolvedValue([
-        { id: "class-1", teacherId: null },
-        { id: "class-2", teacherId: null },
-        { id: "class-3", teacherId: null },
+      // Mock DB query returning all overlapping sessions in range
+      mockTenantedClient.classSession.findMany.mockResolvedValue([
+        { id: "session-1", classId: "class-1", startTime: sessions[0].startTime, endTime: sessions[0].endTime, roomName: "Room A", class: { teacherId: null } },
+        { id: "session-2", classId: "class-2", startTime: sessions[1].startTime, endTime: sessions[1].endTime, roomName: "Room A", class: { teacherId: null } },
+        { id: "session-3", classId: "class-3", startTime: sessions[2].startTime, endTime: sessions[2].endTime, roomName: "Room A", class: { teacherId: null } },
       ]);
 
       const result = await sessionsService.checkBatchConflicts(centerId, sessions);
@@ -665,9 +666,9 @@ describe("SessionsService", () => {
         },
       ];
 
-      mockTenantedClient.class.findMany.mockResolvedValue([
-        { id: "class-1", teacherId: "teacher-1" },
-        { id: "class-2", teacherId: "teacher-1" }, // Same teacher
+      mockTenantedClient.classSession.findMany.mockResolvedValue([
+        { id: "session-1", classId: "class-1", startTime: sessions[0].startTime, endTime: sessions[0].endTime, roomName: "Room A", class: { teacherId: "teacher-1" } },
+        { id: "session-2", classId: "class-2", startTime: sessions[1].startTime, endTime: sessions[1].endTime, roomName: "Room B", class: { teacherId: "teacher-1" } },
       ]);
 
       const result = await sessionsService.checkBatchConflicts(centerId, sessions);
@@ -694,9 +695,9 @@ describe("SessionsService", () => {
         },
       ];
 
-      mockTenantedClient.class.findMany.mockResolvedValue([
-        { id: "class-1", teacherId: "teacher-1" },
-        { id: "class-2", teacherId: "teacher-2" }, // Different teachers
+      mockTenantedClient.classSession.findMany.mockResolvedValue([
+        { id: "session-1", classId: "class-1", startTime: sessions[0].startTime, endTime: sessions[0].endTime, roomName: "Room A", class: { teacherId: "teacher-1" } },
+        { id: "session-2", classId: "class-2", startTime: sessions[1].startTime, endTime: sessions[1].endTime, roomName: "Room A", class: { teacherId: "teacher-2" } },
       ]);
 
       const result = await sessionsService.checkBatchConflicts(centerId, sessions);
@@ -708,6 +709,29 @@ describe("SessionsService", () => {
     it("should return empty map for empty sessions array", async () => {
       const result = await sessionsService.checkBatchConflicts(centerId, []);
       expect(result.size).toBe(0);
+    });
+
+    it("should detect conflicts with sessions outside the batch (DB-only)", async () => {
+      // Batch only contains session-1, but DB has session-external that overlaps
+      const sessions = [
+        {
+          id: "session-1",
+          classId: "class-1",
+          startTime: new Date("2026-01-20T09:00:00Z"),
+          endTime: new Date("2026-01-20T10:00:00Z"),
+          roomName: "Room A",
+        },
+      ];
+
+      // DB returns both batch session AND an external overlapping session
+      mockTenantedClient.classSession.findMany.mockResolvedValue([
+        { id: "session-1", classId: "class-1", startTime: sessions[0].startTime, endTime: sessions[0].endTime, roomName: "Room A", class: { teacherId: null } },
+        { id: "session-external", classId: "class-ext", startTime: new Date("2026-01-20T09:30:00Z"), endTime: new Date("2026-01-20T10:30:00Z"), roomName: "Room A", class: { teacherId: null } },
+      ]);
+
+      const result = await sessionsService.checkBatchConflicts(centerId, sessions);
+
+      expect(result.get("session-1")).toBe(true); // Conflict with external session
     });
   });
 });

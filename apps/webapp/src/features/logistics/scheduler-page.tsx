@@ -70,6 +70,21 @@ export function SchedulerPage() {
     }
   };
 
+  const handleSessionUpdate = async (
+    sessionId: string,
+    updates: { roomName?: string },
+  ) => {
+    try {
+      await updateSession({
+        id: sessionId,
+        input: updates,
+      });
+      toast.success("Session updated successfully");
+    } catch (error) {
+      toast.error("Failed to update session");
+    }
+  };
+
   const handleSessionDelete = async (sessionId: string) => {
     try {
       await deleteSession(sessionId);
@@ -127,6 +142,7 @@ export function SchedulerPage() {
           weekStart={currentWeekStart}
           onWeekChange={handleWeekChange}
           onSessionMove={handleSessionMove}
+          onSessionUpdate={handleSessionUpdate}
           onSessionDelete={handleSessionDelete}
           isUpdating={isUpdating}
           isDeleting={isDeleting}

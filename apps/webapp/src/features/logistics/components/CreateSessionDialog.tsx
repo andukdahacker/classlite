@@ -92,6 +92,7 @@ export function CreateSessionDialog({
     checkConflicts,
     clearConflicts,
     isChecking,
+    checkError,
   } = useConflictCheck();
 
   // Watch form values for debounced conflict checking
@@ -365,6 +366,13 @@ export function CreateSessionDialog({
                 </FormItem>
               )}
             />
+
+            {/* Conflict check error */}
+            {checkError && (
+              <p className="text-sm text-destructive">
+                Unable to check for conflicts. You may still save.
+              </p>
+            )}
 
             {/* Conflict Warning Banner */}
             {hasConflicts && (

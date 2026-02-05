@@ -1,6 +1,6 @@
 # Story 2.3: Conflict Detection
 
-Status: review
+Status: done
 
 ## Story
 
@@ -263,6 +263,15 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 - Optimized `computeConflictSlots` using interval-based approach (O(sessions) vs O(slots×sessions))
 - Implemented ConflictDrawer suggestion handlers (`onApplySuggestion`, `onForceSave`)
 
+**Code Review Fixes (2026-02-05):**
+- [H1] Removed stale `useCallback` wrapper on `checkConflictsImmediate` (recreated every render due to unstable dependency)
+- [H2] Rewrote `checkBatchConflicts` to query DB for all overlapping sessions — now catches conflicts with sessions outside the current batch/view
+- [H2] Added test for DB-only conflict detection (214 tests total)
+- [H3] Scoped room discovery query in `suggestNextAvailable` to last 90 days + non-cancelled sessions
+- [M1] Wired up `onSessionUpdate` prop through WeeklyCalendar → scheduler-page so room suggestions actually update the session
+- [M2] Added conflict check error display in CreateSessionDialog
+- [M3] Added runtime guard for empty conflict check responses; improved type safety in use-sessions hook
+
 **Remaining E2E scope items:**
 - Integration test: Create session with conflict, verify warning returned
 - Integration test: Update session to conflicting time, verify warning returned
@@ -288,3 +297,4 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 - `apps/webapp/src/features/logistics/components/CreateSessionDialog.tsx` - Integrated conflict checking
 - `apps/webapp/src/features/logistics/components/WeeklyCalendar.tsx` - Added conflict drawer integration, drag conflict highlighting
 - `apps/webapp/src/features/logistics/hooks/use-sessions.ts` - Added includeConflicts parameter
+- `apps/webapp/src/features/logistics/scheduler-page.tsx` - Added onSessionUpdate handler for room suggestions

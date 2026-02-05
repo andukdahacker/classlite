@@ -32,7 +32,8 @@ export const useConflictCheck = () => {
         },
       );
       if (error) throw error;
-      return data?.data as ConflictResult;
+      if (!data?.data) throw new Error("Empty conflict check response");
+      return data.data as ConflictResult;
     },
     onSuccess: (result) => {
       setConflictResult(result);
@@ -53,13 +54,10 @@ export const useConflictCheck = () => {
   }, []);
 
   // Immediate check (for final validation before submit)
-  const checkConflictsImmediate = useCallback(
-    async (input: ConflictCheckInput) => {
-      const result = await checkConflictsMutation.mutateAsync(input);
-      return result;
-    },
-    [checkConflictsMutation],
-  );
+  // Note: not wrapped in useCallback — mutateAsync is stable per useMutation
+  const checkConflictsImmediate = async (input: ConflictCheckInput) => {
+    return checkConflictsMutation.mutateAsync(input);
+  };
 
   return {
     // Conflict result state

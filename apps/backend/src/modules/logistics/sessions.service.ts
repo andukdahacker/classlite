@@ -556,10 +556,14 @@ export class SessionsService {
 
     // Find alternative rooms that are free during the requested time
     if (input.roomName) {
-      // Get all distinct room names used in this center
+      // Get distinct room names from recent sessions (last 90 days) for relevance
+      const recentCutoff = new Date();
+      recentCutoff.setDate(recentCutoff.getDate() - 90);
       const allRooms = await db.classSession.findMany({
         where: {
           roomName: { not: null },
+          startTime: { gte: recentCutoff },
+          status: { not: "CANCELLED" },
         },
         select: { roomName: true },
         distinct: ["roomName"],
@@ -595,6 +599,8 @@ export class SessionsService {
   /**
    * Efficiently check conflicts for multiple sessions at once.
    * Used by calendar to mark existing sessions with conflict icons.
+   * Queries the DB for ALL overlapping sessions in the time range (not just the batch)
+   * to catch conflicts with sessions outside the current view.
    * Returns a Map of sessionId -> hasConflicts boolean.
    */
   async checkBatchConflicts(
@@ -608,46 +614,76 @@ export class SessionsService {
       return conflictMap;
     }
 
-    // Get all class data to know teacher assignments
-    const classIds = [...new Set(sessions.map((s) => s.classId))];
-    const classes = await db.class.findMany({
-      where: { id: { in: classIds } },
-      select: { id: true, teacherId: true },
-    });
-    const classTeacherMap = new Map(classes.map((c) => [c.id, c.teacherId]));
+    // Find the full time range of the batch
+    const minStart = new Date(
+      Math.min(...sessions.map((s) => new Date(s.startTime).getTime())),
+    );
+    const maxEnd = new Date(
+      Math.max(...sessions.map((s) => new Date(s.endTime).getTime())),
+    );
 
-    // Check each session for conflicts
+    // Query ALL non-cancelled sessions that overlap with the batch time range
+    const allOverlapping = await db.classSession.findMany({
+      where: {
+        status: { not: "CANCELLED" },
+        startTime: { lt: maxEnd },
+        endTime: { gt: minStart },
+      },
+      select: {
+        id: true,
+        classId: true,
+        startTime: true,
+        endTime: true,
+        roomName: true,
+        class: { select: { teacherId: true } },
+      },
+    });
+
+    // Build teacher map from all overlapping sessions
+    const teacherMap = new Map<string, string | null>();
+    for (const s of allOverlapping) {
+      teacherMap.set(s.classId, s.class?.teacherId ?? null);
+    }
+
+    // Also ensure batch session classes are in the teacher map
+    const missingClassIds = sessions
+      .filter((s) => !teacherMap.has(s.classId))
+      .map((s) => s.classId);
+    if (missingClassIds.length > 0) {
+      const classes = await db.class.findMany({
+        where: { id: { in: [...new Set(missingClassIds)] } },
+        select: { id: true, teacherId: true },
+      });
+      for (const c of classes) {
+        teacherMap.set(c.id, c.teacherId);
+      }
+    }
+
+    // Check each batch session against ALL overlapping sessions
+    const batchIds = new Set(sessions.map((s) => s.id));
     for (const session of sessions) {
       let hasConflict = false;
 
-      // Check room conflicts (if room is assigned)
-      if (session.roomName) {
-        const roomConflict = sessions.find(
-          (other) =>
-            other.id !== session.id &&
-            other.roomName === session.roomName &&
-            new Date(other.startTime) < new Date(session.endTime) &&
-            new Date(other.endTime) > new Date(session.startTime),
-        );
-        if (roomConflict) {
-          hasConflict = true;
-        }
-      }
+      for (const other of allOverlapping) {
+        if (other.id === session.id) continue;
 
-      // Check teacher conflicts (if teacher is assigned)
-      if (!hasConflict) {
-        const teacherId = classTeacherMap.get(session.classId);
-        if (teacherId) {
-          const teacherConflict = sessions.find(
-            (other) =>
-              other.id !== session.id &&
-              classTeacherMap.get(other.classId) === teacherId &&
-              new Date(other.startTime) < new Date(session.endTime) &&
-              new Date(other.endTime) > new Date(session.startTime),
-          );
-          if (teacherConflict) {
-            hasConflict = true;
-          }
+        const overlaps =
+          new Date(other.startTime) < new Date(session.endTime) &&
+          new Date(other.endTime) > new Date(session.startTime);
+        if (!overlaps) continue;
+
+        // Room conflict
+        if (session.roomName && other.roomName === session.roomName) {
+          hasConflict = true;
+          break;
+        }
+
+        // Teacher conflict
+        const sessionTeacherId = teacherMap.get(session.classId);
+        const otherTeacherId = teacherMap.get(other.classId);
+        if (sessionTeacherId && otherTeacherId && sessionTeacherId === otherTeacherId) {
+          hasConflict = true;
+          break;
         }
       }
 
