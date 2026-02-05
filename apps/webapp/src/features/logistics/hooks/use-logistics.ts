@@ -1,16 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/core/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
-  Course,
-  CreateCourseInput,
-  UpdateCourseInput,
-  CreateClassInput,
-  UpdateClassInput,
   AddStudentToClassInput,
-  ClassStudent,
   ClassSchedule,
+  ClassStudent,
+  Course,
+  CreateClassInput,
   CreateClassScheduleInput,
+  CreateCourseInput,
+  UpdateClassInput,
   UpdateClassScheduleInput,
+  UpdateCourseInput,
 } from "@workspace/types";
 
 export const useCourses = (centerId?: string | null) => {
@@ -47,7 +47,6 @@ export const useCourses = (centerId?: string | null) => {
       id: string;
       input: UpdateCourseInput;
     }) => {
-      // @ts-expect-error - openapi-fetch type inference issue
       const { data, error } = await client.PATCH(
         "/api/v1/logistics/courses/{id}",
         {
@@ -99,7 +98,6 @@ export const useClasses = (centerId?: string) => {
 
   const createClassMutation = useMutation({
     mutationFn: async (input: CreateClassInput) => {
-      // @ts-expect-error - openapi-fetch type inference issue
       const { data, error } = await client.POST("/api/v1/logistics/classes/", {
         body: input,
       });
@@ -161,7 +159,6 @@ export const useRoster = (classId?: string, centerId?: string) => {
   const rosterQuery = useQuery({
     queryKey: ["roster", classId],
     queryFn: async () => {
-      // @ts-expect-error - openapi-fetch type inference issue
       const { data, error } = await client.GET(
         "/api/v1/logistics/classes/{id}/students",
         {
@@ -193,7 +190,6 @@ export const useRoster = (classId?: string, centerId?: string) => {
 
   const removeStudentMutation = useMutation({
     mutationFn: async (studentId: string) => {
-      // @ts-expect-error - openapi-fetch type inference issue
       const { error } = await client.DELETE(
         "/api/v1/logistics/classes/{id}/students/{studentId}",
         {
@@ -234,9 +230,12 @@ export const useSchedules = (classId?: string, _centerId?: string) => {
 
   const createScheduleMutation = useMutation({
     mutationFn: async (input: CreateClassScheduleInput) => {
-      const { data, error } = await client.POST("/api/v1/logistics/schedules/", {
-        body: input,
-      });
+      const { data, error } = await client.POST(
+        "/api/v1/logistics/schedules/",
+        {
+          body: input,
+        },
+      );
       if (error) throw error;
       return data?.data;
     },
@@ -270,9 +269,12 @@ export const useSchedules = (classId?: string, _centerId?: string) => {
 
   const deleteScheduleMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await client.DELETE("/api/v1/logistics/schedules/{id}", {
-        params: { path: { id } },
-      });
+      const { error } = await client.DELETE(
+        "/api/v1/logistics/schedules/{id}",
+        {
+          params: { path: { id } },
+        },
+      );
       if (error) throw error;
     },
     onSuccess: () => {

@@ -14,7 +14,7 @@ const firebaseConfig = {
   storageBucket: "claite-87848.firebasestorage.app",
   messagingSenderId: "776124420322",
   appId: "1:776124420322:web:d5b22f779b3eefc95ecebb",
-  measurementId: "G-BZ4PGCHMNK"
+  measurementId: "G-BZ4PGCHMNK",
 };
 
 export const firebase = initializeApp(firebaseConfig);
@@ -22,12 +22,17 @@ export const firebaseAuth = getAuth(firebase);
 
 // Connect to Firebase Auth Emulator in development/test mode
 // In dev mode on localhost, always use the emulator
-const isLocalDev = import.meta.env.DEV && window.location.hostname === "localhost";
-const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true" || isLocalDev;
+const isLocalDev =
+  import.meta.env.DEV && window.location.hostname === "localhost";
+const useEmulator =
+  import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true" || isLocalDev;
 
 if (import.meta.env.DEV) {
   console.log("[Firebase] Configuration:");
-  console.log("  VITE_USE_FIREBASE_EMULATOR:", import.meta.env.VITE_USE_FIREBASE_EMULATOR);
+  console.log(
+    "  VITE_USE_FIREBASE_EMULATOR:",
+    import.meta.env.VITE_USE_FIREBASE_EMULATOR,
+  );
   console.log("  DEV mode:", import.meta.env.DEV);
   console.log("  hostname:", window.location.hostname);
   console.log("  useEmulator:", useEmulator);
@@ -35,7 +40,7 @@ if (import.meta.env.DEV) {
 
 if (useEmulator) {
   // Connect to the emulator - use 127.0.0.1 to match firebase.json config
-  const emulatorUrl = "http://127.0.0.1:9099";
+  const emulatorUrl = "http://localhost:9099";
   if (import.meta.env.DEV) {
     console.log("[Firebase] Connecting to Auth Emulator at", emulatorUrl);
   }

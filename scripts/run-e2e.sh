@@ -58,6 +58,13 @@ cleanup() {
 # Set up trap for cleanup on exit
 trap cleanup EXIT INT TERM
 
+# Clear any existing processes on the ports before starting
+echo -e "${YELLOW}Clearing existing processes on ports...${NC}"
+lsof -ti:$FIREBASE_AUTH_EMULATOR_PORT | xargs kill -9 2>/dev/null || true
+lsof -ti:$BACKEND_PORT | xargs kill -9 2>/dev/null || true
+lsof -ti:$WEBAPP_PORT | xargs kill -9 2>/dev/null || true
+sleep 1
+
 wait_for_service() {
     local url=$1
     local name=$2
@@ -66,13 +73,14 @@ wait_for_service() {
 
     echo -n "Waiting for $name"
     while [ $attempt -le $max_attempts ]; do
-        # Use curl with different options to handle various server types
-        if curl -s -o /dev/null -w "%{http_code}" "$url" 2>/dev/null | grep -q "200\|304\|404"; then
+        # Use curl - any HTTP response means the server is up
+        http_code=$(curl -s -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || echo "000")
+        if [ "$http_code" != "000" ]; then
             echo -e " ${GREEN}ready${NC}"
             return 0
         fi
         echo -n "."
-        sleep 2
+        sleep 1
         attempt=$((attempt + 1))
     done
 
@@ -138,8 +146,8 @@ echo -e "${YELLOW}Step 3: Starting Webapp...${NC}"
 pnpm --filter webapp dev > /tmp/webapp.log 2>&1 &
 WEBAPP_PID=$!
 
-# Use port check for Vite dev server
-if ! wait_for_port $WEBAPP_PORT "Webapp" 60; then
+# Use HTTP check for Vite dev server (more reliable than port check)
+if ! wait_for_service "http://localhost:$WEBAPP_PORT" "Webapp" 60; then
     echo -e "${RED}Failed to start webapp${NC}"
     cat /tmp/webapp.log
     exit 1
