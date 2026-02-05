@@ -462,6 +462,7 @@ export interface paths {
                                     phoneNumber?: string | null;
                                     preferredLanguage?: string;
                                     deletionRequestedAt?: string | null;
+                                    emailScheduleNotifications?: boolean;
                                     /** @enum {string} */
                                     role: "OWNER" | "ADMIN" | "TEACHER" | "STUDENT";
                                     centerId: string | null;
@@ -558,6 +559,7 @@ export interface paths {
                                     phoneNumber?: string | null;
                                     preferredLanguage?: string;
                                     deletionRequestedAt?: string | null;
+                                    emailScheduleNotifications?: boolean;
                                     /** @enum {string} */
                                     role: "OWNER" | "ADMIN" | "TEACHER" | "STUDENT";
                                     centerId: string | null;
@@ -652,6 +654,7 @@ export interface paths {
                                     phoneNumber?: string | null;
                                     preferredLanguage?: string;
                                     deletionRequestedAt?: string | null;
+                                    emailScheduleNotifications?: boolean;
                                     /** @enum {string} */
                                     role: "OWNER" | "ADMIN" | "TEACHER" | "STUDENT";
                                     centerId: string | null;
@@ -724,6 +727,7 @@ export interface paths {
                             phoneNumber?: string | null;
                             preferredLanguage?: string;
                             deletionRequestedAt?: string | null;
+                            emailScheduleNotifications?: boolean;
                             /** @enum {string} */
                             role: "OWNER" | "ADMIN" | "TEACHER" | "STUDENT";
                             centerId: string | null;
@@ -5326,6 +5330,7 @@ export interface paths {
                         preferredLanguage?: "en" | "vi";
                         /** Format: uri */
                         avatarUrl?: string | null;
+                        emailScheduleNotifications?: boolean;
                     };
                 };
             };
@@ -5345,6 +5350,7 @@ export interface paths {
                                 phoneNumber: string | null;
                                 preferredLanguage: string;
                                 deletionRequestedAt: string | null;
+                                emailScheduleNotifications: boolean;
                                 /** @enum {string} */
                                 role: "OWNER" | "ADMIN" | "TEACHER" | "STUDENT";
                                 /** @enum {string} */
@@ -5814,6 +5820,7 @@ export interface paths {
                                 phoneNumber: string | null;
                                 preferredLanguage: string;
                                 deletionRequestedAt: string | null;
+                                emailScheduleNotifications: boolean;
                                 /** @enum {string} */
                                 role: "OWNER" | "ADMIN" | "TEACHER" | "STUDENT";
                                 /** @enum {string} */

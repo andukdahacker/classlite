@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
+import { Switch } from "@workspace/ui/components/switch";
 import { Loader2, Info } from "lucide-react";
 import {
   Tooltip,
@@ -31,6 +32,7 @@ const profileFormSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   phoneNumber: z.string().max(20).optional().or(z.literal("")),
   preferredLanguage: z.enum(["en", "vi"]),
+  emailScheduleNotifications: z.boolean(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -54,6 +56,7 @@ export function ProfileEditForm({
       name: user.name || "",
       phoneNumber: user.phoneNumber || "",
       preferredLanguage: (user.preferredLanguage as "en" | "vi") || "en",
+      emailScheduleNotifications: user.emailScheduleNotifications ?? true,
     },
   });
 
@@ -158,6 +161,30 @@ export function ProfileEditForm({
                 </SelectContent>
               </Select>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="emailScheduleNotifications"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">
+                  Email me schedule changes
+                </FormLabel>
+                <FormDescription>
+                  Receive email notifications when your class schedule is
+                  modified or sessions are cancelled
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
             </FormItem>
           )}
         />

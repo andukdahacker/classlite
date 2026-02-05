@@ -182,7 +182,7 @@ export class SessionsService {
     centerId: string,
     id: string,
     input: UpdateClassSessionInput,
-  ): Promise<{ session: ClassSession; previousStartTime: Date; previousEndTime: Date }> {
+  ): Promise<{ session: ClassSession; previousStartTime: Date; previousEndTime: Date; previousRoomName: string | null }> {
     const db = getTenantedClient(this.prisma, centerId);
 
     // Get the current session to compare changes
@@ -230,6 +230,7 @@ export class SessionsService {
       session,
       previousStartTime: currentSession.startTime,
       previousEndTime: currentSession.endTime,
+      previousRoomName: currentSession.roomName,
     };
   }
 

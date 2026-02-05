@@ -1,10 +1,17 @@
 import { PrismaClient } from "@workspace/db";
 import { addDays, setHours, setMinutes } from "date-fns";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getTestPrisma, closeTestPrisma, isTestDatabaseAvailable } from "../../test/db.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { SessionsController } from "./sessions.controller.js";
 import { SessionsService } from "./sessions.service.js";
+
+// Mock Inngest to prevent real event sending in integration tests
+vi.mock("../inngest/client.js", () => ({
+  inngest: {
+    send: vi.fn().mockResolvedValue({ ids: ["test-event-id"] }),
+  },
+}));
 
 describe("Sessions Integration - Move Session Notify Flow", () => {
   let prisma: PrismaClient;

@@ -13,6 +13,11 @@ import { format } from "date-fns";
 import { JwtPayload } from "jsonwebtoken";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { SessionsService } from "./sessions.service.js";
+import { inngest } from "../inngest/client.js";
+import type {
+  SessionScheduleChangedEvent,
+  SessionCancelledEvent,
+} from "./jobs/session-email-notification.job.js";
 
 export class SessionsController {
   constructor(
@@ -104,7 +109,7 @@ export class SessionsController {
     const centerId = user.centerId;
     if (!centerId) throw new Error("Center ID missing from token");
 
-    const { session, previousStartTime, previousEndTime } =
+    const { session, previousStartTime, previousEndTime, previousRoomName } =
       await this.sessionsService.updateSession(centerId, id, input);
 
     // Check if time changed - if so, notify students and teacher
@@ -114,8 +119,13 @@ export class SessionsController {
       (input.endTime !== undefined &&
         new Date(input.endTime).getTime() !== previousEndTime.getTime());
 
+    // Check if room changed
+    const roomChanged =
+      input.roomName !== undefined &&
+      input.roomName !== previousRoomName;
+
     if (timeChanged) {
-      // Get participants to notify
+      // Get participants to notify (in-app notifications for time changes)
       const participants = await this.sessionsService.getClassParticipants(
         centerId,
         session.classId,
@@ -140,6 +150,24 @@ export class SessionsController {
       }
     }
 
+    // Emit email notification event (separate from in-app notifications)
+    if (timeChanged || roomChanged) {
+      await inngest.send({
+        name: "logistics/session.schedule-changed",
+        data: {
+          sessionId: session.id,
+          centerId,
+          classId: session.classId,
+          previousStartTime: previousStartTime.toISOString(),
+          previousEndTime: previousEndTime.toISOString(),
+          newStartTime: new Date(session.startTime).toISOString(),
+          newEndTime: new Date(session.endTime).toISOString(),
+          previousRoomName: previousRoomName ?? null,
+          newRoomName: session.roomName ?? null,
+        },
+      } as SessionScheduleChangedEvent);
+    }
+
     return {
       data: session,
       message: "Session updated successfully",
@@ -153,7 +181,48 @@ export class SessionsController {
     const centerId = user.centerId;
     if (!centerId) throw new Error("Center ID missing from token");
 
+    // Fetch session details BEFORE deletion for notifications
+    const session = await this.sessionsService.getSession(centerId, id);
+
     await this.sessionsService.deleteSession(centerId, id);
+
+    // Send in-app notifications (consistent with deleteFutureSessions)
+    const participants = await this.sessionsService.getClassParticipants(
+      centerId,
+      session.classId,
+    );
+
+    const userIdsToNotify: string[] = [
+      ...participants.studentIds,
+      ...(participants.teacherId ? [participants.teacherId] : []),
+    ];
+
+    if (userIdsToNotify.length > 0) {
+      const className = session.class?.name ?? "Class";
+      const courseName = session.class?.course?.name ?? "Course";
+      const sessionTime = format(new Date(session.startTime), "MMM d, h:mm a");
+
+      await this.notificationsService.createBulkNotifications(
+        centerId,
+        userIdsToNotify,
+        "Session Cancelled",
+        `${courseName} - ${className} on ${sessionTime} has been cancelled`,
+      );
+    }
+
+    // Emit cancellation email event
+    await inngest.send({
+      name: "logistics/session.cancelled",
+      data: {
+        centerId,
+        classId: session.classId,
+        originalStartTime: new Date(session.startTime).toISOString(),
+        originalEndTime: new Date(session.endTime).toISOString(),
+        roomName: session.roomName ?? null,
+        isBulk: false,
+      },
+    } as SessionCancelledEvent);
+
     return {
       message: "Session deleted successfully",
     };
@@ -165,6 +234,12 @@ export class SessionsController {
   ): Promise<DeleteFutureSessionsResponse> {
     const centerId = user.centerId;
     if (!centerId) throw new Error("Center ID missing from token");
+
+    // Fetch session details BEFORE deletion for email notification
+    const sessionBeforeDelete = await this.sessionsService.getSession(
+      centerId,
+      sessionId,
+    );
 
     const { deletedCount, classId } =
       await this.sessionsService.deleteFutureSessions(centerId, sessionId);
@@ -188,6 +263,20 @@ export class SessionsController {
         `${deletedCount} future session(s) have been cancelled`,
       );
     }
+
+    // Emit cancellation email event
+    await inngest.send({
+      name: "logistics/session.cancelled",
+      data: {
+        centerId,
+        classId,
+        originalStartTime: new Date(sessionBeforeDelete.startTime).toISOString(),
+        originalEndTime: new Date(sessionBeforeDelete.endTime).toISOString(),
+        roomName: sessionBeforeDelete.roomName ?? null,
+        isBulk: true,
+        deletedCount,
+      },
+    } as SessionCancelledEvent);
 
     return {
       data: { deletedCount },

@@ -15,7 +15,8 @@ model User {
   avatarUrl           String?   @map("avatar_url")
   phoneNumber         String?   @map("phone_number")
   preferredLanguage   String    @default("en") @map("preferred_language")
-  deletionRequestedAt DateTime? @map("deletion_requested_at")
+  deletionRequestedAt          DateTime? @map("deletion_requested_at")
+  emailScheduleNotifications   Boolean   @default(true) @map("email_schedule_notifications")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -28,6 +29,7 @@ model User {
   csvImportLogs     CsvImportLog[]     @relation("CsvImportUser")
   attendanceRecords Attendance[]       @relation("AttendanceStudent")
   attendanceMarked  Attendance[]       @relation("AttendanceMarker")
+  emailLogs         EmailLog[]
 }
 
 model AuthAccount {
@@ -345,4 +347,22 @@ enum CsvImportRowStatus {
   IMPORTED
   SKIPPED
   FAILED
+}
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  recipientId String   @map("recipient_id")
+  centerId    String   @map("center_id")
+  type        String   // "schedule-change" | "session-cancelled"
+  status      String   // "sent" | "failed" | "skipped"
+  subject     String?
+  error       String?
+  sentAt      DateTime @default(now()) @map("sent_at")
+
+  recipient User @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([centerId])
+  @@index([recipientId])
+  @@index([type, sentAt])
+  @@map("email_log")
 }

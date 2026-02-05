@@ -43,6 +43,7 @@ export class UsersService {
       preferredLanguage: membership.user.preferredLanguage,
       deletionRequestedAt:
         membership.user.deletionRequestedAt?.toISOString() ?? null,
+      emailScheduleNotifications: membership.user.emailScheduleNotifications,
       role: membership.role as "OWNER" | "ADMIN" | "TEACHER" | "STUDENT",
       status: membership.status as "ACTIVE" | "SUSPENDED" | "INVITED",
       createdAt: membership.createdAt.toISOString(),
@@ -61,6 +62,7 @@ export class UsersService {
         phoneNumber: input.phoneNumber,
         preferredLanguage: input.preferredLanguage,
         avatarUrl: input.avatarUrl,
+        emailScheduleNotifications: input.emailScheduleNotifications,
       },
       include: {
         memberships: true,
@@ -80,6 +82,7 @@ export class UsersService {
       phoneNumber: user.phoneNumber,
       preferredLanguage: user.preferredLanguage,
       deletionRequestedAt: user.deletionRequestedAt?.toISOString() ?? null,
+      emailScheduleNotifications: user.emailScheduleNotifications,
       role: membership.role as "OWNER" | "ADMIN" | "TEACHER" | "STUDENT",
       status: membership.status as "ACTIVE" | "SUSPENDED" | "INVITED",
       createdAt: membership.createdAt.toISOString(),

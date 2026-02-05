@@ -13,6 +13,7 @@ export const AuthUserSchema = z.object({
   phoneNumber: z.string().nullable().optional(),
   preferredLanguage: z.string().optional(),
   deletionRequestedAt: z.string().nullable().optional(),
+  emailScheduleNotifications: z.boolean().optional(),
   role: UserRoleSchema,
   centerId: z.string().nullable(),
 });

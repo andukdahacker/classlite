@@ -98,6 +98,7 @@ export function ProfilePage() {
     name?: string;
     phoneNumber?: string;
     preferredLanguage?: "en" | "vi";
+    emailScheduleNotifications?: boolean;
   }) => {
     try {
       await updateProfile.mutateAsync(values);
@@ -303,6 +304,16 @@ export function ProfilePage() {
                     {(displayUser as AuthUser).preferredLanguage === "vi"
                       ? "Vietnamese"
                       : "English"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Schedule Email Notifications
+                  </p>
+                  <p>
+                    {(displayUser as AuthUser).emailScheduleNotifications !== false
+                      ? "Enabled"
+                      : "Disabled"}
                   </p>
                 </div>
                 <div>

@@ -141,6 +141,7 @@ export const UserProfileSchema = z.object({
   phoneNumber: z.string().nullable(),
   preferredLanguage: z.string(),
   deletionRequestedAt: z.string().nullable(),
+  emailScheduleNotifications: z.boolean(),
   role: z.enum(["OWNER", "ADMIN", "TEACHER", "STUDENT"]),
   status: z.enum(["ACTIVE", "SUSPENDED", "INVITED"]),
   createdAt: z.string(),
@@ -162,6 +163,7 @@ export const UpdateProfileSchema = z.object({
   phoneNumber: z.string().max(20).optional().nullable(),
   preferredLanguage: z.enum(["en", "vi"]).optional(),
   avatarUrl: z.string().url().optional().nullable(),
+  emailScheduleNotifications: z.boolean().optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
