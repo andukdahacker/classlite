@@ -20,7 +20,8 @@ import { SchedulerPage } from "./features/logistics/scheduler-page";
 import { TenantProvider } from "./features/tenants/tenant-context";
 import { ProfilePage } from "./features/users/profile-page";
 import { UsersPage } from "./features/users/users-page";
-import { ExercisesPage } from "./features/exercises/ExercisesPage";
+import { ExercisesPage } from "./features/exercises/exercises-page";
+import { ExerciseEditor } from "./features/exercises/components/ExerciseEditor";
 import { GradingQueuePage } from "./features/grading/GradingQueuePage";
 import { StudentsPage } from "./features/students/StudentsPage";
 import { SettingsLayout } from "./features/settings/components/SettingsLayout";
@@ -147,6 +148,26 @@ function App() {
                         allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
                       >
                         <ExercisesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="exercises/new"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                      >
+                        <ExerciseEditor />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="exercises/:id/edit"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                      >
+                        <ExerciseEditor />
                       </ProtectedRoute>
                     }
                   />

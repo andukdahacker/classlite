@@ -15,7 +15,11 @@ const TENANTED_MODELS = [
   "ClassSession",
   "Notification",
   "EmailLog",
-  // TODO: Add automatic detection or enforce via linting
+  "Room",
+  "Attendance",
+  "Exercise",
+  "QuestionSection",
+  "Question",
 ];
 
 /**

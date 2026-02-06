@@ -719,18 +719,21 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            id: string;
-                            /** Format: email */
-                            email: string;
-                            name: string | null;
-                            avatarUrl?: string | null;
-                            phoneNumber?: string | null;
-                            preferredLanguage?: string;
-                            deletionRequestedAt?: string | null;
-                            emailScheduleNotifications?: boolean;
-                            /** @enum {string} */
-                            role: "OWNER" | "ADMIN" | "TEACHER" | "STUDENT";
-                            centerId: string | null;
+                            data: {
+                                id: string;
+                                /** Format: email */
+                                email: string;
+                                name: string | null;
+                                avatarUrl?: string | null;
+                                phoneNumber?: string | null;
+                                preferredLanguage?: string;
+                                deletionRequestedAt?: string | null;
+                                emailScheduleNotifications?: boolean;
+                                /** @enum {string} */
+                                role: "OWNER" | "ADMIN" | "TEACHER" | "STUDENT";
+                                centerId: string | null;
+                            } | null;
+                            message: string;
                         };
                     };
                 };
@@ -792,7 +795,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/login-attempt/{email}": {
+    "/api/v1/auth/login-attempt": {
         parameters: {
             query?: never;
             header?: never;
@@ -801,11 +804,11 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
-                header?: never;
-                path: {
+                query: {
                     email: string;
                 };
+                header?: never;
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -827,6 +830,18 @@ export interface paths {
                     };
                 };
                 /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
                 500: {
                     headers: {
                         [name: string]: unknown;
@@ -841,14 +856,82 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
-        delete: {
+        post: {
             parameters: {
                 query?: never;
                 header?: never;
-                path: {
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        email: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                locked: boolean;
+                                retryAfterMinutes?: number;
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                423: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete: {
+            parameters: {
+                query: {
                     email: string;
                 };
+                header?: never;
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -890,79 +973,6 @@ export interface paths {
                 };
             };
         };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/login-attempt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** Format: email */
-                        email: string;
-                        success: boolean;
-                    };
-                };
-            };
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: {
-                                locked: boolean;
-                                retryAfterMinutes?: number;
-                            } | null;
-                            message: string;
-                        };
-                    };
-                };
-                /** @description Default Response */
-                423: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message: string;
-                            error?: unknown;
-                        };
-                    };
-                };
-                /** @description Default Response */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message: string;
-                            error?: unknown;
-                        };
-                    };
-                };
-            };
-        };
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2247,6 +2257,18 @@ export interface paths {
                                 name: string | null;
                                 email: string | null;
                             }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
                         };
                     };
                 };
@@ -4609,6 +4631,1713 @@ export interface paths {
                 };
                 /** @description Default Response */
                 409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/exercises/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    skill?: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                    status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                title: string;
+                                instructions?: string | null;
+                                /** @enum {string} */
+                                skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                                /** @enum {string} */
+                                status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                                passageContent?: string | null;
+                                passageFormat?: string | null;
+                                createdById: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                sections?: {
+                                    id: string;
+                                    exerciseId: string;
+                                    centerId: string;
+                                    /** @enum {string} */
+                                    sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                    instructions?: string | null;
+                                    orderIndex: number;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    questions?: {
+                                        id: string;
+                                        sectionId: string;
+                                        centerId: string;
+                                        questionText: string;
+                                        questionType: string;
+                                        options?: unknown;
+                                        correctAnswer?: unknown;
+                                        orderIndex: number;
+                                        wordLimit?: number | null;
+                                        createdAt: string;
+                                        updatedAt: string;
+                                    }[];
+                                }[];
+                                createdBy?: {
+                                    id: string;
+                                    name: string | null;
+                                };
+                            }[] | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        title: string;
+                        instructions?: string | null;
+                        /** @enum {string} */
+                        skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                        passageContent?: string | null;
+                        passageFormat?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                title: string;
+                                instructions?: string | null;
+                                /** @enum {string} */
+                                skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                                /** @enum {string} */
+                                status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                                passageContent?: string | null;
+                                passageFormat?: string | null;
+                                createdById: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                sections?: {
+                                    id: string;
+                                    exerciseId: string;
+                                    centerId: string;
+                                    /** @enum {string} */
+                                    sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                    instructions?: string | null;
+                                    orderIndex: number;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    questions?: {
+                                        id: string;
+                                        sectionId: string;
+                                        centerId: string;
+                                        questionText: string;
+                                        questionType: string;
+                                        options?: unknown;
+                                        correctAnswer?: unknown;
+                                        orderIndex: number;
+                                        wordLimit?: number | null;
+                                        createdAt: string;
+                                        updatedAt: string;
+                                    }[];
+                                }[];
+                                createdBy?: {
+                                    id: string;
+                                    name: string | null;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exercises/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                title: string;
+                                instructions?: string | null;
+                                /** @enum {string} */
+                                skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                                /** @enum {string} */
+                                status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                                passageContent?: string | null;
+                                passageFormat?: string | null;
+                                createdById: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                sections?: {
+                                    id: string;
+                                    exerciseId: string;
+                                    centerId: string;
+                                    /** @enum {string} */
+                                    sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                    instructions?: string | null;
+                                    orderIndex: number;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    questions?: {
+                                        id: string;
+                                        sectionId: string;
+                                        centerId: string;
+                                        questionText: string;
+                                        questionType: string;
+                                        options?: unknown;
+                                        correctAnswer?: unknown;
+                                        orderIndex: number;
+                                        wordLimit?: number | null;
+                                        createdAt: string;
+                                        updatedAt: string;
+                                    }[];
+                                }[];
+                                createdBy?: {
+                                    id: string;
+                                    name: string | null;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        title?: string;
+                        instructions?: string | null;
+                        passageContent?: string | null;
+                        passageFormat?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                title: string;
+                                instructions?: string | null;
+                                /** @enum {string} */
+                                skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                                /** @enum {string} */
+                                status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                                passageContent?: string | null;
+                                passageFormat?: string | null;
+                                createdById: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                sections?: {
+                                    id: string;
+                                    exerciseId: string;
+                                    centerId: string;
+                                    /** @enum {string} */
+                                    sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                    instructions?: string | null;
+                                    orderIndex: number;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    questions?: {
+                                        id: string;
+                                        sectionId: string;
+                                        centerId: string;
+                                        questionText: string;
+                                        questionType: string;
+                                        options?: unknown;
+                                        correctAnswer?: unknown;
+                                        orderIndex: number;
+                                        wordLimit?: number | null;
+                                        createdAt: string;
+                                        updatedAt: string;
+                                    }[];
+                                }[];
+                                createdBy?: {
+                                    id: string;
+                                    name: string | null;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/exercises/{id}/autosave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        title?: string;
+                        instructions?: string | null;
+                        passageContent?: string | null;
+                        passageFormat?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                title: string;
+                                instructions?: string | null;
+                                /** @enum {string} */
+                                skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                                /** @enum {string} */
+                                status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                                passageContent?: string | null;
+                                passageFormat?: string | null;
+                                createdById: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                sections?: {
+                                    id: string;
+                                    exerciseId: string;
+                                    centerId: string;
+                                    /** @enum {string} */
+                                    sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                    instructions?: string | null;
+                                    orderIndex: number;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    questions?: {
+                                        id: string;
+                                        sectionId: string;
+                                        centerId: string;
+                                        questionText: string;
+                                        questionType: string;
+                                        options?: unknown;
+                                        correctAnswer?: unknown;
+                                        orderIndex: number;
+                                        wordLimit?: number | null;
+                                        createdAt: string;
+                                        updatedAt: string;
+                                    }[];
+                                }[];
+                                createdBy?: {
+                                    id: string;
+                                    name: string | null;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/exercises/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                title: string;
+                                instructions?: string | null;
+                                /** @enum {string} */
+                                skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                                /** @enum {string} */
+                                status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                                passageContent?: string | null;
+                                passageFormat?: string | null;
+                                createdById: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                sections?: {
+                                    id: string;
+                                    exerciseId: string;
+                                    centerId: string;
+                                    /** @enum {string} */
+                                    sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                    instructions?: string | null;
+                                    orderIndex: number;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    questions?: {
+                                        id: string;
+                                        sectionId: string;
+                                        centerId: string;
+                                        questionText: string;
+                                        questionType: string;
+                                        options?: unknown;
+                                        correctAnswer?: unknown;
+                                        orderIndex: number;
+                                        wordLimit?: number | null;
+                                        createdAt: string;
+                                        updatedAt: string;
+                                    }[];
+                                }[];
+                                createdBy?: {
+                                    id: string;
+                                    name: string | null;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exercises/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                title: string;
+                                instructions?: string | null;
+                                /** @enum {string} */
+                                skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                                /** @enum {string} */
+                                status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                                passageContent?: string | null;
+                                passageFormat?: string | null;
+                                createdById: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                sections?: {
+                                    id: string;
+                                    exerciseId: string;
+                                    centerId: string;
+                                    /** @enum {string} */
+                                    sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                    instructions?: string | null;
+                                    orderIndex: number;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    questions?: {
+                                        id: string;
+                                        sectionId: string;
+                                        centerId: string;
+                                        questionText: string;
+                                        questionType: string;
+                                        options?: unknown;
+                                        correctAnswer?: unknown;
+                                        orderIndex: number;
+                                        wordLimit?: number | null;
+                                        createdAt: string;
+                                        updatedAt: string;
+                                    }[];
+                                }[];
+                                createdBy?: {
+                                    id: string;
+                                    name: string | null;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exercises/{exerciseId}/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                exerciseId: string;
+                                centerId: string;
+                                /** @enum {string} */
+                                sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                instructions?: string | null;
+                                orderIndex: number;
+                                createdAt: string;
+                                updatedAt: string;
+                                questions?: {
+                                    id: string;
+                                    sectionId: string;
+                                    centerId: string;
+                                    questionText: string;
+                                    questionType: string;
+                                    options?: unknown;
+                                    correctAnswer?: unknown;
+                                    orderIndex: number;
+                                    wordLimit?: number | null;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                }[];
+                            }[] | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                        instructions?: string | null;
+                        orderIndex: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                exerciseId: string;
+                                centerId: string;
+                                /** @enum {string} */
+                                sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                instructions?: string | null;
+                                orderIndex: number;
+                                createdAt: string;
+                                updatedAt: string;
+                                questions?: {
+                                    id: string;
+                                    sectionId: string;
+                                    centerId: string;
+                                    questionText: string;
+                                    questionType: string;
+                                    options?: unknown;
+                                    correctAnswer?: unknown;
+                                    orderIndex: number;
+                                    wordLimit?: number | null;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                }[];
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exercises/{exerciseId}/sections/{sectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                    sectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                    sectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        sectionType?: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                        instructions?: string | null;
+                        orderIndex?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                exerciseId: string;
+                                centerId: string;
+                                /** @enum {string} */
+                                sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                instructions?: string | null;
+                                orderIndex: number;
+                                createdAt: string;
+                                updatedAt: string;
+                                questions?: {
+                                    id: string;
+                                    sectionId: string;
+                                    centerId: string;
+                                    questionText: string;
+                                    questionType: string;
+                                    options?: unknown;
+                                    correctAnswer?: unknown;
+                                    orderIndex: number;
+                                    wordLimit?: number | null;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                }[];
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/exercises/{exerciseId}/sections/{sectionId}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                    sectionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        questionText: string;
+                        questionType: string;
+                        options?: unknown;
+                        correctAnswer?: unknown;
+                        orderIndex: number;
+                        wordLimit?: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                sectionId: string;
+                                centerId: string;
+                                questionText: string;
+                                questionType: string;
+                                options?: unknown;
+                                correctAnswer?: unknown;
+                                orderIndex: number;
+                                wordLimit?: number | null;
+                                createdAt: string;
+                                updatedAt: string;
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exercises/{exerciseId}/sections/{sectionId}/questions/{questionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                    sectionId: string;
+                    questionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                    sectionId: string;
+                    questionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        questionText?: string;
+                        questionType?: string;
+                        options?: unknown;
+                        correctAnswer?: unknown;
+                        orderIndex?: number;
+                        wordLimit?: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                sectionId: string;
+                                centerId: string;
+                                questionText: string;
+                                questionType: string;
+                                options?: unknown;
+                                correctAnswer?: unknown;
+                                orderIndex: number;
+                                wordLimit?: number | null;
+                                createdAt: string;
+                                updatedAt: string;
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };

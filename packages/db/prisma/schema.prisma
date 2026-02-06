@@ -30,6 +30,7 @@ model User {
   attendanceRecords Attendance[]       @relation("AttendanceStudent")
   attendanceMarked  Attendance[]       @relation("AttendanceMarker")
   emailLogs         EmailLog[]
+  exercises         Exercise[]         @relation("ExerciseCreator")
 
   @@map("user")
 }
@@ -367,6 +368,119 @@ enum CsvImportRowStatus {
   SKIPPED
   FAILED
 }
+
+// ─── Exercise Builder (Epic 3) ──────────────────────────────────────
+
+enum ExerciseSkill {
+  READING
+  LISTENING
+  WRITING
+  SPEAKING
+}
+
+enum ExerciseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum IeltsQuestionType {
+  // Reading
+  R1_MCQ_SINGLE
+  R2_MCQ_MULTI
+  R3_TFNG
+  R4_YNNG
+  R5_SENTENCE_COMPLETION
+  R6_SHORT_ANSWER
+  R7_SUMMARY_WORD_BANK
+  R8_SUMMARY_PASSAGE
+  R9_MATCHING_HEADINGS
+  R10_MATCHING_INFORMATION
+  R11_MATCHING_FEATURES
+  R12_MATCHING_SENTENCE_ENDINGS
+  R13_NOTE_TABLE_FLOWCHART
+  R14_DIAGRAM_LABELLING
+  // Listening
+  L1_FORM_NOTE_TABLE
+  L2_MCQ
+  L3_MATCHING
+  L4_MAP_PLAN_LABELLING
+  L5_SENTENCE_COMPLETION
+  L6_SHORT_ANSWER
+  // Writing
+  W1_TASK1_ACADEMIC
+  W2_TASK1_GENERAL
+  W3_TASK2_ESSAY
+  // Speaking
+  S1_PART1_QA
+  S2_PART2_CUE_CARD
+  S3_PART3_DISCUSSION
+}
+
+model Exercise {
+  id             String         @id @default(cuid())
+  centerId       String         @map("center_id")
+  title          String
+  instructions   String?
+  skill          ExerciseSkill
+  status         ExerciseStatus @default(DRAFT)
+  passageContent String?        @map("passage_content") @db.Text
+  passageFormat  String?        @map("passage_format")
+  createdById    String         @map("created_by_id")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  createdBy User              @relation("ExerciseCreator", fields: [createdById], references: [id])
+  sections  QuestionSection[]
+
+  @@unique([id, centerId])
+  @@index([centerId])
+  @@index([centerId, skill])
+  @@index([centerId, status])
+  @@map("exercise")
+}
+
+model QuestionSection {
+  id           String            @id @default(cuid())
+  exerciseId   String            @map("exercise_id")
+  centerId     String            @map("center_id")
+  sectionType  IeltsQuestionType @map("section_type")
+  instructions String?
+  orderIndex   Int               @map("order_index")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  exercise  Exercise   @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  @@unique([id, centerId])
+  @@index([centerId])
+  @@index([exerciseId])
+  @@map("question_section")
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  sectionId     String   @map("section_id")
+  centerId      String   @map("center_id")
+  questionText  String   @map("question_text")
+  questionType  String   @map("question_type")
+  options       Json?
+  correctAnswer Json?    @map("correct_answer")
+  orderIndex    Int      @map("order_index")
+  wordLimit     Int?     @map("word_limit")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  section QuestionSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([id, centerId])
+  @@index([centerId])
+  @@index([sectionId])
+  @@map("question")
+}
+
+// ─── Email Logging ──────────────────────────────────────────────────
 
 model EmailLog {
   id          String   @id @default(cuid())
