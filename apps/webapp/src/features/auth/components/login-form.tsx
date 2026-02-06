@@ -64,14 +64,12 @@ export function LoginForm() {
         values.password,
       );
 
-      // Reset failed attempts on successful login
-      await recordLoginAttempt(values.email, true);
-
-      // The onAuthStateChanged listener in AuthProvider will handle the backend sync
-      // Redirect is handled by GuestRoute detecting the authenticated user
+      // Success recording is now handled by the backend POST /login handler.
+      // The onAuthStateChanged listener in AuthProvider will handle the backend sync.
+      // Redirect is handled by GuestRoute detecting the authenticated user.
     } catch (error: unknown) {
       // Record failed attempt and check if account is now locked
-      const lockResult = await recordLoginAttempt(values.email, false).catch(
+      const lockResult = await recordLoginAttempt(values.email).catch(
         () => null,
       );
 

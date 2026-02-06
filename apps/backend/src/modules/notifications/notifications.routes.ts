@@ -8,6 +8,7 @@ import {
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { requireRole } from "../../middlewares/role.middleware.js";
 import { NotificationsController } from "./notifications.controller.js";
 import { NotificationsService } from "./notifications.service.js";
 import z from "zod";
@@ -32,6 +33,7 @@ export async function notificationsRoutes(fastify: FastifyInstance) {
         500: ErrorResponseSchema,
       },
     },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER", "STUDENT"])],
     handler: async (
       request: FastifyRequest<{ Querystring: { limit?: number } }>,
       reply,
@@ -52,6 +54,7 @@ export async function notificationsRoutes(fastify: FastifyInstance) {
         500: ErrorResponseSchema,
       },
     },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER", "STUDENT"])],
     handler: async (request, reply) => {
       const result = await notificationsController.getUnreadCount(request.jwtPayload!);
       return reply.send(result);
@@ -70,6 +73,7 @@ export async function notificationsRoutes(fastify: FastifyInstance) {
         500: ErrorResponseSchema,
       },
     },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER", "STUDENT"])],
     handler: async (
       request: FastifyRequest<{ Body: MarkNotificationReadInput }>,
       reply,
@@ -93,6 +97,7 @@ export async function notificationsRoutes(fastify: FastifyInstance) {
         500: ErrorResponseSchema,
       },
     },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER", "STUDENT"])],
     handler: async (request, reply) => {
       const result = await notificationsController.markAllAsRead(request.jwtPayload!);
       return reply.send(result);
@@ -113,6 +118,7 @@ export async function notificationsRoutes(fastify: FastifyInstance) {
         500: ErrorResponseSchema,
       },
     },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER", "STUDENT"])],
     handler: async (
       request: FastifyRequest<{ Params: { id: string } }>,
       reply,

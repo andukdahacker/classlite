@@ -5,6 +5,7 @@ import {
   CenterSignupRequest,
   CenterSignupWithGoogleRequest,
 } from "@workspace/types";
+import { AppError } from "../../errors/app-error.js";
 
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
@@ -41,7 +42,7 @@ export class AuthController {
   ): Promise<AuthUser> {
     const result = await this.authService.getUserMembership(uid, centerId);
     if (!result) {
-      throw new Error("NOT_FOUND: User not found in this center");
+      throw AppError.notFound("User not found in this center");
     }
     return {
       id: result.user.id,

@@ -20,7 +20,6 @@ export const requireRole = (allowedRoles: UserRole | UserRole[]) => {
         `ROLE_GUARD_ERROR: jwtPayload missing for path ${request.url}. Ensure authMiddleware is in the chain.`,
       );
       return reply.status(401).send({
-        data: null,
         message: "UNAUTHORIZED: Authentication context missing",
       });
     }
@@ -36,11 +35,7 @@ export const requireRole = (allowedRoles: UserRole | UserRole[]) => {
       });
 
       return reply.status(403).send({
-        data: null,
-        error: {
-          code: "FORBIDDEN",
-          message: `FORBIDDEN: You do not have permission to perform this action. Required: [${roles.join(", ")}]`,
-        },
+        message: `FORBIDDEN: You do not have permission to perform this action. Required: [${roles.join(", ")}]`,
       });
     }
   };

@@ -19,6 +19,7 @@ const mockPrisma = {
   center: {
     create: vi.fn(),
     update: vi.fn(),
+    findUnique: vi.fn(),
     findUniqueOrThrow: vi.fn(),
   },
   centerMembership: {
@@ -84,6 +85,7 @@ describe("TenantService", () => {
     );
 
     // Prisma mocks
+    (mockPrisma.center.findUnique as any).mockResolvedValue(null); // Slug doesn't exist
     (mockPrisma.user.findUnique as any).mockResolvedValue(null); // User doesn't exist in DB
     (mockPrisma.authAccount.findUnique as any).mockResolvedValue(null);
     (mockPrisma.user.create as any).mockResolvedValue({
@@ -116,7 +118,7 @@ describe("TenantService", () => {
       "firebase-uid-123",
       {
         center_id: "center-id-123",
-        role: "owner",
+        role: "OWNER",
       },
     );
 
@@ -223,6 +225,8 @@ describe("TenantService", () => {
       ownerName: "Test Owner",
     };
 
+    (mockPrisma.user.findUnique as any).mockResolvedValue(null);
+    (mockPrisma.center.findUnique as any).mockResolvedValue(null);
     mockFirebaseAuth.getUserByEmail.mockRejectedValue({
       code: "auth/user-not-found",
     });

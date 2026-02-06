@@ -357,7 +357,7 @@ describe("AuthService", () => {
 
       // Act & Assert
       await expect(authService.centerSignupWithGoogle(input)).rejects.toThrow(
-        "CONFLICT: User already belongs to a center",
+        "User already belongs to a center",
       );
     });
 

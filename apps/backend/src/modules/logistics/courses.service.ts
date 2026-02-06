@@ -1,5 +1,6 @@
 import { PrismaClient, getTenantedClient } from "@workspace/db";
 import { CreateCourseInput, UpdateCourseInput, Course } from "@workspace/types";
+import { AppError } from "../../errors/app-error.js";
 
 export class CoursesService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -45,6 +46,15 @@ export class CoursesService {
 
   async deleteCourse(centerId: string, id: string): Promise<void> {
     const db = getTenantedClient(this.prisma, centerId);
+    // Check for dependent classes before deleting
+    const dependentCount = await db.class.count({
+      where: { courseId: id },
+    });
+    if (dependentCount > 0) {
+      throw AppError.badRequest(
+        `Cannot delete: ${dependentCount} class(es) depend on this course`,
+      );
+    }
     await db.course.delete({
       where: { id },
     });

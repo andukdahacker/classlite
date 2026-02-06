@@ -58,9 +58,7 @@ describe("roleMiddleware", () => {
     expect(reply.status).toHaveBeenCalledWith(403);
     expect(reply.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: expect.objectContaining({
-          code: "FORBIDDEN",
-        }),
+        message: expect.stringContaining("FORBIDDEN"),
       }),
     );
     expect(mockLog.warn).toHaveBeenCalled();

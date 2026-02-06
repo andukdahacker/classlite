@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import {
   CreateTenantInput,
   CreateTenantSchema,
@@ -14,6 +15,13 @@ import { TenantController } from "./tenant.controller.js";
 import { TenantService } from "./tenant.service.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireRole } from "../../middlewares/role.middleware.js";
+import { AppError } from "../../errors/app-error.js";
+import { mapPrismaError } from "../../errors/prisma-errors.js";
+
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 export async function tenantRoutes(fastify: FastifyInstance) {
   const env = fastify.getEnvs<Env>();
@@ -44,6 +52,7 @@ export async function tenantRoutes(fastify: FastifyInstance) {
     },
     preHandler: [
       authMiddleware,
+      // Intentional: all roles allowed — requireRole used for RBAC documentation and middleware chain consistency
       requireRole(["OWNER", "ADMIN", "TEACHER", "STUDENT"]),
     ],
     handler: async (
@@ -59,16 +68,17 @@ export async function tenantRoutes(fastify: FastifyInstance) {
       }
 
       try {
-        const result = await tenantService.getTenant(id);
-        return reply.status(200).send({
-          data: result,
-          message: "Tenant fetched successfully",
-        });
-      } catch (error: any) {
-        if (error.code === "P2025") {
-          return reply.status(404).send({ message: "Center not found" });
-        }
+        const result = await tenantController.getTenant(id);
+        return reply.status(200).send(result);
+      } catch (error: unknown) {
         request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 404).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 404).send({ message: prismaErr.message });
+        }
         return reply.status(500).send({ message: "Failed to fetch tenant" });
       }
     },
@@ -89,7 +99,10 @@ export async function tenantRoutes(fastify: FastifyInstance) {
     },
     preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
       const adminKey = request.headers["x-platform-admin-key"];
-      if (adminKey !== env.PLATFORM_ADMIN_API_KEY) {
+      if (
+        typeof adminKey !== "string" ||
+        !safeCompare(adminKey, env.PLATFORM_ADMIN_API_KEY)
+      ) {
         return reply
           .status(401)
           .send({ message: "Unauthorized: Invalid platform admin key" });
@@ -102,17 +115,17 @@ export async function tenantRoutes(fastify: FastifyInstance) {
       try {
         const result = await tenantController.provision(request.body);
         return reply.status(201).send(result);
-      } catch (error: any) {
-        if (error.code === "P2002" || error.message?.includes("CONFLICT")) {
-          return reply.status(409).send({
-            message:
-              error.message.replace("CONFLICT: ", "") || "A conflict occurred",
-          });
-        }
-
+      } catch (error: unknown) {
         request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 409).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 409).send({ message: prismaErr.message });
+        }
         return reply.status(500).send({
-          message: error.message || "Failed to provision tenant",
+          message: "Failed to provision tenant",
         });
       }
     },
@@ -151,13 +164,17 @@ export async function tenantRoutes(fastify: FastifyInstance) {
 
         const result = await tenantController.update(id, request.body);
         return reply.status(200).send(result);
-      } catch (error: any) {
-        if (error.code === "P2025") {
-          return reply.status(404).send({ message: "Center not found" });
-        }
+      } catch (error: unknown) {
         request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 404).send({ message: prismaErr.message });
+        }
         return reply.status(500).send({
-          message: error.message || "Failed to update center",
+          message: "Failed to update center",
         });
       }
     },
@@ -214,7 +231,7 @@ export async function tenantRoutes(fastify: FastifyInstance) {
           data: { logoUrl },
           message: "Logo uploaded successfully",
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         request.log.error(error);
         return reply.status(500).send({ message: "Failed to upload logo" });
       }

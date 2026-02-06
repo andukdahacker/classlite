@@ -1,4 +1,4 @@
-import { MembershipStatus, PrismaClient } from "@workspace/db";
+import { MembershipStatus, PrismaClient, getTenantedClient } from "@workspace/db";
 import {
   AuthResponseData,
   AuthUser,
@@ -7,6 +7,7 @@ import {
   UserRole,
 } from "@workspace/types";
 import { Auth } from "firebase-admin/auth";
+import { AppError } from "../../errors/app-error.js";
 
 export class AuthService {
   constructor(
@@ -22,14 +23,14 @@ export class AuthService {
       where: { slug: centerSlug },
     });
     if (existingCenter) {
-      throw new Error("CONFLICT: Center slug already exists");
+      throw AppError.conflict("Center slug already exists");
     }
 
     const existingUser = await this.prisma.user.findUnique({
       where: { email: ownerEmail },
     });
     if (existingUser) {
-      throw new Error("CONFLICT: Email already registered");
+      throw AppError.conflict("Email already registered");
     }
 
     // 2. Create Firebase User
@@ -40,9 +41,14 @@ export class AuthService {
         password: password,
         displayName: ownerName,
       });
-    } catch (error: any) {
-      if (error.code === "auth/email-already-exists") {
-        throw new Error("CONFLICT: Email already registered in Firebase");
+    } catch (error: unknown) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as { code: string }).code === "auth/email-already-exists"
+      ) {
+        throw AppError.conflict("Email already registered in Firebase");
       }
       throw error;
     }
@@ -116,7 +122,9 @@ export class AuthService {
     const { uid, email, name, picture } = decodedToken;
 
     if (!email) {
-      throw new Error("UNAUTHORIZED: Email not provided by identity provider");
+      throw AppError.unauthorized(
+        "Email not provided by identity provider",
+      );
     }
 
     // 2. Validate Uniqueness
@@ -124,7 +132,7 @@ export class AuthService {
       where: { slug: centerSlug },
     });
     if (existingCenter) {
-      throw new Error("CONFLICT: Center slug already exists");
+      throw AppError.conflict("Center slug already exists");
     }
 
     // Check if user already belongs to a center
@@ -138,7 +146,7 @@ export class AuthService {
     });
 
     if (existingUser && existingUser.memberships.length > 0) {
-      throw new Error("CONFLICT: User already belongs to a center");
+      throw AppError.conflict("User already belongs to a center");
     }
 
     // 3. Create Center, User (if not exists), AuthAccount, and Membership in DB
@@ -224,14 +232,19 @@ export class AuthService {
       await this.syncCustomClaims(uid, result.user);
 
       return result;
-    } catch (error: any) {
-      if (error.code === "P2002") {
-        const target = error.meta?.target;
-        if (target?.includes("slug")) {
-          throw new Error("CONFLICT: Center slug already exists");
+    } catch (error: unknown) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as { code: string }).code === "P2002"
+      ) {
+        const meta = (error as { meta?: { target?: string[] } }).meta;
+        if (meta?.target?.includes("slug")) {
+          throw AppError.conflict("Center slug already exists");
         }
-        if (target?.includes("email")) {
-          throw new Error("CONFLICT: Email already registered");
+        if (meta?.target?.includes("email")) {
+          throw AppError.conflict("Email already registered");
         }
       }
       throw error;
@@ -244,7 +257,9 @@ export class AuthService {
     const { uid, email, name, picture } = decodedToken;
 
     if (!email) {
-      throw new Error("UNAUTHORIZED: Email not provided by identity provider");
+      throw AppError.unauthorized(
+        "Email not provided by identity provider",
+      );
     }
 
     // 2. Find or Create User/Account
@@ -350,7 +365,8 @@ export class AuthService {
 
     if (!authAccount) return null;
 
-    return this.prisma.centerMembership.findFirst({
+    const db = getTenantedClient(this.prisma, centerId);
+    return db.centerMembership.findFirst({
       where: {
         userId: authAccount.userId,
         centerId,

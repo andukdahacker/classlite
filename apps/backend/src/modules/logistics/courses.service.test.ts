@@ -21,6 +21,9 @@ describe("CoursesService", () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
+      class: {
+        count: vi.fn().mockResolvedValue(0),
+      },
       $extends: vi.fn().mockImplementation(function (
         this: any,
         extension: any,
@@ -63,6 +66,15 @@ describe("CoursesService", () => {
                 operation: "delete",
                 args,
                 query: (a: any) => client.course.delete(a),
+              }),
+          },
+          class: {
+            count: (args: any) =>
+              extension.query.$allModels.$allOperations({
+                model: "Class",
+                operation: "count",
+                args,
+                query: (a: any) => client.class.count(a),
               }),
           },
         };

@@ -11,12 +11,40 @@ import {
   LoginAttemptCheckResponseSchema,
   RecordLoginAttemptRequestSchema,
   RecordLoginAttemptResponseSchema,
+  createResponseSchema,
 } from "@workspace/types";
-import { getTenantedClient } from "@workspace/db";
 import { AuthController } from "./auth.controller.js";
 import { AuthService } from "./auth.service.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireRole } from "../../middlewares/role.middleware.js";
+import { AppError } from "../../errors/app-error.js";
+import { mapPrismaError } from "../../errors/prisma-errors.js";
+
+// Simple IP-based rate limiter for login-attempt endpoints
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 10;
+
+const loginAttemptRateLimit = async (
+  request: import("fastify").FastifyRequest,
+  reply: import("fastify").FastifyReply,
+) => {
+  const ip = request.ip;
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return;
+  }
+
+  entry.count++;
+  if (entry.count > RATE_LIMIT_MAX) {
+    return reply.status(429).send({
+      message: "Too many requests. Please try again later.",
+    });
+  }
+};
 
 export async function authRoutes(fastify: FastifyInstance) {
   const authService = new AuthService(fastify.prisma, fastify.firebaseAuth);
@@ -41,12 +69,16 @@ export async function authRoutes(fastify: FastifyInstance) {
       try {
         const result = await authController.centerSignup(request.body);
         return reply.status(201).send(result);
-      } catch (error: any) {
+      } catch (error: unknown) {
         request.log.error(error);
-        const statusCode = error.message.startsWith("CONFLICT") ? 409 : 400;
-        return reply.status(statusCode).send({
-          message: error.message || "Registration failed",
-        });
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Registration failed" });
       }
     },
   );
@@ -70,12 +102,16 @@ export async function authRoutes(fastify: FastifyInstance) {
           request.body,
         );
         return reply.status(201).send(result);
-      } catch (error: any) {
+      } catch (error: unknown) {
         request.log.error(error);
-        const statusCode = error.message.startsWith("CONFLICT") ? 409 : 400;
-        return reply.status(statusCode).send({
-          message: error.message || "Registration failed",
-        });
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Registration failed" });
       }
     },
   );
@@ -95,23 +131,32 @@ export async function authRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const result = await authController.login(request.body.idToken);
+        // Record successful login to reset lockout counter
+        if (result.data?.user?.email) {
+          await authService
+            .recordLoginAttempt(result.data.user.email, true)
+            .catch(() => {});
+        }
         return reply.status(200).send(result);
-      } catch (error: any) {
+      } catch (error: unknown) {
         request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 401).send({ message: error.message });
+        }
         return reply.status(401).send({
-          message: error.message || "Authentication failed",
+          message: "Authentication failed",
         });
       }
     },
   );
 
-  // Protected route example to verify RBAC and Tenanted Client
+  // Protected route to get current user profile
   typedFastify.get(
     "/me",
     {
       schema: {
         response: {
-          200: AuthUserSchema,
+          200: createResponseSchema(AuthUserSchema),
           400: ErrorResponseSchema,
           401: ErrorResponseSchema,
           404: ErrorResponseSchema,
@@ -120,6 +165,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       },
       preHandler: [
         authMiddleware,
+        // Intentional: all roles allowed — requireRole used for RBAC documentation and middleware chain consistency
         requireRole(["OWNER", "ADMIN", "TEACHER", "STUDENT"]),
       ],
     },
@@ -137,12 +183,14 @@ export async function authRoutes(fastify: FastifyInstance) {
           user.uid,
           user.centerId,
         );
-        return reply.status(200).send(result);
-      } catch (error: any) {
+        return reply.status(200).send({ data: result, message: "User profile retrieved" });
+      } catch (error: unknown) {
         request.log.error(error);
-        const statusCode = error.message.startsWith("NOT_FOUND") ? 404 : 400;
-        return reply.status(statusCode).send({
-          message: error.message || "Failed to get user profile",
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        return reply.status(500).send({
+          message: "Failed to get user profile",
         });
       }
     },
@@ -152,33 +200,35 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Check if account is locked
   typedFastify.get(
-    "/login-attempt/:email",
+    "/login-attempt",
     {
       schema: {
-        params: z.object({
-          email: z.string(),
+        querystring: z.object({
+          email: z.string().email(),
         }),
         response: {
           200: LoginAttemptCheckResponseSchema,
+          429: ErrorResponseSchema,
           500: ErrorResponseSchema,
         },
       },
+      preHandler: [loginAttemptRateLimit],
     },
     async (request, reply) => {
       try {
-        const { email } = request.params;
+        const { email } = request.query;
         const result = await authService.checkLoginAttempt(email);
         return reply.status(200).send({ data: result, message: "OK" });
-      } catch (error: any) {
+      } catch (error: unknown) {
         request.log.error(error);
         return reply.status(500).send({
-          message: error.message || "Failed to check login status",
+          message: "Failed to check login status",
         });
       }
     },
   );
 
-  // Record login attempt (success or failure)
+  // Record failed login attempt (always records a failure — success is handled by POST /login)
   typedFastify.post(
     "/login-attempt",
     {
@@ -187,14 +237,16 @@ export async function authRoutes(fastify: FastifyInstance) {
         response: {
           200: RecordLoginAttemptResponseSchema,
           423: ErrorResponseSchema, // Locked
+          429: ErrorResponseSchema,
           500: ErrorResponseSchema,
         },
       },
+      preHandler: [loginAttemptRateLimit],
     },
     async (request, reply) => {
       try {
-        const { email, success } = request.body;
-        const result = await authService.recordLoginAttempt(email, success);
+        const { email } = request.body;
+        const result = await authService.recordLoginAttempt(email, false);
 
         if (result.locked) {
           return reply.status(423).send({
@@ -203,10 +255,10 @@ export async function authRoutes(fastify: FastifyInstance) {
         }
 
         return reply.status(200).send({ data: result, message: "OK" });
-      } catch (error: any) {
+      } catch (error: unknown) {
         request.log.error(error);
         return reply.status(500).send({
-          message: error.message || "Failed to record login attempt",
+          message: "Failed to record login attempt",
         });
       }
     },
@@ -215,11 +267,11 @@ export async function authRoutes(fastify: FastifyInstance) {
   // Reset login attempts for an email (E2E testing only - dev mode)
   // This endpoint allows E2E tests to clear lockouts before each test
   typedFastify.delete(
-    "/login-attempt/:email",
+    "/login-attempt",
     {
       schema: {
-        params: z.object({
-          email: z.string(),
+        querystring: z.object({
+          email: z.string().email(),
         }),
         response: {
           200: z.object({ message: z.string() }),
@@ -229,21 +281,24 @@ export async function authRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      // Only allow in development/test mode
-      if (process.env.NODE_ENV === "production") {
+      // Fail-closed: only allow in development/test mode
+      if (
+        process.env.NODE_ENV !== "development" &&
+        process.env.NODE_ENV !== "test"
+      ) {
         return reply.status(403).send({
           message: "This endpoint is only available in development mode",
         });
       }
 
       try {
-        const { email } = request.params;
+        const { email } = request.query;
         await authService.resetLoginAttempts(email);
         return reply.status(200).send({ message: "Login attempts reset" });
-      } catch (error: any) {
+      } catch (error: unknown) {
         request.log.error(error);
         return reply.status(500).send({
-          message: error.message || "Failed to reset login attempts",
+          message: "Failed to reset login attempts",
         });
       }
     },

@@ -13,6 +13,8 @@ import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireRole } from "../../middlewares/role.middleware.js";
 import { CoursesController } from "./courses.controller.js";
 import { CoursesService } from "./courses.service.js";
+import { AppError } from "../../errors/app-error.js";
+import { mapPrismaError } from "../../errors/prisma-errors.js";
 import z from "zod";
 
 export async function coursesRoutes(fastify: FastifyInstance) {
@@ -32,9 +34,22 @@ export async function coursesRoutes(fastify: FastifyInstance) {
         500: ErrorResponseSchema,
       },
     },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER", "STUDENT"])],
     handler: async (request, reply) => {
-      const result = await coursesController.listCourses(request.jwtPayload!);
-      return reply.send(result);
+      try {
+        const result = await coursesController.listCourses(request.jwtPayload!);
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 500).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 500).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to list courses" });
+      }
     },
   });
 
@@ -50,15 +65,28 @@ export async function coursesRoutes(fastify: FastifyInstance) {
         500: ErrorResponseSchema,
       },
     },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER", "STUDENT"])],
     handler: async (
       request: FastifyRequest<{ Params: { id: string } }>,
       reply,
     ) => {
-      const result = await coursesController.getCourse(
-        request.params.id,
-        request.jwtPayload!,
-      );
-      return reply.send(result);
+      try {
+        const result = await coursesController.getCourse(
+          request.params.id,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 404).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 404).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to get course" });
+      }
     },
   });
 
@@ -78,11 +106,23 @@ export async function coursesRoutes(fastify: FastifyInstance) {
       request: FastifyRequest<{ Body: CreateCourseInput }>,
       reply,
     ) => {
-      const result = await coursesController.createCourse(
-        request.body,
-        request.jwtPayload!,
-      );
-      return reply.status(201).send(result);
+      try {
+        const result = await coursesController.createCourse(
+          request.body,
+          request.jwtPayload!,
+        );
+        return reply.status(201).send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to create course" });
+      }
     },
   });
 
@@ -109,12 +149,24 @@ export async function coursesRoutes(fastify: FastifyInstance) {
       }>,
       reply,
     ) => {
-      const result = await coursesController.updateCourse(
-        request.params.id,
-        request.body,
-        request.jwtPayload!,
-      );
-      return reply.send(result);
+      try {
+        const result = await coursesController.updateCourse(
+          request.params.id,
+          request.body,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 404).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to update course" });
+      }
     },
   });
 
@@ -138,11 +190,23 @@ export async function coursesRoutes(fastify: FastifyInstance) {
       request: FastifyRequest<{ Params: { id: string } }>,
       reply,
     ) => {
-      const result = await coursesController.deleteCourse(
-        request.params.id,
-        request.jwtPayload!,
-      );
-      return reply.send(result);
+      try {
+        const result = await coursesController.deleteCourse(
+          request.params.id,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 404).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 404).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to delete course" });
+      }
     },
   });
 }

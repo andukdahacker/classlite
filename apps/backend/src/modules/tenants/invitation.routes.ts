@@ -45,11 +45,14 @@ export async function invitationRoutes(fastify: FastifyInstance) {
       try {
         const result = await invitationController.inviteUser(request.body, request.jwtPayload!);
         return reply.status(201).send(result);
-      } catch (error: any) {
-        if (error.message === "User is already a member of this center") {
-          return reply.status(400).send({ message: error.message });
-        } else if (error.message === "User does not belong to a center") {
-          return reply.status(400).send({ message: error.message });
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (
+            error.message === "User is already a member of this center" ||
+            error.message === "User does not belong to a center"
+          ) {
+            return reply.status(400).send({ message: error.message });
+          }
         }
         throw error;
       }

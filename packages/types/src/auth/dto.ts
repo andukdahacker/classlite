@@ -86,7 +86,6 @@ export const LoginAttemptCheckResponseSchema = createResponseSchema(
 
 export const RecordLoginAttemptRequestSchema = z.object({
   email: z.string().email("Invalid email address"),
-  success: z.boolean(),
 });
 
 export type RecordLoginAttemptRequest = z.infer<

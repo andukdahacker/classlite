@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { UserRole } from "@workspace/types";
+import { UserRole, UserRoleSchema } from "@workspace/types";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -42,13 +42,20 @@ export const authMiddleware = async (
     const decodedToken =
       await request.server.firebaseAuth.verifyIdToken(idToken);
 
+    const roleParsed = UserRoleSchema.safeParse(decodedToken.role);
+    if (!roleParsed.success) {
+      return reply.status(401).send({
+        message: "UNAUTHORIZED: Invalid role in token claims",
+      });
+    }
+
     request.jwtPayload = {
       uid: decodedToken.uid,
       email: decodedToken.email || "",
-      role: (decodedToken.role as UserRole) || "STUDENT",
+      role: roleParsed.data,
       centerId: decodedToken.center_id || null,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     request.server.log.error(error);
     return reply.status(401).send({
       data: null,

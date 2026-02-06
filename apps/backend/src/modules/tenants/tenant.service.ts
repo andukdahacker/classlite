@@ -12,6 +12,8 @@ import {
 import type { Auth } from "firebase-admin/auth";
 import type { Storage } from "firebase-admin/storage";
 import type { Resend } from "resend";
+import { escapeHtml } from "../../utils/html.js";
+import { AppError } from "../../errors/app-error.js";
 
 export class TenantService {
   constructor(
@@ -142,14 +144,28 @@ export class TenantService {
     });
 
     if (existingUser) {
-      throw new Error("CONFLICT: Email already registered in database");
+      throw AppError.conflict("Email already registered in database");
+    }
+
+    // Check slug uniqueness before proceeding with Firebase user creation
+    const existingCenter = await this.prisma.center.findUnique({
+      where: { slug },
+    });
+    if (existingCenter) {
+      throw AppError.conflict("Center slug already exists");
     }
 
     try {
       await this.firebaseAuth.getUserByEmail(ownerEmail);
-      throw new Error("CONFLICT: Email already registered in Firebase");
-    } catch (error: any) {
-      if (error.code !== "auth/user-not-found") {
+      throw AppError.conflict("Email already registered in Firebase");
+    } catch (error: unknown) {
+      if (error instanceof AppError) throw error;
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as { code: string }).code !== "auth/user-not-found"
+      ) {
         throw error;
       }
     }
@@ -164,6 +180,8 @@ export class TenantService {
 
     try {
       // 3. Perform DB Transaction
+      // Intentionally uses raw prisma (not tenanted client) because the center
+      // doesn't exist yet — centerId is explicitly set in each create call.
       const result = await this.prisma.$transaction(async (tx) => {
         // 3a. Create User
         const user = await tx.user.create({
@@ -207,7 +225,7 @@ export class TenantService {
       // 4. Set Custom Claims
       await this.firebaseAuth.setCustomUserClaims(firebaseUid, {
         center_id: result.center.id,
-        role: "owner",
+        role: "OWNER",
       });
 
       // 5. Send Welcome Email (with Password Reset Link)
@@ -219,8 +237,8 @@ export class TenantService {
         to: ownerEmail,
         subject: "Welcome to ClassLite",
         html: `
-        <h1>Welcome to ClassLite, ${ownerName}!</h1>
-        <p>Your center <strong>${name}</strong> has been successfully provisioned.</p>
+        <h1>Welcome to ClassLite, ${escapeHtml(ownerName)}!</h1>
+        <p>Your center <strong>${escapeHtml(name)}</strong> has been successfully provisioned.</p>
         <p>Please click the link below to set your password and access your account:</p>
         <a href="${resetLink}">Set Password & Login</a>
         <p>If you already have an account, you can just login.</p>

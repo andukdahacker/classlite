@@ -27,9 +27,12 @@ export class InvitationController {
         },
         message: "Invitation sent successfully",
       };
-    } catch (error: any) {
-      if (error.message === "User is already a member of this center") {
-        throw new Error(error.message);
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        error.message === "User is already a member of this center"
+      ) {
+        throw error;
       }
       throw error;
     }

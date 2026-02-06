@@ -32,8 +32,6 @@ import swaggerUi from "@fastify/swagger-ui";
 import Fastify from "fastify";
 
 export const buildApp = async () => {
-  console.log("Starting server...", process.env.NODE_ENV);
-
   const app: FastifyInstance<Server, IncomingMessage, ServerResponse> = Fastify(
     {
       logger: true,
@@ -109,7 +107,7 @@ export const buildApp = async () => {
     allowedHeaders: [
       "Content-Type",
       "Authorization",
-      "X-Platform-Admin-Api-Key",
+      "X-Platform-Admin-Key",
     ],
   });
 
@@ -208,9 +206,7 @@ export const buildApp = async () => {
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);
-    reply.log.error(error);
     return reply.status(500).send({
-      error,
       message: "Internal server error",
     });
   });

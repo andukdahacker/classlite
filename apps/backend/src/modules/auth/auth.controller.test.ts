@@ -124,7 +124,7 @@ describe("AuthController", () => {
 
       await expect(
         authController.getCurrentUser("uid", "center"),
-      ).rejects.toThrow("NOT_FOUND: User not found in this center");
+      ).rejects.toThrow("User not found in this center");
     });
   });
 });

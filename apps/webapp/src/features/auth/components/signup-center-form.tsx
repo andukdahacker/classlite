@@ -95,14 +95,14 @@ export function SignupCenterForm() {
         await signInWithCredential(firebaseAuth, credential);
         // Step 5: Manually call login() to populate user data before navigating.
         // This ensures the user is fully authenticated before we navigate.
+        // Token storage is handled by auth-context.tsx's onAuthStateChanged listener.
         const newToken = await firebaseAuth.currentUser?.getIdToken();
         if (newToken) {
-          localStorage.setItem("token", newToken);
           await login(newToken);
         }
       } else {
-        // Fallback: store token manually so the user is authenticated until expiry
-        localStorage.setItem("token", idToken);
+        // Fallback: call login with the original token
+        // Token storage is handled by auth-context.tsx's onAuthStateChanged listener.
         await login(idToken);
       }
 

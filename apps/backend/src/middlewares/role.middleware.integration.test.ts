@@ -60,7 +60,7 @@ describe("roleMiddleware Integration", () => {
 
     expect(response.statusCode).toBe(403);
     const body = JSON.parse(response.body);
-    expect(body.error.code).toBe("FORBIDDEN");
+    expect(body.message).toContain("FORBIDDEN");
   });
 
   it("should allow access if user has required role", async () => {

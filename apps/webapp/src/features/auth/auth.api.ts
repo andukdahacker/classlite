@@ -17,8 +17,8 @@ export async function checkLoginAttempt(
   email: string
 ): Promise<LoginAttemptStatus> {
   try {
-    const result = await client.GET("/api/v1/auth/login-attempt/{email}", {
-      params: { path: { email } },
+    const result = await client.GET("/api/v1/auth/login-attempt", {
+      params: { query: { email } },
     });
 
     if (result.error) {
@@ -39,16 +39,15 @@ interface RecordLoginAttemptResult {
 }
 
 /**
- * Record a login attempt (success or failure) for rate limiting
- * Returns lock status after recording the attempt
+ * Record a failed login attempt for rate limiting.
+ * Success is now handled by the backend POST /login handler.
  */
 export async function recordLoginAttempt(
   email: string,
-  success: boolean
 ): Promise<RecordLoginAttemptResult> {
   try {
     const result = await client.POST("/api/v1/auth/login-attempt", {
-      body: { email, success },
+      body: { email },
     });
 
     // 423 Locked response indicates account is now locked

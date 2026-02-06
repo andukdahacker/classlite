@@ -5,6 +5,15 @@ import {
   Class,
   ClassStudent,
 } from "@workspace/types";
+import { AppError } from "../../errors/app-error.js";
+
+interface CenterStudentResult {
+  user: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  };
+}
 
 export class ClassesService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -59,6 +68,15 @@ export class ClassesService {
 
   async deleteClass(centerId: string, id: string): Promise<void> {
     const db = getTenantedClient(this.prisma, centerId);
+    // Check for dependent students before deleting
+    const dependentCount = await db.classStudent.count({
+      where: { classId: id },
+    });
+    if (dependentCount > 0) {
+      throw AppError.badRequest(
+        `Cannot delete: ${dependentCount} student(s) are enrolled in this class`,
+      );
+    }
     await db.class.delete({
       where: { id },
     });
@@ -118,7 +136,7 @@ export class ClassesService {
     });
   }
 
-  async getCenterStudents(centerId: string, search?: string): Promise<any[]> {
+  async getCenterStudents(centerId: string, search?: string): Promise<CenterStudentResult[]> {
     const db = getTenantedClient(this.prisma, centerId);
     return await db.centerMembership.findMany({
       where: {

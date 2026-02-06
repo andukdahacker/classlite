@@ -62,7 +62,9 @@ export const getTenantedClient = (prisma: PrismaClient, centerId: string) => {
               queryArgs.where = { ...queryArgs.where, centerId };
             }
 
-            // findUnique -> findFirst to allow non-unique field injection
+            // findUnique -> findFirst rewrite to allow non-unique centerId injection.
+            // Known limitation: this only works correctly when a single Prisma extension
+            // is applied. Chaining multiple extensions that rewrite findUnique may conflict.
             if (
               operation === "findUnique" ||
               operation === "findUniqueOrThrow"
@@ -100,7 +102,9 @@ export const getTenantedClient = (prisma: PrismaClient, centerId: string) => {
                 }
               }
               if (operation === "upsert") {
+                queryArgs.where = { ...queryArgs.where, centerId };
                 queryArgs.create = { ...queryArgs.create, centerId };
+                queryArgs.update = { ...queryArgs.update, centerId };
               }
             }
 

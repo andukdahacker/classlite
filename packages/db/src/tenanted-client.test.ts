@@ -153,4 +153,177 @@ describe("tenanted-client", () => {
       }),
     );
   });
+
+  it("should rewrite findUnique to findFirst with centerId", async () => {
+    const mockFindFirst = vi.fn();
+    mockPrisma.centerMembership = { findFirst: mockFindFirst };
+    getTenantedClient(mockPrisma, "center-123");
+
+    const queryFn = vi.fn();
+    const args = { where: { id: "mem-1" } };
+
+    await extensionDefinition.query.$allModels.$allOperations({
+      model: "CenterMembership",
+      operation: "findUnique",
+      args,
+      query: queryFn,
+    });
+
+    // findUnique should NOT call the original query
+    expect(queryFn).not.toHaveBeenCalled();
+    // Instead it should call findFirst on the base prisma client
+    expect(mockFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "mem-1",
+          centerId: "center-123",
+        }),
+      }),
+    );
+  });
+
+  it("should rewrite findUniqueOrThrow to findFirstOrThrow with centerId", async () => {
+    const mockFindFirstOrThrow = vi.fn();
+    mockPrisma.centerMembership = { findFirstOrThrow: mockFindFirstOrThrow };
+    getTenantedClient(mockPrisma, "center-123");
+
+    const queryFn = vi.fn();
+    const args = { where: { id: "mem-1" } };
+
+    await extensionDefinition.query.$allModels.$allOperations({
+      model: "CenterMembership",
+      operation: "findUniqueOrThrow",
+      args,
+      query: queryFn,
+    });
+
+    expect(queryFn).not.toHaveBeenCalled();
+    expect(mockFindFirstOrThrow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "mem-1",
+          centerId: "center-123",
+        }),
+      }),
+    );
+  });
+
+  it("should inject centerId into upsert where, create, and update", async () => {
+    getTenantedClient(mockPrisma, "center-123");
+
+    const queryFn = vi.fn();
+    const args = {
+      where: { id: "mem-1" },
+      create: { userId: "u1", role: "STUDENT" },
+      update: { role: "TEACHER" },
+    };
+
+    await extensionDefinition.query.$allModels.$allOperations({
+      model: "CenterMembership",
+      operation: "upsert",
+      args,
+      query: queryFn,
+    });
+
+    expect(queryFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "mem-1", centerId: "center-123" }),
+        create: expect.objectContaining({
+          userId: "u1",
+          role: "STUDENT",
+          centerId: "center-123",
+        }),
+        update: expect.objectContaining({
+          role: "TEACHER",
+          centerId: "center-123",
+        }),
+      }),
+    );
+  });
+
+  it("should inject centerId into update where clause", async () => {
+    getTenantedClient(mockPrisma, "center-123");
+
+    const queryFn = vi.fn();
+    const args = { where: { id: "mem-1" }, data: { role: "ADMIN" } };
+
+    await extensionDefinition.query.$allModels.$allOperations({
+      model: "CenterMembership",
+      operation: "update",
+      args,
+      query: queryFn,
+    });
+
+    expect(queryFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "mem-1", centerId: "center-123" }),
+      }),
+    );
+  });
+
+  it("should inject centerId into delete where clause", async () => {
+    getTenantedClient(mockPrisma, "center-123");
+
+    const queryFn = vi.fn();
+    const args = { where: { id: "mem-1" } };
+
+    await extensionDefinition.query.$allModels.$allOperations({
+      model: "CenterMembership",
+      operation: "delete",
+      args,
+      query: queryFn,
+    });
+
+    expect(queryFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "mem-1", centerId: "center-123" }),
+      }),
+    );
+  });
+
+  it("should inject centerId into deleteMany where clause", async () => {
+    getTenantedClient(mockPrisma, "center-123");
+
+    const queryFn = vi.fn();
+    const args = { where: { role: "STUDENT" } };
+
+    await extensionDefinition.query.$allModels.$allOperations({
+      model: "CenterMembership",
+      operation: "deleteMany",
+      args,
+      query: queryFn,
+    });
+
+    expect(queryFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          role: "STUDENT",
+          centerId: "center-123",
+        }),
+      }),
+    );
+  });
+
+  it("should inject centerId into updateMany where clause", async () => {
+    getTenantedClient(mockPrisma, "center-123");
+
+    const queryFn = vi.fn();
+    const args = { where: { role: "STUDENT" }, data: { role: "TEACHER" } };
+
+    await extensionDefinition.query.$allModels.$allOperations({
+      model: "CenterMembership",
+      operation: "updateMany",
+      args,
+      query: queryFn,
+    });
+
+    expect(queryFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          role: "STUDENT",
+          centerId: "center-123",
+        }),
+      }),
+    );
+  });
 });
