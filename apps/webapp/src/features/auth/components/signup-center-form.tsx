@@ -26,6 +26,7 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { setSignupInProgress } from "../auth-context";
 import {
+  useLoginMutation,
   useSignupCenterMutation,
   useSignupCenterWithGoogleMutation,
 } from "../auth.hooks";
@@ -35,6 +36,7 @@ export function SignupCenterForm() {
   const { mutateAsync: signup, isPending } = useSignupCenterMutation();
   const { mutateAsync: signupWithGoogle, isPending: isGooglePending } =
     useSignupCenterWithGoogleMutation();
+  const { mutateAsync: login } = useLoginMutation();
 
   const form = useForm<CenterSignupRequest>({
     resolver: zodResolver(CenterSignupRequestSchema),
@@ -87,17 +89,25 @@ export function SignupCenterForm() {
         centerSlug: form.getValues("centerSlug"),
       });
 
-      // Step 4: Clear the flag, then re-establish the Firebase session.
-      // Now onAuthStateChanged will call login() and succeed because
-      // the backend user already exists.
-      setSignupInProgress(false);
-
+      // Step 4: Re-establish the Firebase session while keeping flag set.
+      // We keep signupInProgress=true so onAuthStateChanged doesn't race with us.
       if (credential) {
         await signInWithCredential(firebaseAuth, credential);
+        // Step 5: Manually call login() to populate user data before navigating.
+        // This ensures the user is fully authenticated before we navigate.
+        const newToken = await firebaseAuth.currentUser?.getIdToken();
+        if (newToken) {
+          localStorage.setItem("token", newToken);
+          await login(newToken);
+        }
       } else {
         // Fallback: store token manually so the user is authenticated until expiry
         localStorage.setItem("token", idToken);
+        await login(idToken);
       }
+
+      // Step 6: Clear the flag after everything is complete
+      setSignupInProgress(false);
 
       toast.success("Center registered successfully with Google!");
       navigate("/dashboard");
