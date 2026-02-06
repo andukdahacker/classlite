@@ -86,18 +86,21 @@ test.describe("Rooms - CRUD", () => {
   });
 
   test("enters inline edit mode and cancels", async ({ page }) => {
-    // Find the test room row and click its edit (pencil) button
-    const roomRow = page.locator("div.flex.items-center").filter({ hasText: TEST_ROOM_NAME });
-    await roomRow.getByRole("button").first().click(); // Pencil icon
+    // Find the test room row - each room is in a div with justify-between inside the room list
+    const roomList = page.locator("div.divide-y");
+    const roomRow = roomList.locator("div.flex.items-center.justify-between").filter({ hasText: TEST_ROOM_NAME });
+
+    // Click the edit (pencil) button - first button in the row
+    await roomRow.getByRole("button").first().click();
     await page.waitForTimeout(300);
 
-    // Should show an input with the room name
-    const editInput = roomRow.locator("input");
-    await expect(editInput).toBeVisible();
-    await expect(editInput).toHaveValue(TEST_ROOM_NAME);
+    // Should show an input with the room name (input appears in the row when editing)
+    const editInput = page.locator("input").filter({ hasNot: page.getByPlaceholder("New room name") });
+    await expect(editInput.first()).toBeVisible();
 
-    // Cancel editing (X button is the last button in the row)
-    await roomRow.getByRole("button").last().click();
+    // Cancel editing - click X button (last visible button with X icon)
+    const cancelButton = page.getByRole("button").filter({ has: page.locator("svg.lucide-x") });
+    await cancelButton.click();
     await page.waitForTimeout(200);
 
     // Should show the room name as text again

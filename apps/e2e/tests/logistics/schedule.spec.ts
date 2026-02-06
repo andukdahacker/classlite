@@ -125,14 +125,15 @@ test.describe("Schedule - Create Session Dialog", () => {
 
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText("Create Session")).toBeVisible();
+    // Use heading role to avoid matching both title and button
+    await expect(dialog.getByRole("heading", { name: "Create Session" })).toBeVisible();
 
-    // Check all form fields are present
-    await expect(dialog.getByText("Class")).toBeVisible();
-    await expect(dialog.getByText("Date")).toBeVisible();
-    await expect(dialog.getByText("Start Time")).toBeVisible();
-    await expect(dialog.getByText("End Time")).toBeVisible();
-    await expect(dialog.getByText("Room (Optional)")).toBeVisible();
-    await expect(dialog.getByText("Recurrence")).toBeVisible();
+    // Check all form field labels are present (use exact match to avoid multiple matches)
+    await expect(dialog.getByText("Class", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("Date", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("Start Time", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("End Time", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("Room (Optional)", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("Recurrence", { exact: true })).toBeVisible();
   });
 });

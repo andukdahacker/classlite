@@ -79,7 +79,8 @@ test.describe("Classes - Class Drawer", () => {
 
     await expect(page.getByText("Create New Class")).toBeVisible();
     await expect(page.getByLabel("Class Name")).toBeVisible();
-    await expect(page.getByLabel("Course")).toBeVisible();
+    // Course is a Select field, check for label text
+    await expect(page.getByText("Course").first()).toBeVisible();
   });
 
   test("edit drawer opens pre-filled with class data", async ({ page }) => {
