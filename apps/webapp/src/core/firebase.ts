@@ -20,12 +20,9 @@ const firebaseConfig = {
 export const firebase = initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(firebase);
 
-// Connect to Firebase Auth Emulator in development/test mode
-// In dev mode on localhost, always use the emulator
-const isLocalDev =
-  import.meta.env.DEV && window.location.hostname === "localhost";
-const useEmulator =
-  import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true" || isLocalDev;
+// Connect to Firebase Auth Emulator only when explicitly enabled (e.g., E2E tests)
+// Set VITE_USE_FIREBASE_EMULATOR=true in .env or CLI to enable
+const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true";
 
 if (import.meta.env.DEV) {
   console.log("[Firebase] Configuration:");

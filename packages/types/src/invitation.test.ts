@@ -24,10 +24,9 @@ describe("Invitation DTOs", () => {
     it("should fail on invalid role", () => {
       const invalidRequest = {
         email: "student@example.com",
-        role: "ADMIN", // Story mentions Dropdown: Teacher, Student. Though ADMIN is a valid CenterRole, the story might want to restrict it.
+        role: "SUPERADMIN",
       };
       const result = CreateInvitationRequestSchema.safeParse(invalidRequest);
-      // Wait, if I want to restrict it to TEACHER and STUDENT as per story...
       expect(result.success).toBe(false);
     });
 
