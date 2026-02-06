@@ -1,4 +1,5 @@
 import { parse } from "csv-parse/sync";
+import { AppError } from "../../errors/app-error.js";
 import {
   PrismaClient,
   getTenantedClient,
@@ -62,16 +63,16 @@ export class CsvImportService {
         relax_column_count: true,
       });
     } catch {
-      throw new Error("Invalid CSV format. Please check file structure.");
+      throw AppError.badRequest("Invalid CSV format. Please check file structure.");
     }
 
     // Check row count limit
     if (records.length > 1000) {
-      throw new Error("Too many rows. Maximum is 1,000 rows per import.");
+      throw AppError.badRequest("Too many rows. Maximum is 1,000 rows per import.");
     }
 
     if (records.length === 0) {
-      throw new Error("CSV file is empty. Please add data rows.");
+      throw AppError.badRequest("CSV file is empty. Please add data rows.");
     }
 
     // Normalize headers and extract data
@@ -86,7 +87,7 @@ export class CsvImportService {
       if (firstRow.role === undefined) missingColumns.push("Role");
 
       if (missingColumns.length > 0) {
-        throw new Error(`Missing required column(s): ${missingColumns.join(", ")}`);
+        throw AppError.badRequest(`Missing required column(s): ${missingColumns.join(", ")}`);
       }
     }
 
@@ -262,7 +263,7 @@ export class CsvImportService {
     });
 
     if (!importLog) {
-      throw new Error("Import not found");
+      throw AppError.notFound("Import not found");
     }
 
     const totalSelected = importLog.rows.filter(
@@ -373,7 +374,7 @@ export class CsvImportService {
     });
 
     if (!importLog) {
-      throw new Error("Import not found");
+      throw AppError.notFound("Import not found");
     }
 
     return {
@@ -444,7 +445,7 @@ export class CsvImportService {
     // Verify ownership before updating
     const exists = await this.verifyImportOwnership(importLogId, centerId);
     if (!exists) {
-      throw new Error("Import not found");
+      throw AppError.notFound("Import not found");
     }
 
     await db.csvImportLog.update({

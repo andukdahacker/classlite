@@ -11,6 +11,7 @@ import {
 } from "@workspace/types";
 import { format } from "date-fns";
 import { JwtPayload } from "jsonwebtoken";
+import { AppError } from "../../errors/app-error.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { SessionsService } from "./sessions.service.js";
 import { inngest } from "../inngest/client.js";
@@ -33,7 +34,7 @@ export class SessionsController {
     includeConflicts?: boolean,
   ): Promise<ClassSessionListResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const sessions = includeConflicts
       ? await this.sessionsService.listSessionsWithConflicts(
@@ -60,7 +61,7 @@ export class SessionsController {
     classId?: string,
   ): Promise<ClassSessionListResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const sessions = await this.sessionsService.getSessionsForWeek(
       centerId,
@@ -78,7 +79,7 @@ export class SessionsController {
     user: JwtPayload,
   ): Promise<ClassSessionResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const session = await this.sessionsService.getSession(centerId, id);
     return {
@@ -92,7 +93,7 @@ export class SessionsController {
     user: JwtPayload,
   ): Promise<ClassSessionResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const session = await this.sessionsService.createSession(centerId, input);
     return {
@@ -107,7 +108,7 @@ export class SessionsController {
     user: JwtPayload,
   ): Promise<ClassSessionResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const { session, previousStartTime, previousEndTime, previousRoomName } =
       await this.sessionsService.updateSession(centerId, id, input);
@@ -179,7 +180,7 @@ export class SessionsController {
     user: JwtPayload,
   ): Promise<{ message: string }> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     // Fetch session details BEFORE deletion for notifications
     const session = await this.sessionsService.getSession(centerId, id);
@@ -233,7 +234,7 @@ export class SessionsController {
     user: JwtPayload,
   ): Promise<DeleteFutureSessionsResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     // Fetch session details BEFORE deletion for email notification
     const sessionBeforeDelete = await this.sessionsService.getSession(
@@ -289,7 +290,7 @@ export class SessionsController {
     user: JwtPayload,
   ): Promise<GenerateSessionsResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const result = await this.sessionsService.generateSessions(centerId, input);
     return {
@@ -303,7 +304,7 @@ export class SessionsController {
     user: JwtPayload,
   ): Promise<ConflictResultResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const result = await this.sessionsService.checkConflicts(centerId, input);
     return {

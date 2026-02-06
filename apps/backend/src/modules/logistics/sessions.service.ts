@@ -1,4 +1,5 @@
 import { PrismaClient, getTenantedClient } from "@workspace/db";
+import { AppError } from "../../errors/app-error.js";
 import {
   CreateClassSessionInput,
   UpdateClassSessionInput,
@@ -252,7 +253,7 @@ export class SessionsService {
     });
 
     if (!session.scheduleId) {
-      throw new Error("Session is not part of a recurring series");
+      throw AppError.badRequest("Session is not part of a recurring series");
     }
 
     const result = await db.classSession.deleteMany({
@@ -292,7 +293,7 @@ export class SessionsService {
       : input.endDate;
 
     if (!isValid(startDate) || !isValid(endDate)) {
-      throw new Error("Invalid date range provided");
+      throw AppError.badRequest("Invalid date range provided");
     }
 
     // Get all schedules (optionally filtered by class)

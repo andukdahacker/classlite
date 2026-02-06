@@ -38,6 +38,8 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import Env from "../../env.js";
+import { AppError } from "../../errors/app-error.js";
+import { mapPrismaError } from "../../errors/prisma-errors.js";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireRole } from "../../middlewares/role.middleware.js";
 import { CsvImportController } from "./csv-import.controller.js";
@@ -72,11 +74,23 @@ export async function usersRoutes(fastify: FastifyInstance) {
       request: FastifyRequest<{ Querystring: UserListQuery }>,
       reply,
     ) => {
-      const result = await usersController.listUsers(
-        request.query,
-        request.jwtPayload!,
-      );
-      return reply.send(result);
+      try {
+        const result = await usersController.listUsers(
+          request.query,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 500).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 500).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to list users" });
+      }
     },
   });
 
@@ -95,11 +109,23 @@ export async function usersRoutes(fastify: FastifyInstance) {
       request: FastifyRequest<{ Querystring: { status?: string } }>,
       reply,
     ) => {
-      const result = await usersController.listInvitations(
-        request.query.status,
-        request.jwtPayload!,
-      );
-      return reply.send(result);
+      try {
+        const result = await usersController.listInvitations(
+          request.query.status,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 500).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 500).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to list invitations" });
+      }
     },
   });
 
@@ -135,14 +161,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (
-          err.message === "Invitation not found" ||
-          err.message === "User has already accepted the invitation"
-        ) {
-          return reply.status(400).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
         }
-        throw error;
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to resend invitation" });
       }
     },
   });
@@ -175,14 +202,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (
-          err.message === "Invitation not found" ||
-          err.message.includes("Cannot revoke")
-        ) {
-          return reply.status(400).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
         }
-        throw error;
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to revoke invitation" });
       }
     },
   });
@@ -209,8 +237,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        return reply.status(400).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to update profile" });
       }
     },
   });
@@ -263,11 +298,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (err.message === "Current password is incorrect") {
-          return reply.status(400).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
         }
-        return reply.status(400).send({ message: err.message });
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to change password" });
       }
     },
   });
@@ -290,11 +329,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (err.message === "Owners cannot delete their account") {
-          return reply.status(403).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
         }
-        return reply.status(400).send({ message: err.message });
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to request deletion" });
       }
     },
   });
@@ -316,8 +359,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        return reply.status(400).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to cancel deletion" });
       }
     },
   });
@@ -428,11 +478,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (err.message === "User not found in this center") {
-          return reply.status(404).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 404).send({ message: error.message });
         }
-        throw error;
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 404).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to get user" });
       }
     },
   });
@@ -469,14 +523,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (
-          err.message === "User not found in this center" ||
-          err.message === "Cannot change role of an owner"
-        ) {
-          return reply.status(400).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
         }
-        throw error;
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to change role" });
       }
     },
   });
@@ -508,15 +563,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (
-          err.message === "Cannot deactivate yourself" ||
-          err.message === "Cannot deactivate an owner" ||
-          err.message === "User not found in this center"
-        ) {
-          return reply.status(400).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
         }
-        throw error;
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to deactivate user" });
       }
     },
   });
@@ -548,11 +603,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (err.message === "User not found in this center") {
-          return reply.status(400).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
         }
-        throw error;
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to reactivate user" });
       }
     },
   });
@@ -574,11 +633,23 @@ export async function usersRoutes(fastify: FastifyInstance) {
       request: FastifyRequest<{ Body: BulkUserActionRequest }>,
       reply,
     ) => {
-      const result = await usersController.bulkDeactivate(
-        request.body,
-        request.jwtPayload!,
-      );
-      return reply.send(result);
+      try {
+        const result = await usersController.bulkDeactivate(
+          request.body,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to bulk deactivate" });
+      }
     },
   });
 
@@ -599,11 +670,23 @@ export async function usersRoutes(fastify: FastifyInstance) {
       request: FastifyRequest<{ Body: BulkUserActionRequest }>,
       reply,
     ) => {
-      const result = await usersController.bulkRemind(
-        request.body,
-        request.jwtPayload!,
-      );
-      return reply.send(result);
+      try {
+        const result = await usersController.bulkRemind(
+          request.body,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 500).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 500).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to send reminders" });
+      }
     },
   });
 
@@ -685,8 +768,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        return reply.status(400).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to validate CSV" });
       }
     },
   });
@@ -716,11 +806,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (err.message === "Import not found") {
-          return reply.status(404).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
         }
-        return reply.status(400).send({ message: err.message });
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to execute import" });
       }
     },
   });
@@ -752,11 +846,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (err.message === "Import not found") {
-          return reply.status(404).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
         }
-        return reply.status(400).send({ message: err.message });
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to get import status" });
       }
     },
   });
@@ -785,8 +883,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        return reply.status(400).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to get import history" });
       }
     },
   });
@@ -818,11 +923,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (err.message === "Import not found") {
-          return reply.status(404).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 404).send({ message: error.message });
         }
-        return reply.status(400).send({ message: err.message });
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 404).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to get import details" });
       }
     },
   });
@@ -859,17 +968,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         );
         return reply.send(result);
       } catch (error: unknown) {
-        const err = error as Error;
-        if (err.message === "Import not found") {
-          return reply.status(404).send({ message: err.message });
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
         }
-        if (
-          err.message === "No failed rows to retry" ||
-          err.message === "No matching failed rows to retry"
-        ) {
-          return reply.status(400).send({ message: err.message });
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
         }
-        return reply.status(400).send({ message: err.message });
+        return reply.status(500).send({ message: "Failed to retry import" });
       }
     },
   });

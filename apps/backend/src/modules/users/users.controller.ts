@@ -15,6 +15,7 @@ import type {
   RequestDeletionResponse,
   CancelDeletionResponse,
 } from "@workspace/types";
+import { AppError } from "../../errors/app-error.js";
 import { UsersService } from "./users.service.js";
 // Use the custom JwtPayload type from auth middleware for proper type checking
 interface JwtPayload {
@@ -32,11 +33,11 @@ export class UsersController {
     user: JwtPayload
   ): Promise<UserProfileResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const profile = await this.usersService.getUserById(centerId, userId);
     if (!profile) {
-      throw new Error("User not found in this center");
+      throw AppError.notFound("User not found in this center");
     }
 
     return {
@@ -50,7 +51,7 @@ export class UsersController {
     user: JwtPayload
   ): Promise<UserListResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const { items, total } = await this.usersService.listUsers(centerId, query);
     const hasMore = query.page * query.limit < total;
@@ -73,7 +74,7 @@ export class UsersController {
     user: JwtPayload
   ): Promise<ChangeRoleResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const result = await this.usersService.changeRole(centerId, userId, input);
     return {
@@ -87,7 +88,7 @@ export class UsersController {
     user: JwtPayload
   ): Promise<UserStatusResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const result = await this.usersService.deactivateUser(
       centerId,
@@ -105,7 +106,7 @@ export class UsersController {
     user: JwtPayload
   ): Promise<UserStatusResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const result = await this.usersService.reactivateUser(centerId, userId);
     return {
@@ -119,7 +120,7 @@ export class UsersController {
     user: JwtPayload
   ): Promise<BulkActionResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const result = await this.usersService.bulkDeactivate(
       centerId,
@@ -137,7 +138,7 @@ export class UsersController {
     user: JwtPayload
   ): Promise<BulkActionResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const result = await this.usersService.bulkRemind(centerId, input);
     return {
@@ -151,7 +152,7 @@ export class UsersController {
     user: JwtPayload
   ): Promise<InvitationListResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const invitations = await this.usersService.listInvitations(
       centerId,
@@ -175,7 +176,7 @@ export class UsersController {
     user: JwtPayload
   ): Promise<{ data: { id: string; status: string }; message: string }> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const result = await this.usersService.resendInvitation(
       centerId,
@@ -192,7 +193,7 @@ export class UsersController {
     user: JwtPayload
   ): Promise<{ message: string }> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     await this.usersService.revokeInvitation(centerId, invitationId);
     return {
@@ -235,7 +236,7 @@ export class UsersController {
 
   async requestMyDeletion(user: JwtPayload): Promise<RequestDeletionResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const result = await this.usersService.requestDeletion(centerId, user.uid);
     return {

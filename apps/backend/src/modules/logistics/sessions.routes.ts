@@ -18,6 +18,8 @@ import { FastifyInstance, FastifyRequest } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireRole } from "../../middlewares/role.middleware.js";
+import { AppError } from "../../errors/app-error.js";
+import { mapPrismaError } from "../../errors/prisma-errors.js";
 import { SessionsController } from "./sessions.controller.js";
 import { SessionsService } from "./sessions.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
@@ -56,14 +58,26 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
       }>,
       reply,
     ) => {
-      const result = await sessionsController.listSessions(
-        request.jwtPayload!,
-        request.query.startDate,
-        request.query.endDate,
-        request.query.classId,
-        request.query.includeConflicts === "true",
-      );
-      return reply.send(result);
+      try {
+        const result = await sessionsController.listSessions(
+          request.jwtPayload!,
+          request.query.startDate,
+          request.query.endDate,
+          request.query.classId,
+          request.query.includeConflicts === "true",
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 500).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 500).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to list sessions" });
+      }
     },
   });
 
@@ -85,12 +99,24 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
       }>,
       reply,
     ) => {
-      const result = await sessionsController.getSessionsForWeek(
-        request.jwtPayload!,
-        request.query.weekStart,
-        request.query.classId,
-      );
-      return reply.send(result);
+      try {
+        const result = await sessionsController.getSessionsForWeek(
+          request.jwtPayload!,
+          request.query.weekStart,
+          request.query.classId,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 500).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 500).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to get sessions for week" });
+      }
     },
   });
 
@@ -110,11 +136,23 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
       request: FastifyRequest<{ Params: { id: string } }>,
       reply,
     ) => {
-      const result = await sessionsController.getSession(
-        request.params.id,
-        request.jwtPayload!,
-      );
-      return reply.send(result);
+      try {
+        const result = await sessionsController.getSession(
+          request.params.id,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 404).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 404).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to get session" });
+      }
     },
   });
 
@@ -134,11 +172,23 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
       request: FastifyRequest<{ Body: CreateClassSessionInput }>,
       reply,
     ) => {
-      const result = await sessionsController.createSession(
-        request.body,
-        request.jwtPayload!,
-      );
-      return reply.status(201).send(result);
+      try {
+        const result = await sessionsController.createSession(
+          request.body,
+          request.jwtPayload!,
+        );
+        return reply.status(201).send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to create session" });
+      }
     },
   });
 
@@ -165,12 +215,24 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
       }>,
       reply,
     ) => {
-      const result = await sessionsController.updateSession(
-        request.params.id,
-        request.body,
-        request.jwtPayload!,
-      );
-      return reply.send(result);
+      try {
+        const result = await sessionsController.updateSession(
+          request.params.id,
+          request.body,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 404).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to update session" });
+      }
     },
   });
 
@@ -199,11 +261,16 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
           request.jwtPayload!,
         );
         return reply.send(result);
-      } catch (error) {
-        if (error instanceof Error && error.message === "Session is not part of a recurring series") {
-          return reply.status(400).send({ message: error.message });
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
         }
-        throw error;
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to delete future sessions" });
       }
     },
   });
@@ -228,11 +295,23 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
       request: FastifyRequest<{ Params: { id: string } }>,
       reply,
     ) => {
-      const result = await sessionsController.deleteSession(
-        request.params.id,
-        request.jwtPayload!,
-      );
-      return reply.send(result);
+      try {
+        const result = await sessionsController.deleteSession(
+          request.params.id,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 404).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 404).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to delete session" });
+      }
     },
   });
 
@@ -252,11 +331,23 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
       request: FastifyRequest<{ Body: GenerateSessionsInput }>,
       reply,
     ) => {
-      const result = await sessionsController.generateSessions(
-        request.body,
-        request.jwtPayload!,
-      );
-      return reply.status(201).send(result);
+      try {
+        const result = await sessionsController.generateSessions(
+          request.body,
+          request.jwtPayload!,
+        );
+        return reply.status(201).send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to generate sessions" });
+      }
     },
   });
 
@@ -277,11 +368,23 @@ export async function sessionsRoutes(fastify: FastifyInstance) {
       request: FastifyRequest<{ Body: ConflictCheckInput }>,
       reply,
     ) => {
-      const result = await sessionsController.checkConflicts(
-        request.body,
-        request.jwtPayload!,
-      );
-      return reply.send(result);
+      try {
+        const result = await sessionsController.checkConflicts(
+          request.body,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 400).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 400).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to check conflicts" });
+      }
     },
   });
 }

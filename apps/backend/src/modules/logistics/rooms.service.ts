@@ -1,5 +1,6 @@
 import { PrismaClient, getTenantedClient } from "@workspace/db";
 import type { CreateRoomInput, UpdateRoomInput, Room } from "@workspace/types";
+import { AppError } from "../../errors/app-error.js";
 
 export class RoomsService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -18,7 +19,7 @@ export class RoomsService {
       where: { name: input.name },
     });
     if (existing) {
-      throw new Error("Room name already exists");
+      throw AppError.conflict("Room name already exists");
     }
 
     return await db.room.create({
@@ -36,7 +37,7 @@ export class RoomsService {
       where: { name: input.name, id: { not: id } },
     });
     if (existing) {
-      throw new Error("Room name already exists");
+      throw AppError.conflict("Room name already exists");
     }
 
     return await db.room.update({
@@ -50,7 +51,7 @@ export class RoomsService {
 
     const room = await db.room.findUnique({ where: { id } });
     if (!room) {
-      throw new Error("Room not found");
+      throw AppError.notFound("Room not found");
     }
 
     await db.room.delete({ where: { id } });

@@ -11,6 +11,8 @@ import { FastifyInstance, FastifyRequest } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireRole } from "../../middlewares/role.middleware.js";
+import { AppError } from "../../errors/app-error.js";
+import { mapPrismaError } from "../../errors/prisma-errors.js";
 import { RoomsController } from "./rooms.controller.js";
 import { RoomsService } from "./rooms.service.js";
 import z from "zod";
@@ -34,8 +36,20 @@ export async function roomsRoutes(fastify: FastifyInstance) {
     },
     preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
     handler: async (request, reply) => {
-      const result = await roomsController.listRooms(request.jwtPayload!);
-      return reply.send(result);
+      try {
+        const result = await roomsController.listRooms(request.jwtPayload!);
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 500).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 500).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to list rooms" });
+      }
     },
   });
 
@@ -62,11 +76,16 @@ export async function roomsRoutes(fastify: FastifyInstance) {
           request.jwtPayload!,
         );
         return reply.status(201).send(result);
-      } catch (error) {
-        if (error instanceof Error && error.message === "Room name already exists") {
-          return reply.status(409).send({ message: error.message });
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 409).send({ message: error.message });
         }
-        throw error;
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 409).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to create room" });
       }
     },
   });
@@ -101,11 +120,16 @@ export async function roomsRoutes(fastify: FastifyInstance) {
           request.jwtPayload!,
         );
         return reply.send(result);
-      } catch (error) {
-        if (error instanceof Error && error.message === "Room name already exists") {
-          return reply.status(409).send({ message: error.message });
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 409).send({ message: error.message });
         }
-        throw error;
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 409).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to update room" });
       }
     },
   });
@@ -136,11 +160,16 @@ export async function roomsRoutes(fastify: FastifyInstance) {
           request.jwtPayload!,
         );
         return reply.send(result);
-      } catch (error) {
-        if (error instanceof Error && error.message === "Room not found") {
-          return reply.status(404).send({ message: error.message });
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 404).send({ message: error.message });
         }
-        throw error;
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 404).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to delete room" });
       }
     },
   });

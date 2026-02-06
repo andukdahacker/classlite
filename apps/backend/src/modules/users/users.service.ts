@@ -4,6 +4,7 @@ import {
   PrismaClient,
   getTenantedClient,
 } from "@workspace/db";
+import { AppError } from "../../errors/app-error.js";
 import type {
   BulkUserActionRequest,
   ChangeRoleRequest,
@@ -71,7 +72,7 @@ export class UsersService {
 
     const membership = user.memberships[0];
     if (!membership) {
-      throw new Error("User has no membership");
+      throw AppError.badRequest("User has no membership");
     }
 
     return {
@@ -102,7 +103,7 @@ export class UsersService {
     });
 
     if (!authAccount) {
-      throw new Error("No Firebase account linked");
+      throw AppError.badRequest("No Firebase account linked");
     }
 
     // Get user email
@@ -111,7 +112,7 @@ export class UsersService {
     });
 
     if (!user?.email) {
-      throw new Error("User email not found");
+      throw AppError.badRequest("User email not found");
     }
 
     // Verify current password using Firebase REST API
@@ -134,9 +135,9 @@ export class UsersService {
         errorData.error?.message === "INVALID_PASSWORD" ||
         errorData.error?.message === "INVALID_LOGIN_CREDENTIALS"
       ) {
-        throw new Error("Current password is incorrect");
+        throw AppError.unauthorized("Current password is incorrect");
       }
-      throw new Error("Password verification failed");
+      throw AppError.badRequest("Password verification failed");
     }
 
     // Update password via Firebase Admin SDK
@@ -181,11 +182,11 @@ export class UsersService {
     });
 
     if (!membership) {
-      throw new Error("User not found in this center");
+      throw AppError.notFound("User not found in this center");
     }
 
     if (membership.role === "OWNER") {
-      throw new Error("Owners cannot delete their account");
+      throw AppError.forbidden("Owners cannot delete their account");
     }
 
     const deletionRequestedAt = new Date();
@@ -215,11 +216,11 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new Error("User not found");
+      throw AppError.notFound("User not found");
     }
 
     if (!user.deletionRequestedAt) {
-      throw new Error("No deletion request found");
+      throw AppError.notFound("No deletion request found");
     }
 
     await this.prisma.user.update({
@@ -298,12 +299,12 @@ export class UsersService {
     });
 
     if (!membership) {
-      throw new Error("User not found in this center");
+      throw AppError.notFound("User not found in this center");
     }
 
     // Cannot change role of an OWNER
     if (membership.role === "OWNER") {
-      throw new Error("Cannot change role of an owner");
+      throw AppError.forbidden("Cannot change role of an owner");
     }
 
     const updated = await db.centerMembership.update({
@@ -323,7 +324,7 @@ export class UsersService {
 
     // Cannot deactivate yourself
     if (userId === requestingUserId) {
-      throw new Error("Cannot deactivate yourself");
+      throw AppError.badRequest("Cannot deactivate yourself");
     }
 
     const membership = await db.centerMembership.findFirst({
@@ -332,7 +333,7 @@ export class UsersService {
     });
 
     if (!membership) {
-      throw new Error("User not found in this center");
+      throw AppError.notFound("User not found in this center");
     }
 
     // Cannot deactivate the last active OWNER
@@ -345,7 +346,7 @@ export class UsersService {
       });
 
       if (activeOwnerCount <= 1) {
-        throw new Error("Cannot deactivate the last owner");
+        throw AppError.badRequest("Cannot deactivate the last owner");
       }
     }
 
@@ -382,7 +383,7 @@ export class UsersService {
     });
 
     if (!membership) {
-      throw new Error("User not found in this center");
+      throw AppError.notFound("User not found in this center");
     }
 
     const updated = await db.centerMembership.update({
@@ -505,11 +506,11 @@ export class UsersService {
     });
 
     if (!membership) {
-      throw new Error("Invitation not found");
+      throw AppError.notFound("Invitation not found");
     }
 
     if (membership.status !== "INVITED") {
-      throw new Error("User has already accepted the invitation");
+      throw AppError.badRequest("User has already accepted the invitation");
     }
 
     // Would trigger email resend here
@@ -529,11 +530,11 @@ export class UsersService {
     });
 
     if (!membership) {
-      throw new Error("Invitation not found");
+      throw AppError.notFound("Invitation not found");
     }
 
     if (membership.status !== "INVITED") {
-      throw new Error(
+      throw AppError.badRequest(
         "Cannot revoke - user has already accepted the invitation",
       );
     }

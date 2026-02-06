@@ -9,6 +9,7 @@ import type {
   CsvRetryRequest,
   CsvRetryResponse,
 } from "@workspace/types";
+import { AppError } from "../../errors/app-error.js";
 import { CsvImportService } from "./csv-import.service.js";
 import { inngest } from "../inngest/client.js";
 
@@ -38,7 +39,7 @@ export class CsvImportController {
     user: JwtPayload
   ): Promise<CsvValidationResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const result = await this.csvImportService.parseAndValidate(
       buffer,
@@ -61,7 +62,7 @@ export class CsvImportController {
     user: JwtPayload
   ): Promise<CsvExecuteResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     // Generate a job ID
     const jobId = crypto.randomUUID();
@@ -101,7 +102,7 @@ export class CsvImportController {
     user: JwtPayload
   ): Promise<CsvImportStatusResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const status = await this.csvImportService.getImportStatus(
       importLogId,
@@ -122,7 +123,7 @@ export class CsvImportController {
     user: JwtPayload
   ): Promise<CsvImportHistoryResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const result = await this.csvImportService.getImportHistory(
       centerId,
@@ -143,7 +144,7 @@ export class CsvImportController {
     user: JwtPayload
   ): Promise<CsvImportDetailsResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     const details = await this.csvImportService.getImportDetails(
       importLogId,
@@ -165,7 +166,7 @@ export class CsvImportController {
     user: JwtPayload
   ): Promise<CsvRetryResponse> {
     const centerId = user.centerId;
-    if (!centerId) throw new Error("Center ID missing from token");
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
     // Get failed rows
     const failedRows = await this.csvImportService.getFailedRows(
@@ -174,7 +175,7 @@ export class CsvImportController {
     );
 
     if (failedRows.length === 0) {
-      throw new Error("No failed rows to retry");
+      throw AppError.badRequest("No failed rows to retry");
     }
 
     // Filter to specific rows if provided
@@ -184,7 +185,7 @@ export class CsvImportController {
     }
 
     if (rowsToRetry.length === 0) {
-      throw new Error("No matching failed rows to retry");
+      throw AppError.badRequest("No matching failed rows to retry");
     }
 
     // Generate a job ID
