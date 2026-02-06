@@ -52,12 +52,14 @@ import { toast } from "sonner";
 import { useClasses, useCourses } from "../hooks/use-logistics";
 import { useRooms } from "../hooks/use-rooms";
 import { useSessions } from "../hooks/use-sessions";
+import { RosterManager } from "./RosterManager";
 import { ScheduleManager } from "./ScheduleManager";
 
 interface ClassDrawerProps {
   cls?: Class | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCreated?: (cls: Class) => void;
   centerId: string;
 }
 
@@ -65,6 +67,7 @@ export function ClassDrawer({
   cls,
   open,
   onOpenChange,
+  onCreated,
   centerId,
 }: ClassDrawerProps) {
   const isEditing = !!cls;
@@ -120,11 +123,16 @@ export function ClassDrawer({
       if (isEditing && cls) {
         await updateClass({ id: cls.id, input: values });
         toast.success("Class updated successfully");
+        onOpenChange(false);
       } else {
-        await createClass(values);
+        const newClass = await createClass(values);
         toast.success("Class created successfully");
+        if (onCreated && newClass) {
+          onCreated(newClass);
+        } else {
+          onOpenChange(false);
+        }
       }
-      onOpenChange(false);
     } catch {
       toast.error("Failed to save class");
     }
@@ -146,7 +154,7 @@ export function ClassDrawer({
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent className="sm:max-w-md">
+      <SheetContent className="sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>
             {isEditing ? "Edit Class" : "Create New Class"}
@@ -271,23 +279,45 @@ export function ClassDrawer({
                   {form.formState.isSubmitting && (
                     <Loader2 className="mr-2 size-4 animate-spin" />
                   )}
-                  {isEditing ? "Save Changes" : "Create Class"}
+                  {isEditing ? "Save Changes" : "Create & Continue"}
                 </Button>
               </SheetFooter>
             </form>
           </Form>
 
           {/* Schedule Manager - outside the form to avoid nested forms */}
-          {isEditing && cls && (
-            <div className="px-6 pb-6">
-              <Separator className="mb-4" />
+          <div className="px-6 pb-6">
+            <Separator className="mb-4" />
+            {isEditing && cls ? (
               <ScheduleManager
                 classId={cls.id}
                 centerId={centerId}
                 onScheduleCreated={handleScheduleCreated}
               />
-            </div>
-          )}
+            ) : (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Schedule</h3>
+                <p className="text-sm text-muted-foreground">
+                  Create the class first to manage its schedule.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Roster Manager */}
+          <div className="px-6 pb-6">
+            <Separator className="mb-4" />
+            {isEditing && cls ? (
+              <RosterManager classId={cls.id} centerId={centerId} />
+            ) : (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Roster</h3>
+                <p className="text-sm text-muted-foreground">
+                  Create the class first to manage its roster.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </SheetContent>
     </Sheet>

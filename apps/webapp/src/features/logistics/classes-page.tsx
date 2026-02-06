@@ -3,13 +3,6 @@ import { RBACWrapper } from "@/features/auth/components/RBACWrapper";
 import type { Class, Course } from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -26,7 +19,6 @@ import {
 import { Edit2, Loader2, Plus, Trash2, Users } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { RosterManager } from "./components/RosterManager";
 import { ClassDrawer } from "./components/ClassDrawer";
 import { CourseDrawer } from "./components/CourseDrawer";
 import { useClasses, useCourses } from "./hooks/use-logistics";
@@ -39,7 +31,6 @@ export const ClassesPage = () => {
   const { courses, isLoading: coursesLoading, deleteCourse } = useCourses(centerId);
 
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-  const [rosterOpen, setRosterOpen] = useState(false);
   const [classDrawerOpen, setClassDrawerOpen] = useState(false);
 
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -48,9 +39,9 @@ export const ClassesPage = () => {
   const [activeTab, setActiveTab] = useState("classes");
 
   // Class handlers
-  const handleRoster = (cls: Class) => {
+  const handleClassCreated = (cls: Class) => {
     setSelectedClass(cls);
-    setRosterOpen(true);
+    // Drawer stays open — now in edit mode with schedule + roster visible
   };
 
   const handleCreateClass = () => {
@@ -168,7 +159,7 @@ export const ClassesPage = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleRoster(cls)}
+                              onClick={() => handleEditClass(cls)}
                             >
                               <Users className="mr-2 size-4" />
                               Roster
@@ -269,28 +260,10 @@ export const ClassesPage = () => {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={rosterOpen} onOpenChange={setRosterOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>
-              Roster: {selectedClass?.name} ({selectedClass?.course?.name})
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              Manage students enrolled in this class
-            </DialogDescription>
-          </DialogHeader>
-          {selectedClass && (
-            <RosterManager
-              classId={selectedClass.id}
-              centerId={user?.centerId || ""}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
       <ClassDrawer
         open={classDrawerOpen}
         onOpenChange={setClassDrawerOpen}
+        onCreated={handleClassCreated}
         cls={selectedClass}
         centerId={user?.centerId || ""}
       />
