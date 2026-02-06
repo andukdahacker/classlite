@@ -99,7 +99,9 @@ _This file contains critical rules and patterns that AI agents must follow when 
 ### Naming
 
 - **API:** `kebab-case` URLs (e.g., `/api/v1/grading-jobs`).
-- **DB:** `PascalCase` Models, `snake_case` Database Columns (via `@map`).
+- **DB Models:** `PascalCase` in Prisma schema (e.g., `model ClassSession`).
+- **DB Columns:** `snake_case` in PostgreSQL via `@map` on every field (e.g., `@map("start_time")`).
+- **DB Tables:** `snake_case` in PostgreSQL via `@@map` on every model (e.g., `@@map("class_session")`). **Rule:** ALL Prisma models MUST have a `@@map("snake_case_name")` directive to ensure consistent snake_case table names in the database. Do NOT leave models without `@@map` — PostgreSQL tables should never use PascalCase.
 - **Components:** `PascalCase` (e.g., `GradingWorkbench.tsx`).
 
 ### Error Handling

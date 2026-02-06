@@ -30,6 +30,8 @@ model User {
   attendanceRecords Attendance[]       @relation("AttendanceStudent")
   attendanceMarked  Attendance[]       @relation("AttendanceMarker")
   emailLogs         EmailLog[]
+
+  @@map("user")
 }
 
 model AuthAccount {
@@ -45,6 +47,7 @@ model AuthAccount {
 
   @@unique([provider, providerUserId])
   @@unique([provider, email])
+  @@map("auth_account")
 }
 
 enum AuthProvider {
@@ -65,6 +68,8 @@ model Center {
 
   memberships    CenterMembership[]
   csvImportLogs  CsvImportLog[]
+
+  @@map("center")
 }
 
 model CenterMembership {
@@ -82,6 +87,7 @@ model CenterMembership {
 
   @@unique([centerId, userId])
   @@unique([id, centerId])
+  @@map("center_membership")
 }
 
 enum CenterRole {
@@ -104,6 +110,8 @@ model Permission {
 
   rolePermissions       RolePermission[]
   membershipPermissions MembershipPermission[]
+
+  @@map("permission")
 }
 
 model RolePermission {
@@ -113,6 +121,7 @@ model RolePermission {
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([role, permissionId])
+  @@map("role_permission")
 }
 
 model MembershipPermission {
@@ -125,6 +134,7 @@ model MembershipPermission {
   permission Permission       @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([membershipId, permissionId])
+  @@map("membership_permission")
 }
 
 model Course {
@@ -140,6 +150,7 @@ model Course {
 
   @@unique([id, centerId])
   @@index([centerId])
+  @@map("course")
 }
 
 model Class {
@@ -162,6 +173,7 @@ model Class {
   @@index([centerId])
   @@index([courseId])
   @@index([teacherId])
+  @@map("class")
 }
 
 model ClassStudent {
@@ -174,6 +186,7 @@ model ClassStudent {
 
   @@id([classId, studentId])
   @@index([centerId])
+  @@map("class_student")
 }
 
 model ClassSchedule {
@@ -194,6 +207,7 @@ model ClassSchedule {
   @@unique([id, centerId])
   @@index([centerId])
   @@index([classId])
+  @@map("class_schedule")
 }
 
 model ClassSession {
@@ -218,6 +232,7 @@ model ClassSession {
   @@index([classId])
   @@index([scheduleId])
   @@index([startTime, endTime])
+  @@map("class_session")
 }
 
 enum SessionStatus {
@@ -279,6 +294,7 @@ model Notification {
   @@index([centerId])
   @@index([userId])
   @@index([userId, read])
+  @@map("notification")
 }
 
 model LoginAttempt {
@@ -289,6 +305,8 @@ model LoginAttempt {
   lastAttempt DateTime? @map("last_attempt")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("login_attempt")
 }
 
 model CsvImportLog {
