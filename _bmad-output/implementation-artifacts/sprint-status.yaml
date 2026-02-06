@@ -78,8 +78,8 @@ development_status:
   # Status: BACKLOG (completely restructured 2026-01-29 for IELTS question types)
   # OLD stories 3.1-3.5 replaced with comprehensive 3.1-3.16
   epic-3: in-progress
-  3-1-exercise-builder-core-passage-management: review # Implementation complete 2026-02-06
-  3-2-reading-question-types-basic: backlog # R1-R8
+  3-1-exercise-builder-core-passage-management: done # Implementation complete 2026-02-06
+  3-2-reading-question-types-basic: ready-for-dev # R1-R8 — Story created 2026-02-06
   3-3-reading-question-types-matching: backlog # R9-R12 (Phase 1.5)
   3-4-reading-question-types-advanced: backlog # R13-R14 (Phase 2)
   3-5-answer-key-management: backlog # Variants, normalization
