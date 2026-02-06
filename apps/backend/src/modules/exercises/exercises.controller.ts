@@ -1,13 +1,13 @@
 import type {
-  ExerciseResponse,
-  ExerciseListResponse,
-  CreateExerciseInput,
-  UpdateExerciseInput,
   AutosaveExerciseInput,
+  CreateExerciseInput,
+  ExerciseListResponse,
+  ExerciseResponse,
+  UpdateExerciseInput,
 } from "@workspace/types";
 import { JwtPayload } from "jsonwebtoken";
-import { ExercisesService } from "./exercises.service.js";
 import { AppError } from "../../errors/app-error.js";
+import { ExercisesService } from "./exercises.service.js";
 
 export class ExercisesController {
   constructor(private readonly exercisesService: ExercisesService) {}
@@ -29,10 +29,7 @@ export class ExercisesController {
     };
   }
 
-  async getExercise(
-    id: string,
-    user: JwtPayload,
-  ): Promise<ExerciseResponse> {
+  async getExercise(id: string, user: JwtPayload): Promise<ExerciseResponse> {
     const centerId = user.centerId;
     if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
@@ -53,7 +50,7 @@ export class ExercisesController {
     const exercise = await this.exercisesService.createExercise(
       centerId,
       input,
-      user.userId,
+      user.uid,
     );
     return {
       data: exercise,

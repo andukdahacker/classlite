@@ -209,7 +209,7 @@ export function ExerciseEditor() {
         title: "Untitled Exercise",
         skill,
       });
-      navigate(`../${created.id}/edit`, { replace: true });
+      navigate(`../exercises/${created.id}/edit`, { replace: true });
       toast.success("Exercise created");
     } catch {
       toast.error("Failed to create exercise");
@@ -241,7 +241,7 @@ export function ExerciseEditor() {
       await handleSaveDraft();
       await publishExercise(id);
       toast.success("Exercise published");
-      navigate("..", { replace: true });
+      navigate("../exercises", { replace: true });
     } catch {
       toast.error("Failed to publish exercise");
     } finally {
@@ -309,7 +309,7 @@ export function ExerciseEditor() {
   if (!isEditing && !selectedSkill) {
     return (
       <div className="container py-10">
-        <Button variant="ghost" onClick={() => navigate("..")} className="mb-6">
+        <Button variant="ghost" onClick={() => navigate("../exercises")} className="mb-6">
           <ArrowLeft className="mr-2 size-4" />
           Back to Exercises
         </Button>
@@ -346,7 +346,7 @@ export function ExerciseEditor() {
     <div className="container py-10 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate("..")}>
+        <Button variant="ghost" onClick={() => navigate("../exercises")}>
           <ArrowLeft className="mr-2 size-4" />
           Back to Exercises
         </Button>

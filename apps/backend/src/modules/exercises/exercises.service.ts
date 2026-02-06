@@ -78,8 +78,21 @@ export class ExercisesService {
   async createExercise(
     centerId: string,
     input: CreateExerciseInput,
-    userId: string,
+    firebaseUid: string,
   ): Promise<Exercise> {
+    // Resolve Firebase UID to Prisma User ID via AuthAccount
+    const authAccount = await this.prisma.authAccount.findUnique({
+      where: {
+        provider_providerUserId: {
+          provider: "FIREBASE",
+          providerUserId: firebaseUid,
+        },
+      },
+    });
+    if (!authAccount) {
+      throw AppError.notFound("User account not found");
+    }
+
     const db = getTenantedClient(this.prisma, centerId);
 
     return await db.exercise.create({
@@ -90,7 +103,7 @@ export class ExercisesService {
         skill: input.skill,
         passageContent: input.passageContent ?? null,
         passageFormat: input.passageFormat ?? null,
-        createdById: userId,
+        createdById: authAccount.userId,
       },
       include: EXERCISE_INCLUDE,
     });

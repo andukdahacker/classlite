@@ -8,6 +8,7 @@ describe("ExercisesService", () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockDb: any;
   const centerId = "center-123";
+  const firebaseUid = "firebase-uid-456";
   const userId = "user-456";
 
   const mockExercise = {
@@ -41,6 +42,9 @@ describe("ExercisesService", () => {
 
     mockPrisma = {
       $extends: vi.fn().mockReturnValue(mockDb),
+      authAccount: {
+        findUnique: vi.fn(),
+      },
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,15 +119,28 @@ describe("ExercisesService", () => {
   });
 
   describe("createExercise", () => {
-    it("should create exercise with default DRAFT status", async () => {
+    it("should resolve Firebase UID and create exercise", async () => {
+      mockPrisma.authAccount.findUnique.mockResolvedValue({
+        userId,
+        provider: "FIREBASE",
+        providerUserId: firebaseUid,
+      });
       mockDb.exercise.create.mockResolvedValue(mockExercise);
 
       const result = await service.createExercise(centerId, {
         title: "Reading Test 1",
         skill: "READING",
-      }, userId);
+      }, firebaseUid);
 
       expect(result).toEqual(mockExercise);
+      expect(mockPrisma.authAccount.findUnique).toHaveBeenCalledWith({
+        where: {
+          provider_providerUserId: {
+            provider: "FIREBASE",
+            providerUserId: firebaseUid,
+          },
+        },
+      });
       expect(mockDb.exercise.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -134,6 +151,17 @@ describe("ExercisesService", () => {
           }),
         }),
       );
+    });
+
+    it("should throw if auth account not found", async () => {
+      mockPrisma.authAccount.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.createExercise(centerId, {
+          title: "Test",
+          skill: "READING",
+        }, "unknown-uid"),
+      ).rejects.toThrow("User account not found");
     });
   });
 

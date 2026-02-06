@@ -1,8 +1,24 @@
 import { useAuth } from "@/features/auth/auth-context";
-import { useExercises } from "./hooks/use-exercises";
 import type { Exercise, ExerciseSkill, ExerciseStatus } from "@workspace/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@workspace/ui/components/alert-dialog";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 import { Input } from "@workspace/ui/components/input";
 import {
   Select,
@@ -20,13 +36,6 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
-import {
   Book,
   Headphones,
   Loader2,
@@ -36,19 +45,10 @@ import {
   Plus,
   Search,
 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@workspace/ui/components/alert-dialog";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
+import { useExercises } from "./hooks/use-exercises";
 
 const SKILL_ICONS: Record<ExerciseSkill, React.ReactNode> = {
   READING: <Book className="size-4" />,
@@ -71,7 +71,8 @@ const STATUS_VARIANTS: Record<
   DRAFT: { label: "Draft", className: "bg-muted text-muted-foreground" },
   PUBLISHED: {
     label: "Published",
-    className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    className:
+      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
   },
   ARCHIVED: {
     label: "Archived",
@@ -110,17 +111,15 @@ export function ExercisesPage() {
   const filteredExercises = useMemo(() => {
     if (!searchQuery.trim()) return exercises;
     const query = searchQuery.toLowerCase();
-    return exercises.filter((ex) =>
-      ex.title.toLowerCase().includes(query),
-    );
+    return exercises.filter((ex) => ex.title.toLowerCase().includes(query));
   }, [exercises, searchQuery]);
 
   const handleCreate = () => {
-    navigate("new");
+    navigate("../exercises/new");
   };
 
   const handleEdit = (exercise: Exercise) => {
-    navigate(`${exercise.id}/edit`);
+    navigate(`../exercises/${exercise.id}/edit`);
   };
 
   const handleDeleteClick = (exercise: Exercise) => {
@@ -272,15 +271,11 @@ export function ExercisesPage() {
                       <span>{SKILL_LABELS[exercise.skill]}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    {exercise.sections?.length ?? 0}
-                  </TableCell>
+                  <TableCell>{exercise.sections?.length ?? 0}</TableCell>
                   <TableCell>
                     <Badge
                       variant="outline"
-                      className={
-                        STATUS_VARIANTS[exercise.status]?.className
-                      }
+                      className={STATUS_VARIANTS[exercise.status]?.className}
                     >
                       {STATUS_VARIANTS[exercise.status]?.label}
                     </Badge>
@@ -297,9 +292,7 @@ export function ExercisesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleEdit(exercise)}
-                        >
+                        <DropdownMenuItem onClick={() => handleEdit(exercise)}>
                           Edit
                         </DropdownMenuItem>
                         {exercise.status === "DRAFT" && (
