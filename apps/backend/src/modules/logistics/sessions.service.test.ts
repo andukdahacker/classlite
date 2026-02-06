@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionsService } from "./sessions.service.js";
 
 describe("SessionsService", () => {
@@ -48,12 +48,24 @@ describe("SessionsService", () => {
       const startDate = new Date("2026-01-20");
       const endDate = new Date("2026-01-26");
       const mockSessions = [
-        { id: "s1", classId: "c1", startTime: new Date("2026-01-21T09:00:00Z") },
-        { id: "s2", classId: "c1", startTime: new Date("2026-01-22T09:00:00Z") },
+        {
+          id: "s1",
+          classId: "c1",
+          startTime: new Date("2026-01-21T09:00:00Z"),
+        },
+        {
+          id: "s2",
+          classId: "c1",
+          startTime: new Date("2026-01-22T09:00:00Z"),
+        },
       ];
       mockTenantedClient.classSession.findMany.mockResolvedValue(mockSessions);
 
-      const result = await sessionsService.listSessions(centerId, startDate, endDate);
+      const result = await sessionsService.listSessions(
+        centerId,
+        startDate,
+        endDate,
+      );
 
       expect(result).toHaveLength(2);
       expect(mockTenantedClient.classSession.findMany).toHaveBeenCalledWith(
@@ -110,7 +122,9 @@ describe("SessionsService", () => {
         endTime: new Date("2026-01-20T10:00:00Z"),
       };
 
-      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({ id: "class-456" });
+      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({
+        id: "class-456",
+      });
       mockTenantedClient.classSession.create.mockResolvedValue({
         id: "session-1",
         ...input,
@@ -133,7 +147,9 @@ describe("SessionsService", () => {
         roomName: "Room A",
       };
 
-      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({ id: "class-456" });
+      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({
+        id: "class-456",
+      });
       mockTenantedClient.classSession.create.mockResolvedValue({
         id: "session-1",
         ...input,
@@ -163,7 +179,9 @@ describe("SessionsService", () => {
         endTime: new Date("2026-01-20T10:00:00Z"),
       };
 
-      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({ id: "class-456" });
+      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({
+        id: "class-456",
+      });
       mockTenantedClient.classSession.create.mockResolvedValue({
         id: "session-1",
         ...input,
@@ -276,13 +294,13 @@ describe("SessionsService", () => {
       mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({
         id: classId,
         teacherId: "teacher-1",
-        students: [
-          { studentId: "student-1" },
-          { studentId: "student-2" },
-        ],
+        students: [{ studentId: "student-1" }, { studentId: "student-2" }],
       });
 
-      const result = await sessionsService.getClassParticipants(centerId, classId);
+      const result = await sessionsService.getClassParticipants(
+        centerId,
+        classId,
+      );
 
       expect(result.teacherId).toBe("teacher-1");
       expect(result.studentIds).toEqual(["student-1", "student-2"]);
@@ -296,7 +314,10 @@ describe("SessionsService", () => {
         students: [{ studentId: "student-1" }],
       });
 
-      const result = await sessionsService.getClassParticipants(centerId, classId);
+      const result = await sessionsService.getClassParticipants(
+        centerId,
+        classId,
+      );
 
       expect(result.teacherId).toBeNull();
       expect(result.studentIds).toEqual(["student-1"]);
@@ -310,7 +331,10 @@ describe("SessionsService", () => {
         students: [],
       });
 
-      const result = await sessionsService.getClassParticipants(centerId, classId);
+      const result = await sessionsService.getClassParticipants(
+        centerId,
+        classId,
+      );
 
       expect(result.teacherId).toBe("teacher-1");
       expect(result.studentIds).toEqual([]);
@@ -336,7 +360,9 @@ describe("SessionsService", () => {
       ]);
 
       mockTenantedClient.classSession.findMany.mockResolvedValue([]);
-      mockTenantedClient.classSession.createMany.mockResolvedValue({ count: 1 });
+      mockTenantedClient.classSession.createMany.mockResolvedValue({
+        count: 1,
+      });
 
       const result = await sessionsService.generateSessions(centerId, input);
 
@@ -370,7 +396,9 @@ describe("SessionsService", () => {
         ])
         .mockResolvedValueOnce([]); // For the final query
 
-      mockTenantedClient.classSession.createMany.mockResolvedValue({ count: 0 });
+      mockTenantedClient.classSession.createMany.mockResolvedValue({
+        count: 0,
+      });
 
       const result = await sessionsService.generateSessions(centerId, input);
 
@@ -382,7 +410,9 @@ describe("SessionsService", () => {
   describe("deleteSession", () => {
     it("should delete session by id", async () => {
       const sessionId = "session-1";
-      mockTenantedClient.classSession.delete.mockResolvedValue({ id: sessionId });
+      mockTenantedClient.classSession.delete.mockResolvedValue({
+        id: sessionId,
+      });
 
       await sessionsService.deleteSession(centerId, sessionId);
 
@@ -413,11 +443,20 @@ describe("SessionsService", () => {
         endTime: new Date("2026-01-20T10:30:00Z"),
         roomName: "Room A",
         status: "SCHEDULED",
-        class: { name: "Math 101", course: { name: "Math" }, teacher: { name: "Mr. Smith" } },
+        class: {
+          name: "Math 101",
+          course: { name: "Math" },
+          teacher: { name: "Mr. Smith" },
+        },
       };
 
-      mockTenantedClient.class.findUnique.mockResolvedValue({ id: "class-456", teacherId: null });
-      mockTenantedClient.classSession.findMany.mockResolvedValue([conflictingSession]);
+      mockTenantedClient.class.findUnique.mockResolvedValue({
+        id: "class-456",
+        teacherId: null,
+      });
+      mockTenantedClient.classSession.findMany.mockResolvedValue([
+        conflictingSession,
+      ]);
 
       const result = await sessionsService.checkConflicts(centerId, baseInput);
 
@@ -434,23 +473,39 @@ describe("SessionsService", () => {
         endTime: new Date("2026-01-20T10:30:00Z"),
         roomName: "Room B",
         status: "SCHEDULED",
-        class: { name: "Science 101", course: { name: "Science" }, teacher: { id: "teacher-1", name: "Mr. Jones" }, teacherId: "teacher-1" },
+        class: {
+          name: "Science 101",
+          course: { name: "Science" },
+          teacher: { id: "teacher-1", name: "Mr. Jones" },
+          teacherId: "teacher-1",
+        },
       };
 
-      mockTenantedClient.class.findUnique.mockResolvedValue({ id: "class-456", teacherId: "teacher-1" });
+      mockTenantedClient.class.findUnique.mockResolvedValue({
+        id: "class-456",
+        teacherId: "teacher-1",
+      });
       // When roomName is null, room conflict check is skipped, so only teacher conflict findMany is called
-      mockTenantedClient.classSession.findMany.mockResolvedValueOnce([conflictingSession]); // teacher conflicts only
+      mockTenantedClient.classSession.findMany.mockResolvedValueOnce([
+        conflictingSession,
+      ]); // teacher conflicts only
 
       const inputWithNoRoom = { ...baseInput, roomName: null };
-      const result = await sessionsService.checkConflicts(centerId, inputWithNoRoom);
+      const result = await sessionsService.checkConflicts(
+        centerId,
+        inputWithNoRoom,
+      );
 
       expect(result.hasConflicts).toBe(true);
       expect(result.teacherConflicts).toHaveLength(1);
-      expect(result.teacherConflicts[0].id).toBe("session-existing");
+      expect(result.teacherConflicts[0]!.id).toBe("session-existing");
     });
 
     it("should return no conflicts when time slots do not overlap", async () => {
-      mockTenantedClient.class.findUnique.mockResolvedValue({ id: "class-456", teacherId: "teacher-1" });
+      mockTenantedClient.class.findUnique.mockResolvedValue({
+        id: "class-456",
+        teacherId: "teacher-1",
+      });
       mockTenantedClient.classSession.findMany.mockResolvedValue([]);
 
       const result = await sessionsService.checkConflicts(centerId, baseInput);
@@ -471,12 +526,21 @@ describe("SessionsService", () => {
         class: { name: "Math 101", course: { name: "Math" }, teacher: null },
       };
 
-      mockTenantedClient.class.findUnique.mockResolvedValue({ id: "class-456", teacherId: null });
+      mockTenantedClient.class.findUnique.mockResolvedValue({
+        id: "class-456",
+        teacherId: null,
+      });
       // The query should have excludeSessionId filter so this shouldn't be returned
       mockTenantedClient.classSession.findMany.mockResolvedValue([]);
 
-      const inputWithExclude = { ...baseInput, excludeSessionId: "session-being-edited" };
-      const result = await sessionsService.checkConflicts(centerId, inputWithExclude);
+      const inputWithExclude = {
+        ...baseInput,
+        excludeSessionId: "session-being-edited",
+      };
+      const result = await sessionsService.checkConflicts(
+        centerId,
+        inputWithExclude,
+      );
 
       expect(result.hasConflicts).toBe(false);
       // Verify the query includes the exclusion
@@ -490,11 +554,17 @@ describe("SessionsService", () => {
     });
 
     it("should skip room conflict check when roomName is null", async () => {
-      mockTenantedClient.class.findUnique.mockResolvedValue({ id: "class-456", teacherId: null });
+      mockTenantedClient.class.findUnique.mockResolvedValue({
+        id: "class-456",
+        teacherId: null,
+      });
       mockTenantedClient.classSession.findMany.mockResolvedValue([]);
 
       const inputNoRoom = { ...baseInput, roomName: null };
-      const result = await sessionsService.checkConflicts(centerId, inputNoRoom);
+      const result = await sessionsService.checkConflicts(
+        centerId,
+        inputNoRoom,
+      );
 
       expect(result.hasConflicts).toBe(false);
       // Should only be called once for teacher conflicts (since no room)
@@ -502,7 +572,10 @@ describe("SessionsService", () => {
     });
 
     it("should skip teacher conflict check when class has no teacher", async () => {
-      mockTenantedClient.class.findUnique.mockResolvedValue({ id: "class-456", teacherId: null });
+      mockTenantedClient.class.findUnique.mockResolvedValue({
+        id: "class-456",
+        teacherId: null,
+      });
       mockTenantedClient.classSession.findMany.mockResolvedValue([]);
 
       const result = await sessionsService.checkConflicts(centerId, baseInput);
@@ -519,7 +592,11 @@ describe("SessionsService", () => {
         endTime: new Date("2026-01-20T10:30:00Z"),
         roomName: "Room A",
         status: "SCHEDULED",
-        class: { name: "Math 101", course: { name: "Math" }, teacher: { id: "teacher-2", name: "Mr. Smith" } },
+        class: {
+          name: "Math 101",
+          course: { name: "Math" },
+          teacher: { id: "teacher-2", name: "Mr. Smith" },
+        },
       };
 
       const teacherConflictSession = {
@@ -529,10 +606,18 @@ describe("SessionsService", () => {
         endTime: new Date("2026-01-20T09:45:00Z"),
         roomName: "Room B",
         status: "SCHEDULED",
-        class: { name: "Science 101", course: { name: "Science" }, teacher: { id: "teacher-1", name: "Mr. Jones" }, teacherId: "teacher-1" },
+        class: {
+          name: "Science 101",
+          course: { name: "Science" },
+          teacher: { id: "teacher-1", name: "Mr. Jones" },
+          teacherId: "teacher-1",
+        },
       };
 
-      mockTenantedClient.class.findUnique.mockResolvedValue({ id: "class-456", teacherId: "teacher-1" });
+      mockTenantedClient.class.findUnique.mockResolvedValue({
+        id: "class-456",
+        teacherId: "teacher-1",
+      });
       // First call for room conflicts, second for teacher conflicts
       mockTenantedClient.classSession.findMany
         .mockResolvedValueOnce([roomConflictSession])
@@ -542,9 +627,9 @@ describe("SessionsService", () => {
 
       expect(result.hasConflicts).toBe(true);
       expect(result.roomConflicts).toHaveLength(1);
-      expect(result.roomConflicts[0].id).toBe("session-room-conflict");
+      expect(result.roomConflicts[0]!.id).toBe("session-room-conflict");
       expect(result.teacherConflicts).toHaveLength(1);
-      expect(result.teacherConflicts[0].id).toBe("session-teacher-conflict");
+      expect(result.teacherConflicts[0]!.id).toBe("session-teacher-conflict");
     });
   });
 
@@ -572,15 +657,23 @@ describe("SessionsService", () => {
         },
       ];
 
-      mockTenantedClient.class.findUnique.mockResolvedValue({ id: "class-456", teacherId: "teacher-1" });
-      mockTenantedClient.classSession.findMany.mockResolvedValue(existingSessions);
+      mockTenantedClient.class.findUnique.mockResolvedValue({
+        id: "class-456",
+        teacherId: "teacher-1",
+      });
+      mockTenantedClient.classSession.findMany.mockResolvedValue(
+        existingSessions,
+      );
 
-      const result = await sessionsService.suggestNextAvailable(centerId, input);
+      const result = await sessionsService.suggestNextAvailable(
+        centerId,
+        input,
+      );
 
       expect(result).toBeInstanceOf(Array);
       // Should suggest time after 10:00
       if (result.length > 0) {
-        expect(result[0].type).toBe("time");
+        expect(result[0]!.type).toBe("time");
       }
     });
 
@@ -593,22 +686,33 @@ describe("SessionsService", () => {
       };
 
       // Room A is blocked, but Room B is free
-      mockTenantedClient.class.findUnique.mockResolvedValue({ id: "class-456", teacherId: null });
+      mockTenantedClient.class.findUnique.mockResolvedValue({
+        id: "class-456",
+        teacherId: null,
+      });
       // First call: sessions on day for time suggestions
       // Second call: distinct rooms query
       mockTenantedClient.classSession.findMany
         .mockResolvedValueOnce([]) // For sessions on day query
-        .mockResolvedValueOnce([{ roomName: "Room A" }, { roomName: "Room B" }]); // distinct rooms
+        .mockResolvedValueOnce([
+          { roomName: "Room A" },
+          { roomName: "Room B" },
+        ]); // distinct rooms
       // findFirst returns null for Room B (free)
       mockTenantedClient.classSession.findFirst.mockResolvedValue(null);
 
-      const result = await sessionsService.suggestNextAvailable(centerId, input);
+      const result = await sessionsService.suggestNextAvailable(
+        centerId,
+        input,
+      );
 
       expect(result).toBeInstanceOf(Array);
       // Should suggest Room B as an alternative since it's free
-      const roomSuggestions = result.filter((s: { type: string }) => s.type === "room");
+      const roomSuggestions = result.filter(
+        (s: { type: string }) => s.type === "room",
+      );
       expect(roomSuggestions.length).toBeGreaterThanOrEqual(1);
-      expect(roomSuggestions[0].value).toBe("Room B");
+      expect(roomSuggestions[0]!.value).toBe("Room B");
     });
   });
 
@@ -640,12 +744,36 @@ describe("SessionsService", () => {
 
       // Mock DB query returning all overlapping sessions in range
       mockTenantedClient.classSession.findMany.mockResolvedValue([
-        { id: "session-1", classId: "class-1", startTime: sessions[0].startTime, endTime: sessions[0].endTime, roomName: "Room A", class: { teacherId: null } },
-        { id: "session-2", classId: "class-2", startTime: sessions[1].startTime, endTime: sessions[1].endTime, roomName: "Room A", class: { teacherId: null } },
-        { id: "session-3", classId: "class-3", startTime: sessions[2].startTime, endTime: sessions[2].endTime, roomName: "Room A", class: { teacherId: null } },
+        {
+          id: "session-1",
+          classId: "class-1",
+          startTime: sessions[0].startTime,
+          endTime: sessions[0].endTime,
+          roomName: "Room A",
+          class: { teacherId: null },
+        },
+        {
+          id: "session-2",
+          classId: "class-2",
+          startTime: sessions[1].startTime,
+          endTime: sessions[1].endTime,
+          roomName: "Room A",
+          class: { teacherId: null },
+        },
+        {
+          id: "session-3",
+          classId: "class-3",
+          startTime: sessions[2].startTime,
+          endTime: sessions[2].endTime,
+          roomName: "Room A",
+          class: { teacherId: null },
+        },
       ]);
 
-      const result = await sessionsService.checkBatchConflicts(centerId, sessions);
+      const result = await sessionsService.checkBatchConflicts(
+        centerId,
+        sessions,
+      );
 
       expect(result.get("session-1")).toBe(true); // Conflicts with session-2
       expect(result.get("session-2")).toBe(true); // Conflicts with session-1
@@ -671,11 +799,28 @@ describe("SessionsService", () => {
       ];
 
       mockTenantedClient.classSession.findMany.mockResolvedValue([
-        { id: "session-1", classId: "class-1", startTime: sessions[0].startTime, endTime: sessions[0].endTime, roomName: "Room A", class: { teacherId: "teacher-1" } },
-        { id: "session-2", classId: "class-2", startTime: sessions[1].startTime, endTime: sessions[1].endTime, roomName: "Room B", class: { teacherId: "teacher-1" } },
+        {
+          id: "session-1",
+          classId: "class-1",
+          startTime: sessions[0].startTime,
+          endTime: sessions[0].endTime,
+          roomName: "Room A",
+          class: { teacherId: "teacher-1" },
+        },
+        {
+          id: "session-2",
+          classId: "class-2",
+          startTime: sessions[1].startTime,
+          endTime: sessions[1].endTime,
+          roomName: "Room B",
+          class: { teacherId: "teacher-1" },
+        },
       ]);
 
-      const result = await sessionsService.checkBatchConflicts(centerId, sessions);
+      const result = await sessionsService.checkBatchConflicts(
+        centerId,
+        sessions,
+      );
 
       expect(result.get("session-1")).toBe(true); // Teacher conflict
       expect(result.get("session-2")).toBe(true); // Teacher conflict
@@ -700,11 +845,28 @@ describe("SessionsService", () => {
       ];
 
       mockTenantedClient.classSession.findMany.mockResolvedValue([
-        { id: "session-1", classId: "class-1", startTime: sessions[0].startTime, endTime: sessions[0].endTime, roomName: "Room A", class: { teacherId: "teacher-1" } },
-        { id: "session-2", classId: "class-2", startTime: sessions[1].startTime, endTime: sessions[1].endTime, roomName: "Room A", class: { teacherId: "teacher-2" } },
+        {
+          id: "session-1",
+          classId: "class-1",
+          startTime: sessions[0].startTime,
+          endTime: sessions[0].endTime,
+          roomName: "Room A",
+          class: { teacherId: "teacher-1" },
+        },
+        {
+          id: "session-2",
+          classId: "class-2",
+          startTime: sessions[1].startTime,
+          endTime: sessions[1].endTime,
+          roomName: "Room A",
+          class: { teacherId: "teacher-2" },
+        },
       ]);
 
-      const result = await sessionsService.checkBatchConflicts(centerId, sessions);
+      const result = await sessionsService.checkBatchConflicts(
+        centerId,
+        sessions,
+      );
 
       expect(result.get("session-1")).toBe(false);
       expect(result.get("session-2")).toBe(false);
@@ -729,11 +891,28 @@ describe("SessionsService", () => {
 
       // DB returns both batch session AND an external overlapping session
       mockTenantedClient.classSession.findMany.mockResolvedValue([
-        { id: "session-1", classId: "class-1", startTime: sessions[0].startTime, endTime: sessions[0].endTime, roomName: "Room A", class: { teacherId: null } },
-        { id: "session-external", classId: "class-ext", startTime: new Date("2026-01-20T09:30:00Z"), endTime: new Date("2026-01-20T10:30:00Z"), roomName: "Room A", class: { teacherId: null } },
+        {
+          id: "session-1",
+          classId: "class-1",
+          startTime: sessions[0].startTime,
+          endTime: sessions[0].endTime,
+          roomName: "Room A",
+          class: { teacherId: null },
+        },
+        {
+          id: "session-external",
+          classId: "class-ext",
+          startTime: new Date("2026-01-20T09:30:00Z"),
+          endTime: new Date("2026-01-20T10:30:00Z"),
+          roomName: "Room A",
+          class: { teacherId: null },
+        },
       ]);
 
-      const result = await sessionsService.checkBatchConflicts(centerId, sessions);
+      const result = await sessionsService.checkBatchConflicts(
+        centerId,
+        sessions,
+      );
 
       expect(result.get("session-1")).toBe(true); // Conflict with external session
     });
@@ -753,10 +932,15 @@ describe("SessionsService", () => {
         startTime: sessionStartTime,
         centerId,
       });
-      mockTenantedClient.classSession.deleteMany.mockResolvedValue({ count: 5 });
+      mockTenantedClient.classSession.deleteMany.mockResolvedValue({
+        count: 5,
+      });
       mockTenantedClient.classSession.count.mockResolvedValue(3); // 3 earlier sessions remain
 
-      const result = await sessionsService.deleteFutureSessions(centerId, sessionId);
+      const result = await sessionsService.deleteFutureSessions(
+        centerId,
+        sessionId,
+      );
 
       expect(result.deletedCount).toBe(5);
       expect(result.classId).toBe(classId);
@@ -781,7 +965,7 @@ describe("SessionsService", () => {
       });
 
       await expect(
-        sessionsService.deleteFutureSessions(centerId, "session-solo")
+        sessionsService.deleteFutureSessions(centerId, "session-solo"),
       ).rejects.toThrow("Session is not part of a recurring series");
     });
 
@@ -796,9 +980,13 @@ describe("SessionsService", () => {
         startTime: new Date("2026-02-10T09:00:00Z"),
         centerId,
       });
-      mockTenantedClient.classSession.deleteMany.mockResolvedValue({ count: 1 });
+      mockTenantedClient.classSession.deleteMany.mockResolvedValue({
+        count: 1,
+      });
       mockTenantedClient.classSession.count.mockResolvedValue(0); // No sessions remain
-      mockTenantedClient.classSchedule.delete.mockResolvedValue({ id: scheduleId });
+      mockTenantedClient.classSchedule.delete.mockResolvedValue({
+        id: scheduleId,
+      });
 
       await sessionsService.deleteFutureSessions(centerId, sessionId);
 
@@ -818,7 +1006,9 @@ describe("SessionsService", () => {
         startTime: new Date("2026-02-10T09:00:00Z"),
         centerId,
       });
-      mockTenantedClient.classSession.deleteMany.mockResolvedValue({ count: 3 });
+      mockTenantedClient.classSession.deleteMany.mockResolvedValue({
+        count: 3,
+      });
       mockTenantedClient.classSession.count.mockResolvedValue(5); // 5 earlier sessions remain
 
       await sessionsService.deleteFutureSessions(centerId, sessionId);
@@ -827,7 +1017,7 @@ describe("SessionsService", () => {
     });
   });
 
-  describe("createSession with recurrence", () => {
+  describe("createSession", () => {
     const baseInput = {
       classId: "class-1",
       startTime: "2026-02-10T09:00:00Z",
@@ -835,35 +1025,16 @@ describe("SessionsService", () => {
       roomName: "Room A",
     };
 
-    const mockSessionInclude = {
-      class: {
-        include: {
-          course: true,
-          teacher: { select: { id: true, name: true } },
-          _count: { select: { students: true } },
-        },
-      },
-    };
-
-    it("should create a single session when recurrence is 'none'", async () => {
-      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({ id: "class-1" });
-      const mockSession = { id: "session-1", ...baseInput, centerId, status: "SCHEDULED" };
-      mockTenantedClient.classSession.create.mockResolvedValue(mockSession);
-
-      const result = await sessionsService.createSession(centerId, {
-        ...baseInput,
-        recurrence: "none",
+    it("should create only the requested session without generating extras", async () => {
+      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({
+        id: "class-1",
       });
-
-      expect(result).toEqual(mockSession);
-      // Should NOT create ClassSchedule or additional sessions
-      expect(mockTenantedClient.classSchedule.create).not.toHaveBeenCalled();
-      expect(mockTenantedClient.classSession.createMany).not.toHaveBeenCalled();
-    });
-
-    it("should create a single session when no recurrence is specified", async () => {
-      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({ id: "class-1" });
-      const mockSession = { id: "session-1", ...baseInput, centerId, status: "SCHEDULED" };
+      const mockSession = {
+        id: "session-1",
+        ...baseInput,
+        centerId,
+        status: "SCHEDULED",
+      };
       mockTenantedClient.classSession.create.mockResolvedValue(mockSession);
 
       const result = await sessionsService.createSession(centerId, baseInput);
@@ -871,57 +1042,6 @@ describe("SessionsService", () => {
       expect(result).toEqual(mockSession);
       expect(mockTenantedClient.classSchedule.create).not.toHaveBeenCalled();
       expect(mockTenantedClient.classSession.createMany).not.toHaveBeenCalled();
-    });
-
-    it("should generate 12 sessions for weekly recurrence", async () => {
-      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({ id: "class-1" });
-      const mockPrimarySession = { id: "session-primary", ...baseInput, centerId, status: "SCHEDULED" };
-      mockTenantedClient.classSession.create.mockResolvedValue(mockPrimarySession);
-      mockTenantedClient.classSchedule.create.mockResolvedValue({ id: "schedule-new" });
-      mockTenantedClient.classSession.update.mockResolvedValue(mockPrimarySession);
-      mockTenantedClient.classSession.createMany.mockResolvedValue({ count: 11 });
-
-      const result = await sessionsService.createSession(centerId, {
-        ...baseInput,
-        recurrence: "weekly",
-      });
-
-      expect(mockTenantedClient.classSchedule.create).toHaveBeenCalled();
-      expect(mockTenantedClient.classSession.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: "session-primary" },
-          data: { scheduleId: "schedule-new" },
-        }),
-      );
-      expect(mockTenantedClient.classSession.createMany).toHaveBeenCalledWith({
-        data: expect.arrayContaining([
-          expect.objectContaining({
-            classId: "class-1",
-            scheduleId: "schedule-new",
-            centerId,
-          }),
-        ]),
-      });
-      // 11 additional sessions (total 12 - 1 primary)
-      const createManyCall = mockTenantedClient.classSession.createMany.mock.calls[0][0];
-      expect(createManyCall.data).toHaveLength(11);
-    });
-
-    it("should generate 6 sessions for biweekly recurrence", async () => {
-      mockTenantedClient.class.findUniqueOrThrow.mockResolvedValue({ id: "class-1" });
-      const mockPrimarySession = { id: "session-primary", ...baseInput, centerId, status: "SCHEDULED" };
-      mockTenantedClient.classSession.create.mockResolvedValue(mockPrimarySession);
-      mockTenantedClient.classSchedule.create.mockResolvedValue({ id: "schedule-new" });
-      mockTenantedClient.classSession.update.mockResolvedValue(mockPrimarySession);
-      mockTenantedClient.classSession.createMany.mockResolvedValue({ count: 5 });
-
-      await sessionsService.createSession(centerId, {
-        ...baseInput,
-        recurrence: "biweekly",
-      });
-
-      const createManyCall = mockTenantedClient.classSession.createMany.mock.calls[0][0];
-      expect(createManyCall.data).toHaveLength(5); // 6 total - 1 primary = 5 additional
     });
   });
 });

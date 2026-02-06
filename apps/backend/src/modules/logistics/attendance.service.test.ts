@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AttendanceService } from "./attendance.service.js";
 
 describe("AttendanceService", () => {
@@ -69,7 +69,7 @@ describe("AttendanceService", () => {
         centerId,
         sessionId,
         { studentId, status: "PRESENT" },
-        markedByUserId
+        markedByUserId,
       );
 
       expect(result.status).toBe("PRESENT");
@@ -87,7 +87,7 @@ describe("AttendanceService", () => {
             status: "PRESENT",
             markedBy: markedByUserId,
           }),
-        })
+        }),
       );
     });
 
@@ -116,7 +116,7 @@ describe("AttendanceService", () => {
         centerId,
         sessionId,
         { studentId, status: "LATE" },
-        markedByUserId
+        markedByUserId,
       );
 
       expect(result.status).toBe("LATE");
@@ -137,8 +137,8 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { studentId, status: "PRESENT" },
-          markedByUserId
-        )
+          markedByUserId,
+        ),
       ).rejects.toThrow("Student is not enrolled in this class");
     });
 
@@ -156,8 +156,8 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { studentId, status: "PRESENT" },
-          markedByUserId
-        )
+          markedByUserId,
+        ),
       ).rejects.toThrow("Cannot mark attendance for future sessions");
     });
 
@@ -175,8 +175,8 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { studentId, status: "PRESENT" },
-          markedByUserId
-        )
+          markedByUserId,
+        ),
       ).rejects.toThrow("Cannot mark attendance for cancelled sessions");
     });
 
@@ -188,8 +188,8 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { studentId, status: "PRESENT" },
-          markedByUserId
-        )
+          markedByUserId,
+        ),
       ).rejects.toThrow("Session not found");
     });
   });
@@ -212,26 +212,34 @@ describe("AttendanceService", () => {
       ];
 
       mockTenantedClient.classSession.findUnique.mockResolvedValue(mockSession);
-      mockTenantedClient.classStudent.findMany.mockResolvedValue(enrolledStudents);
-      mockTenantedClient.$transaction.mockImplementation(async (callback: Function) => {
-        // Simulate transaction with mock tx client
-        const mockTx = {
-          attendance: {
-            upsert: vi.fn().mockResolvedValue({ id: "att-1" }),
-          },
-        };
-        await callback(mockTx);
-      });
+      mockTenantedClient.classStudent.findMany.mockResolvedValue(
+        enrolledStudents,
+      );
+      mockTenantedClient.$transaction.mockImplementation(
+        async (callback: Function) => {
+          // Simulate transaction with mock tx client
+          const mockTx = {
+            attendance: {
+              upsert: vi.fn().mockResolvedValue({ id: "att-1" }),
+            },
+          };
+          await callback(mockTx);
+        },
+      );
 
       const result = await attendanceService.markBulkAttendance(
         centerId,
         sessionId,
         { status: "PRESENT" },
-        markedByUserId
+        markedByUserId,
       );
 
       expect(result.count).toBe(3);
-      expect(result.markedStudents).toEqual(["student-1", "student-2", "student-3"]);
+      expect(result.markedStudents).toEqual([
+        "student-1",
+        "student-2",
+        "student-3",
+      ]);
       expect(mockTenantedClient.$transaction).toHaveBeenCalled();
     });
 
@@ -249,11 +257,11 @@ describe("AttendanceService", () => {
         centerId,
         sessionId,
         { status: "PRESENT" },
-        markedByUserId
+        markedByUserId,
       );
 
       expect(mockTenantedClient.classStudent.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ take: 500 })
+        expect.objectContaining({ take: 500 }),
       );
     });
 
@@ -271,7 +279,7 @@ describe("AttendanceService", () => {
         centerId,
         sessionId,
         { status: "PRESENT" },
-        markedByUserId
+        markedByUserId,
       );
 
       expect(result.count).toBe(0);
@@ -292,8 +300,8 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { status: "PRESENT" },
-          markedByUserId
-        )
+          markedByUserId,
+        ),
       ).rejects.toThrow("Cannot mark attendance for future sessions");
     });
 
@@ -311,8 +319,8 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { status: "PRESENT" },
-          markedByUserId
-        )
+          markedByUserId,
+        ),
       ).rejects.toThrow("Cannot mark attendance for cancelled sessions");
     });
   });
@@ -332,11 +340,21 @@ describe("AttendanceService", () => {
           students: [
             {
               studentId: "student-1",
-              student: { id: "student-1", name: "Alice", email: "alice@test.com", avatarUrl: null },
+              student: {
+                id: "student-1",
+                name: "Alice",
+                email: "alice@test.com",
+                avatarUrl: null,
+              },
             },
             {
               studentId: "student-2",
-              student: { id: "student-2", name: "Bob", email: "bob@test.com", avatarUrl: null },
+              student: {
+                id: "student-2",
+                name: "Bob",
+                email: "bob@test.com",
+                avatarUrl: null,
+              },
             },
           ],
         },
@@ -345,9 +363,14 @@ describe("AttendanceService", () => {
         ],
       };
 
-      mockTenantedClient.classSession.findUniqueOrThrow.mockResolvedValue(mockSession);
+      mockTenantedClient.classSession.findUniqueOrThrow.mockResolvedValue(
+        mockSession,
+      );
 
-      const result = await attendanceService.getSessionAttendance(centerId, sessionId);
+      const result = await attendanceService.getSessionAttendance(
+        centerId,
+        sessionId,
+      );
 
       expect(result.session.id).toBe(sessionId);
       expect(result.session.class.name).toBe("Math 101");
@@ -376,7 +399,9 @@ describe("AttendanceService", () => {
 
       await attendanceService.getSessionAttendance(centerId, sessionId);
 
-      expect(mockTenantedClient.classSession.findUniqueOrThrow).toHaveBeenCalledWith(
+      expect(
+        mockTenantedClient.classSession.findUniqueOrThrow,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           include: expect.objectContaining({
             class: expect.objectContaining({
@@ -387,7 +412,7 @@ describe("AttendanceService", () => {
               }),
             }),
           }),
-        })
+        }),
       );
     });
   });
@@ -418,7 +443,10 @@ describe("AttendanceService", () => {
         { status: "ABSENT" },
       ]);
 
-      const result = await attendanceService.getStudentAttendanceStats(centerId, studentId);
+      const result = await attendanceService.getStudentAttendanceStats(
+        centerId,
+        studentId,
+      );
 
       expect(result.totalSessions).toBe(10);
       expect(result.presentCount).toBe(7);
@@ -432,7 +460,10 @@ describe("AttendanceService", () => {
     it("should return zeros when student has no enrollments", async () => {
       mockTenantedClient.classStudent.findMany.mockResolvedValue([]);
 
-      const result = await attendanceService.getStudentAttendanceStats(centerId, studentId);
+      const result = await attendanceService.getStudentAttendanceStats(
+        centerId,
+        studentId,
+      );
 
       expect(result.attendancePercentage).toBe(0);
       expect(result.totalSessions).toBe(0);
@@ -443,7 +474,9 @@ describe("AttendanceService", () => {
       const startDate = new Date("2026-01-01");
       const endDate = new Date("2026-01-31");
 
-      mockTenantedClient.classStudent.findMany.mockResolvedValue([{ classId: "class-1" }]);
+      mockTenantedClient.classStudent.findMany.mockResolvedValue([
+        { classId: "class-1" },
+      ]);
       mockTenantedClient.classSession.count.mockResolvedValue(5);
       mockTenantedClient.attendance.findMany.mockResolvedValue([
         { status: "PRESENT" },
@@ -455,7 +488,7 @@ describe("AttendanceService", () => {
         centerId,
         studentId,
         startDate,
-        endDate
+        endDate,
       );
 
       expect(mockTenantedClient.classSession.count).toHaveBeenCalledWith(
@@ -465,12 +498,14 @@ describe("AttendanceService", () => {
               gte: startDate,
             }),
           }),
-        })
+        }),
       );
     });
 
     it("should only count past sessions (not future)", async () => {
-      mockTenantedClient.classStudent.findMany.mockResolvedValue([{ classId: "class-1" }]);
+      mockTenantedClient.classStudent.findMany.mockResolvedValue([
+        { classId: "class-1" },
+      ]);
       mockTenantedClient.classSession.count.mockResolvedValue(3);
       mockTenantedClient.attendance.findMany.mockResolvedValue([]);
 
@@ -483,7 +518,7 @@ describe("AttendanceService", () => {
               lte: expect.any(Date),
             }),
           }),
-        })
+        }),
       );
     });
   });
@@ -515,10 +550,13 @@ describe("AttendanceService", () => {
 
       mockTenantedClient.attendance.findMany.mockResolvedValue(mockRecords);
 
-      const result = await attendanceService.getStudentAttendanceHistory(centerId, studentId);
+      const result = await attendanceService.getStudentAttendanceHistory(
+        centerId,
+        studentId,
+      );
 
       expect(result).toHaveLength(1);
-      expect(result[0].session.class.name).toBe("Math 101");
+      expect(result[0]!.session.class.name).toBe("Math 101");
     });
 
     it("should order by session start time descending", async () => {
@@ -529,7 +567,7 @@ describe("AttendanceService", () => {
       expect(mockTenantedClient.attendance.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { session: { startTime: "desc" } },
-        })
+        }),
       );
     });
   });
@@ -543,7 +581,10 @@ describe("AttendanceService", () => {
       // 5 students * 4 sessions = 20 expected, 15 attended = 75%
       mockTenantedClient.attendance.count.mockResolvedValue(15);
 
-      const result = await attendanceService.getClassAttendanceStats(centerId, classId);
+      const result = await attendanceService.getClassAttendanceStats(
+        centerId,
+        classId,
+      );
 
       expect(result.totalStudents).toBe(5);
       expect(result.totalSessions).toBe(4);
@@ -554,7 +595,10 @@ describe("AttendanceService", () => {
       mockTenantedClient.classStudent.count.mockResolvedValue(0);
       mockTenantedClient.classSession.count.mockResolvedValue(5);
 
-      const result = await attendanceService.getClassAttendanceStats(centerId, classId);
+      const result = await attendanceService.getClassAttendanceStats(
+        centerId,
+        classId,
+      );
 
       expect(result.averageAttendancePercentage).toBe(0);
     });
@@ -563,7 +607,10 @@ describe("AttendanceService", () => {
       mockTenantedClient.classStudent.count.mockResolvedValue(5);
       mockTenantedClient.classSession.count.mockResolvedValue(0);
 
-      const result = await attendanceService.getClassAttendanceStats(centerId, classId);
+      const result = await attendanceService.getClassAttendanceStats(
+        centerId,
+        classId,
+      );
 
       expect(result.averageAttendancePercentage).toBe(0);
     });
@@ -580,7 +627,7 @@ describe("AttendanceService", () => {
           where: expect.objectContaining({
             status: { in: ["PRESENT", "LATE", "EXCUSED"] },
           }),
-        })
+        }),
       );
     });
   });
@@ -602,7 +649,10 @@ describe("AttendanceService", () => {
         attendance: [],
       });
 
-      await attendanceService.getSessionAttendance(differentCenterId, "session-1");
+      await attendanceService.getSessionAttendance(
+        differentCenterId,
+        "session-1",
+      );
 
       // Verify $extends was called (which creates tenanted client)
       expect(mockPrisma.$extends).toHaveBeenCalled();
