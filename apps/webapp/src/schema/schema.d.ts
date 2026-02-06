@@ -1510,6 +1510,7 @@ export interface paths {
                                 name: string;
                                 courseId: string;
                                 teacherId?: string | null;
+                                defaultRoomName?: string | null;
                                 centerId: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -1575,6 +1576,7 @@ export interface paths {
                         name: string;
                         courseId: string;
                         teacherId?: string | null;
+                        defaultRoomName?: string | null;
                     };
                 };
             };
@@ -1591,6 +1593,7 @@ export interface paths {
                                 name: string;
                                 courseId: string;
                                 teacherId?: string | null;
+                                defaultRoomName?: string | null;
                                 centerId: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -1702,6 +1705,7 @@ export interface paths {
                                 name: string;
                                 courseId: string;
                                 teacherId?: string | null;
+                                defaultRoomName?: string | null;
                                 centerId: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -1856,6 +1860,7 @@ export interface paths {
                         name?: string;
                         courseId?: string;
                         teacherId?: string | null;
+                        defaultRoomName?: string | null;
                     };
                 };
             };
@@ -1872,6 +1877,7 @@ export interface paths {
                                 name: string;
                                 courseId: string;
                                 teacherId?: string | null;
+                                defaultRoomName?: string | null;
                                 centerId: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -2723,6 +2729,7 @@ export interface paths {
                                     name: string;
                                     courseId: string;
                                     teacherId?: string | null;
+                                    defaultRoomName?: string | null;
                                     centerId: string;
                                     createdAt: string;
                                     updatedAt: string;
@@ -2823,6 +2830,7 @@ export interface paths {
                                     name: string;
                                     courseId: string;
                                     teacherId?: string | null;
+                                    defaultRoomName?: string | null;
                                     centerId: string;
                                     createdAt: string;
                                     updatedAt: string;
@@ -2948,6 +2956,7 @@ export interface paths {
                                     name: string;
                                     courseId: string;
                                     teacherId?: string | null;
+                                    defaultRoomName?: string | null;
                                     centerId: string;
                                     createdAt: string;
                                     updatedAt: string;
@@ -3050,6 +3059,7 @@ export interface paths {
                                     name: string;
                                     courseId: string;
                                     teacherId?: string | null;
+                                    defaultRoomName?: string | null;
                                     centerId: string;
                                     createdAt: string;
                                     updatedAt: string;
@@ -3235,6 +3245,7 @@ export interface paths {
                                     name: string;
                                     courseId: string;
                                     teacherId?: string | null;
+                                    defaultRoomName?: string | null;
                                     centerId: string;
                                     createdAt: string;
                                     updatedAt: string;
@@ -3479,6 +3490,7 @@ export interface paths {
                                         name: string;
                                         courseId: string;
                                         teacherId?: string | null;
+                                        defaultRoomName?: string | null;
                                         centerId: string;
                                         createdAt: string;
                                         updatedAt: string;

@@ -1,6 +1,6 @@
+import type { UserRole } from "@workspace/types";
 import React from "react";
 import { useAuth } from "../auth-context";
-import type { UserRole } from "@workspace/types";
 
 export interface RBACWrapperProps {
   /**
@@ -39,14 +39,16 @@ const deepDisable = (children: React.ReactNode): React.ReactNode => {
     // If it's a Fragment, we need to recurse into its children
     if (typedChild.type === React.Fragment) {
       return React.cloneElement(typedChild, {
-        children: deepDisable(typedChild.props.children),
+        children: deepDisable(typedChild.props.children as React.ReactNode),
       });
     }
 
     // If it has children, we recurse into them as well to ensure deep disable
     // This addresses the "Shallow Disable" issue for nested interactive elements
     if (typedChild.props && typedChild.props.children) {
-      props.children = deepDisable(typedChild.props.children);
+      props.children = deepDisable(
+        typedChild.props.children as React.ReactNode,
+      );
     }
 
     return React.cloneElement(typedChild, props);

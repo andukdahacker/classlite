@@ -26,10 +26,17 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   sessionExpired: boolean;
-  setSignupInProgress: (inProgress: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Module-level flag to suppress onAuthStateChanged login during Google signup.
+// This MUST be module-level (not a React ref) so it survives StrictMode
+// double-mounting and is always the same variable across all listeners.
+let _signupInProgress = false;
+export function setSignupInProgress(inProgress: boolean) {
+  _signupInProgress = inProgress;
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -38,12 +45,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
-  const signupInProgressRef = React.useRef(false);
-
-  const setSignupInProgress = useCallback((inProgress: boolean) => {
-    console.log("setSignupInProgress called with:", inProgress);
-    signupInProgressRef.current = inProgress;
-  }, []);
 
   const { data: user } = useAuthUserQuery();
   const { mutateAsync: login, isPending: isLoggingIn } = useLoginMutation();
@@ -86,17 +87,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Auth state change listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (fbUser) => {
-      console.log("=== onAuthStateChanged fired ===", fbUser?.uid);
       setFirebaseUser(fbUser);
 
-      console.log("Firebase user:", fbUser);
-
       if (fbUser) {
-        // Skip automatic login if signup is in progress - the signup flow
-        // will handle authentication after creating the user in the backend
-        console.log("onAuthStateChanged - signupInProgressRef:", signupInProgressRef.current);
-        if (signupInProgressRef.current) {
-          console.log("Skipping login - signup in progress");
+        // During Google signup, the signup flow handles backend user creation
+        // and auth. Skip login() here to avoid racing with signup.
+        if (_signupInProgress) {
           setLoading(false);
           return;
         }
@@ -104,13 +100,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
           const token = await fbUser.getIdToken();
           localStorage.setItem("token", token);
-          console.log("onAuthStateChanged - calling login");
           await loginRef.current(token);
-          console.log("onAuthStateChanged - login completed");
           setSessionExpired(false);
-        } catch (err) {
-          console.log("onAuthStateChanged - login failed:", err);
-          // Session sync failed - user will be prompted to re-login if needed
+        } catch {
+          // Login failed (e.g. user doesn't exist yet).
+          // Non-fatal — caller handles its own auth.
         }
       } else {
         localStorage.removeItem("token");
@@ -126,12 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Silent token refresh listener
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(firebaseAuth, async (fbUser) => {
-      // Skip token refresh during signup - the signup flow handles authentication
-      console.log("onIdTokenChanged - signupInProgressRef:", signupInProgressRef.current);
-      if (signupInProgressRef.current) {
-        console.log("Skipping token refresh - signup in progress");
-        return;
-      }
+      if (_signupInProgress) return;
 
       if (fbUser) {
         try {
@@ -193,7 +182,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         loading: loading || isLoggingIn,
         logout,
         sessionExpired,
-        setSignupInProgress,
       }}
     >
       {children}

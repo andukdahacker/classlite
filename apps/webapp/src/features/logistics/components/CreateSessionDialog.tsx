@@ -133,6 +133,17 @@ export function CreateSessionDialog({
   const selectedClass = classes.find((c) => c.id === selectedClassId);
   const teacherName = selectedClass?.teacher?.name ?? null;
 
+  // Pre-fill room from selected class's default room
+  useEffect(() => {
+    if (selectedClass?.defaultRoomName) {
+      const currentRoom = form.getValues("roomName");
+      // Only pre-fill if room is empty (don't override user's choice)
+      if (!currentRoom) {
+        form.setValue("roomName", selectedClass.defaultRoomName);
+      }
+    }
+  }, [selectedClassId, selectedClass?.defaultRoomName, form]);
+
   // Conflict checking
   const {
     hasConflicts,

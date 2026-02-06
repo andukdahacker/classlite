@@ -13,13 +13,23 @@ import type { NavItem } from "./app-sidebar";
 export function NavMain({ items }: { items: NavItem[] }) {
   const location = useLocation();
 
+  // Find the most specific matching nav item to avoid parent routes
+  // (e.g. /dashboard) staying highlighted when on child routes
+  // (e.g. /dashboard/schedule).
+  const activeUrl = items.reduce<string | null>((best, item) => {
+    const matches =
+      location.pathname === item.url ||
+      location.pathname.startsWith(`${item.url}/`);
+    if (!matches) return best;
+    if (!best) return item.url;
+    return item.url.length > best.length ? item.url : best;
+  }, null);
+
   return (
     <SidebarGroup>
       <SidebarMenu>
         {items.map((item) => {
-          const isActive =
-            location.pathname === item.url ||
-            location.pathname.startsWith(`${item.url}/`);
+          const isActive = item.url === activeUrl;
 
           return (
             <SidebarMenuItem key={item.title}>

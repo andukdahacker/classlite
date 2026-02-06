@@ -1,5 +1,4 @@
-import React from "react";
-import { useForm } from "react-hook-form";
+import { firebaseAuth } from "@/core/firebase";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CenterSignupRequestSchema,
@@ -15,19 +14,24 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
-import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-import { firebaseAuth } from "@/core/firebase";
+import {
+  GoogleAuthProvider,
+  signInWithCredential,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
+import { toast } from "sonner";
+import { setSignupInProgress } from "../auth-context";
 import {
   useSignupCenterMutation,
   useSignupCenterWithGoogleMutation,
 } from "../auth.hooks";
-import { useAuth } from "../auth-context";
-import { useNavigate } from "react-router";
-import { toast } from "sonner";
 
 export function SignupCenterForm() {
   const navigate = useNavigate();
-  const { setSignupInProgress } = useAuth();
   const { mutateAsync: signup, isPending } = useSignupCenterMutation();
   const { mutateAsync: signupWithGoogle, isPending: isGooglePending } =
     useSignupCenterWithGoogleMutation();
@@ -54,42 +58,55 @@ export function SignupCenterForm() {
   };
 
   const onGoogleSignup = async () => {
-    // Validate only center fields
     const isCenterValid = await form.trigger(["centerName", "centerSlug"]);
     if (!isCenterValid) {
       toast.error("Please provide valid center details first");
       return;
     }
 
-    // Prevent auth context from calling login before signup completes
-    console.log("Setting signup in progress to true");
+    // Set module-level flag BEFORE signInWithPopup so onAuthStateChanged
+    // and onIdTokenChanged skip calling login() during the signup flow.
     setSignupInProgress(true);
 
     try {
+      // Step 1: Authenticate with Google to get the credential and token
       const provider = new GoogleAuthProvider();
-      console.log("Calling signInWithPopup");
       const result = await signInWithPopup(firebaseAuth, provider);
-      console.log("signInWithPopup completed");
-      console.log("Getting idToken...");
+      const credential = GoogleAuthProvider.credentialFromResult(result);
       const idToken = await result.user.getIdToken();
-      console.log("Got idToken, calling signupWithGoogle...");
 
+      // Step 2: Sign out of Firebase while signup is in progress.
+      // The module-level flag already blocks login(), but signing out
+      // ensures no lingering Firebase session if something goes wrong.
+      await signOut(firebaseAuth);
+
+      // Step 3: Create user + center in the backend (token passed in body)
       await signupWithGoogle({
         idToken,
         centerName: form.getValues("centerName"),
         centerSlug: form.getValues("centerSlug"),
       });
 
-      console.log("signupWithGoogle completed successfully");
+      // Step 4: Clear the flag, then re-establish the Firebase session.
+      // Now onAuthStateChanged will call login() and succeed because
+      // the backend user already exists.
       setSignupInProgress(false);
+
+      if (credential) {
+        await signInWithCredential(firebaseAuth, credential);
+      } else {
+        // Fallback: store token manually so the user is authenticated until expiry
+        localStorage.setItem("token", idToken);
+      }
+
       toast.success("Center registered successfully with Google!");
       navigate("/dashboard");
     } catch (error) {
-      console.log("Signup error caught:", error);
       setSignupInProgress(false);
-      // Force sign out if registration fails so user state doesn't get stuck
-      await signOut(firebaseAuth);
-      toast.error(error instanceof Error ? error.message : "Google signup failed");
+      await signOut(firebaseAuth).catch(() => {});
+      toast.error(
+        error instanceof Error ? error.message : "Google signup failed",
+      );
     }
   };
 
@@ -104,7 +121,11 @@ export function SignupCenterForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-4"
+        noValidate
+      >
         <FormField
           control={form.control}
           name="centerName"

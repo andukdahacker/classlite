@@ -6,6 +6,14 @@ import {
 } from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@workspace/ui/components/command";
+import {
   Form,
   FormControl,
   FormField,
@@ -14,6 +22,11 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover";
 import {
   Select,
   SelectContent,
@@ -30,12 +43,14 @@ import {
   SheetTitle,
 } from "@workspace/ui/components/sheet";
 import { Separator } from "@workspace/ui/components/separator";
+import { cn } from "@workspace/ui/lib/utils";
 import { addWeeks, startOfWeek } from "date-fns";
-import { Loader2 } from "lucide-react";
-import { useEffect, useCallback } from "react";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { useEffect, useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useClasses, useCourses } from "../hooks/use-logistics";
+import { useRooms } from "../hooks/use-rooms";
 import { useSessions } from "../hooks/use-sessions";
 import { ScheduleManager } from "./ScheduleManager";
 
@@ -55,7 +70,9 @@ export function ClassDrawer({
   const isEditing = !!cls;
   const { createClass, updateClass } = useClasses(centerId);
   const { courses } = useCourses(centerId);
+  const { rooms } = useRooms(centerId);
   const { generateSessions } = useSessions(centerId);
+  const [roomComboOpen, setRoomComboOpen] = useState(false);
 
   // Callback to auto-generate sessions when a schedule is created
   const handleScheduleCreated = useCallback(async () => {
@@ -75,6 +92,7 @@ export function ClassDrawer({
     defaultValues: {
       name: "",
       courseId: "",
+      defaultRoomName: "",
     },
   });
 
@@ -85,11 +103,13 @@ export function ClassDrawer({
           name: cls.name,
           courseId: cls.courseId,
           teacherId: cls.teacherId || undefined,
+          defaultRoomName: cls.defaultRoomName || "",
         });
       } else {
         form.reset({
           name: "",
           courseId: "",
+          defaultRoomName: "",
         });
       }
     }
@@ -180,6 +200,67 @@ export function ClassDrawer({
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="defaultRoomName"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Default Room (Optional)</FormLabel>
+                    <Popover open={roomComboOpen} onOpenChange={setRoomComboOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value || "Select or type room..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                          <CommandInput
+                            placeholder="Search rooms..."
+                            onValueChange={(val) => field.onChange(val)}
+                          />
+                          <CommandList>
+                            <CommandEmpty>
+                              {field.value ? `Use "${field.value}"` : "No rooms found."}
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {rooms.map((room) => (
+                                <CommandItem
+                                  key={room.id}
+                                  value={room.name}
+                                  onSelect={() => {
+                                    field.onChange(room.name);
+                                    setRoomComboOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      field.value === room.name ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {room.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}

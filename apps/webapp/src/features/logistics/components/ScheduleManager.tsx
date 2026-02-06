@@ -8,6 +8,14 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@workspace/ui/components/command";
+import {
   Form,
   FormControl,
   FormField,
@@ -15,7 +23,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@workspace/ui/components/form";
-import { Input } from "@workspace/ui/components/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover";
 import {
   Select,
   SelectContent,
@@ -23,13 +35,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
+import { cn } from "@workspace/ui/lib/utils";
 import { format, setHours, setMinutes } from "date-fns";
-import { Clock, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronsUpDown, Clock, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useSchedules } from "../hooks/use-logistics";
+import { useRooms } from "../hooks/use-rooms";
 
 const DAYS_OF_WEEK = [
   { value: "1", label: "Monday" },
@@ -58,6 +72,7 @@ interface ScheduleManagerProps {
 
 export function ScheduleManager({ classId, centerId, onScheduleCreated }: ScheduleManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
+  const [roomComboOpen, setRoomComboOpen] = useState(false);
   const {
     schedules,
     isLoading,
@@ -66,6 +81,7 @@ export function ScheduleManager({ classId, centerId, onScheduleCreated }: Schedu
     isCreating,
     isDeleting,
   } = useSchedules(classId, centerId);
+  const { rooms } = useRooms(centerId);
 
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleSchema),
@@ -320,11 +336,58 @@ export function ScheduleManager({ classId, centerId, onScheduleCreated }: Schedu
                   control={form.control}
                   name="roomName"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="flex flex-col">
                       <FormLabel>Room (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Room 101" {...field} />
-                      </FormControl>
+                      <Popover open={roomComboOpen} onOpenChange={setRoomComboOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn(
+                                "w-full justify-between font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value || "Select or type room..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                          <Command>
+                            <CommandInput
+                              placeholder="Search rooms..."
+                              onValueChange={(val) => field.onChange(val)}
+                            />
+                            <CommandList>
+                              <CommandEmpty>
+                                {field.value ? `Use "${field.value}"` : "No rooms found."}
+                              </CommandEmpty>
+                              <CommandGroup>
+                                {rooms.map((room) => (
+                                  <CommandItem
+                                    key={room.id}
+                                    value={room.name}
+                                    onSelect={() => {
+                                      field.onChange(room.name);
+                                      setRoomComboOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        field.value === room.name ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {room.name}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}

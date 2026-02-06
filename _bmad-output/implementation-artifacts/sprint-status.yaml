@@ -71,7 +71,7 @@ development_status:
   2-3-conflict-detection: done
   2-4-attendance-tracking: done
   2-5-class-session-crud: done # Completed 2026-02-05
-  2-6-schedule-change-notifications-email: review # Implementation complete 2026-02-05
+  2-6-schedule-change-notifications-email: done # Implementation complete 2026-02-05
   epic-2-retrospective: optional
 
   # Epic 3: IELTS Exercise Builder & Content

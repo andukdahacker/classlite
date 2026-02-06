@@ -85,6 +85,12 @@ export function WeeklyCalendar({
     endSlot: number;
   } | null>(null);
 
+  // Generate days of the week — must be defined before callbacks that reference it
+  const weekDays = useMemo(() => {
+    const start = startOfWeek(weekStart, { weekStartsOn: 1 }); // Monday
+    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  }, [weekStart]);
+
   // Convert slot index to time string "HH:mm"
   const slotToTime = useCallback((slotIndex: number): string => {
     const totalMinutes = START_HOUR * 60 + slotIndex * SLOT_MINUTES;
@@ -172,12 +178,6 @@ export function WeeklyCalendar({
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
-  // Generate days of the week
-  const weekDays = useMemo(() => {
-    const start = startOfWeek(weekStart, { weekStartsOn: 1 }); // Monday
-    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
-  }, [weekStart]);
 
   // Generate time slots for display
   const timeSlots = useMemo(() => {

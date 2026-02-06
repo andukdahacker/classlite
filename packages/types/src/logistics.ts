@@ -50,6 +50,7 @@ export const ClassSchema = z.object({
   name: z.string().min(1, "Class name is required"),
   courseId: z.string(),
   teacherId: z.string().nullable().optional(),
+  defaultRoomName: z.string().nullable().optional(),
   centerId: z.string(),
   createdAt: z.union([z.date(), z.string()]),
   updatedAt: z.union([z.date(), z.string()]),
@@ -71,6 +72,7 @@ export const CreateClassSchema = z.object({
   name: z.string().min(1, "Class name is required"),
   courseId: z.string(),
   teacherId: z.string().nullable().optional(),
+  defaultRoomName: z.string().nullable().optional(),
 });
 
 export type CreateClassInput = z.infer<typeof CreateClassSchema>;

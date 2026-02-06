@@ -246,6 +246,41 @@ async function seedDatabase() {
     });
     console.log(`   ✓ Created class: ${testClass.name}`);
 
+    // Create a test room for room management tests
+    const existingRoom = await prisma.room.findFirst({
+      where: { name: "E2E Room 101", centerId: TEST_CENTER.id },
+    });
+    if (!existingRoom) {
+      await prisma.room.create({
+        data: {
+          id: "e2e-test-room",
+          name: "E2E Room 101",
+          centerId: TEST_CENTER.id,
+        },
+      });
+    }
+    console.log("   ✓ Created room: E2E Room 101");
+
+    // Assign student to class for roster tests
+    const student = TEST_USERS.find((u) => u.role === "STUDENT");
+    if (student) {
+      await prisma.classStudent.upsert({
+        where: {
+          classId_studentId: {
+            classId: testClass.id,
+            studentId: student.id,
+          },
+        },
+        update: {},
+        create: {
+          classId: testClass.id,
+          studentId: student.id,
+          centerId: TEST_CENTER.id,
+        },
+      });
+      console.log(`   ✓ Assigned student to class: ${student.name} → ${testClass.name}`);
+    }
+
     console.log("\n✅ Database seeding complete!");
   } catch (error) {
     console.error("❌ Database seeding failed:", error);

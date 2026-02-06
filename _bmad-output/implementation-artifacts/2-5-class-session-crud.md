@@ -533,6 +533,27 @@ Body: { classId, startTime, endTime, roomName?, recurrence?: 'none' | 'weekly' |
 - [Source: apps/webapp/src/features/logistics/components/ScheduleManager.tsx] (existing schedule creation — 4-week generation)
 - [Source: apps/webapp/src/features/logistics/hooks/use-sessions.ts] (existing mutations with optimistic updates)
 
+## Post-Implementation Enhancements
+
+### Default Room on Class (2026-02-06)
+
+**Requirement:** When creating a class, allow setting a default room. When creating sessions for that class, pre-fill the room field from the class default (user can still override per-session).
+
+**Changes:**
+- `packages/db/prisma/schema.prisma` — Added `defaultRoomName` field to Class model
+- `packages/types/src/logistics.ts` — Added `defaultRoomName` to ClassSchema, CreateClassSchema
+- `apps/webapp/src/features/logistics/components/ClassDrawer.tsx` — Added Room Combobox for default room selection
+- `apps/webapp/src/features/logistics/components/ScheduleManager.tsx` — Replaced text input with Room Combobox
+- `apps/webapp/src/features/logistics/components/CreateSessionDialog.tsx` — Pre-fill room from `class.defaultRoomName` when class is selected
+
+**Behavior:**
+1. Create/edit class → Optional default room via Combobox
+2. Create session → Select class → Room auto-fills from class default
+3. User can override room per-session
+4. Conflict detection unchanged (runs at session level)
+
+---
+
 ## Dev Agent Record
 
 ### Agent Model Used
@@ -583,5 +604,12 @@ None
 - `apps/webapp/src/features/logistics/scheduler-page.tsx` — Wired up edit dialog, slot click, drag-to-create, delete future
 - `apps/webapp/src/features/logistics/hooks/use-sessions.ts` — Added deleteFutureSessions mutation, fixed updateSession body builder
 - `apps/webapp/src/features/settings/config/settings-nav.ts` — Added "Rooms" tab
+
+**Post-Implementation Enhancement Files (2026-02-06):**
+- `packages/db/prisma/schema.prisma` — Added `defaultRoomName` to Class model
+- `packages/types/src/logistics.ts` — Added `defaultRoomName` to ClassSchema, CreateClassSchema
+- `apps/webapp/src/features/logistics/components/ClassDrawer.tsx` — Added Room Combobox
+- `apps/webapp/src/features/logistics/components/ScheduleManager.tsx` — Replaced text input with Room Combobox
+- `apps/webapp/src/features/logistics/components/CreateSessionDialog.tsx` — Pre-fill room from class default
 - `apps/webapp/src/App.tsx` — Added RoomsPage route
 - `apps/webapp/src/schema/schema.d.ts` — Auto-generated after schema sync

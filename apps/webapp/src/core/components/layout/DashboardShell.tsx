@@ -19,6 +19,7 @@ import { NotificationBell } from "@/features/dashboard/components/NotificationBe
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@workspace/ui/components/sheet";
@@ -112,6 +113,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <SheetContent side="right" className="w-[320px] p-0">
                 <SheetHeader className="sr-only">
                   <SheetTitle>AI Assistant</SheetTitle>
+                  <SheetDescription>AI chat assistant</SheetDescription>
                 </SheetHeader>
                 <AISidebarContent onClose={() => setIsAISidebarOpen(false)} />
               </SheetContent>

@@ -71,7 +71,9 @@ export function LoginForm() {
       // Redirect is handled by GuestRoute detecting the authenticated user
     } catch (error: unknown) {
       // Record failed attempt and check if account is now locked
-      const lockResult = await recordLoginAttempt(values.email, false).catch(() => null);
+      const lockResult = await recordLoginAttempt(values.email, false).catch(
+        () => null,
+      );
 
       // Check if account is now locked after this attempt
       if (lockResult?.locked) {
@@ -105,7 +107,11 @@ export function LoginForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-4"
+        noValidate
+      >
         {loginError && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
             {loginError}
