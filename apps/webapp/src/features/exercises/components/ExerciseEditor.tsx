@@ -7,6 +7,12 @@ import type {
   CreateQuestionInput,
   UpdateQuestionInput,
 } from "@workspace/types";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  type DropResult,
+} from "@hello-pangea/dnd";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
@@ -149,6 +155,7 @@ export function ExerciseEditor() {
     createSection,
     updateSection,
     deleteSection,
+    reorderSections,
     createQuestion,
     updateQuestion,
     deleteQuestion,
@@ -320,6 +327,22 @@ export function ExerciseEditor() {
     }
   };
 
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+    if (result.source.index === result.destination.index) return;
+
+    const sections = exercise?.sections ?? [];
+    const reordered = Array.from(sections);
+    const [moved] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, moved);
+
+    try {
+      await reorderSections(reordered.map((s) => s.id));
+    } catch {
+      toast.error("Failed to reorder sections");
+    }
+  };
+
   // New exercise: show skill selector
   if (!isEditing && !selectedSkill) {
     return (
@@ -433,19 +456,46 @@ export function ExerciseEditor() {
           </Button>
         </div>
 
-        {(exercise?.sections ?? []).map((section, idx) => (
-          <QuestionSectionEditor
-            key={section.id}
-            section={section}
-            skill={selectedSkill!}
-            index={idx}
-            onUpdateSection={handleUpdateSection}
-            onDeleteSection={setDeleteSectionId}
-            onCreateQuestion={handleCreateQuestion}
-            onUpdateQuestion={handleUpdateQuestion}
-            onDeleteQuestion={handleDeleteQuestion}
-          />
-        ))}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="sections">
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="space-y-4"
+              >
+                {(exercise?.sections ?? []).map((section, idx) => (
+                  <Draggable
+                    key={section.id}
+                    draggableId={section.id}
+                    index={idx}
+                  >
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                      >
+                        <QuestionSectionEditor
+                          section={section}
+                          skill={selectedSkill!}
+                          index={idx}
+                          exerciseId={exercise?.id}
+                          onUpdateSection={handleUpdateSection}
+                          onDeleteSection={setDeleteSectionId}
+                          onCreateQuestion={handleCreateQuestion}
+                          onUpdateQuestion={handleUpdateQuestion}
+                          onDeleteQuestion={handleDeleteQuestion}
+                          dragHandleProps={provided.dragHandleProps}
+                        />
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
 
         {(exercise?.sections?.length ?? 0) === 0 && (
           <div className="text-center py-8 text-muted-foreground rounded-md border border-dashed">

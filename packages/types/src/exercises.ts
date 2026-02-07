@@ -340,6 +340,13 @@ export type QuestionSectionListResponse = z.infer<
   typeof QuestionSectionListResponseSchema
 >;
 
+export const ReorderSectionsResponseSchema = createResponseSchema(
+  z.array(QuestionSectionSchema),
+);
+export type ReorderSectionsResponse = z.infer<
+  typeof ReorderSectionsResponseSchema
+>;
+
 export const QuestionResponseSchema = createResponseSchema(QuestionSchema);
 export type QuestionResponse = z.infer<typeof QuestionResponseSchema>;
 

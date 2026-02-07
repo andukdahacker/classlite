@@ -6,6 +6,7 @@ import type {
   CreateQuestionInput,
   UpdateQuestionInput,
 } from "@workspace/types";
+import type { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
@@ -64,22 +65,26 @@ interface QuestionSectionEditorProps {
   section: QuestionSection;
   skill: ExerciseSkill;
   index: number;
+  exerciseId?: string;
   onUpdateSection: (sectionId: string, data: { sectionType?: IeltsQuestionType; instructions?: string | null }) => void;
   onDeleteSection: (sectionId: string) => void;
   onCreateQuestion: (sectionId: string, input: CreateQuestionInput) => void;
   onUpdateQuestion: (sectionId: string, questionId: string, input: UpdateQuestionInput) => void;
   onDeleteQuestion: (sectionId: string, questionId: string) => void;
+  dragHandleProps?: DraggableProvidedDragHandleProps | null;
 }
 
 export function QuestionSectionEditor({
   section,
   skill,
   index,
+  exerciseId,
   onUpdateSection,
   onDeleteSection,
   onCreateQuestion,
   onUpdateQuestion,
   onDeleteQuestion,
+  dragHandleProps,
 }: QuestionSectionEditorProps) {
   const [newQuestionText, setNewQuestionText] = useState("");
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
@@ -133,7 +138,9 @@ export function QuestionSectionEditor({
     <div className="rounded-lg border p-4 space-y-4">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <GripVertical className="size-4 text-muted-foreground" />
+          <div {...dragHandleProps} className="cursor-grab">
+            <GripVertical className="size-4 text-muted-foreground" />
+          </div>
           <h4 className="font-semibold">Section {index + 1}</h4>
         </div>
         <Button
@@ -244,6 +251,7 @@ export function QuestionSectionEditor({
                   correctAnswer={q.correctAnswer}
                   wordLimit={q.wordLimit}
                   questionId={q.id}
+                  exerciseId={exerciseId}
                   onChange={(opts, ans, wl) =>
                     handleEditorChange(q, opts, ans, wl)
                   }

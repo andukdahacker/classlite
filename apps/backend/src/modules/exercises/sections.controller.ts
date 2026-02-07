@@ -6,6 +6,8 @@ import type {
   UpdateQuestionSectionInput,
   CreateQuestionInput,
   UpdateQuestionInput,
+  ReorderSectionsInput,
+  ReorderSectionsResponse,
 } from "@workspace/types";
 import { JwtPayload } from "jsonwebtoken";
 import { SectionsService } from "./sections.service.js";
@@ -82,6 +84,25 @@ export class SectionsController {
     await this.sectionsService.deleteSection(centerId, exerciseId, sectionId);
     return {
       message: "Section deleted successfully",
+    };
+  }
+
+  async reorderSections(
+    exerciseId: string,
+    input: ReorderSectionsInput,
+    user: JwtPayload,
+  ): Promise<ReorderSectionsResponse> {
+    const centerId = user.centerId;
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
+
+    const sections = await this.sectionsService.reorderSections(
+      centerId,
+      exerciseId,
+      input,
+    );
+    return {
+      data: sections,
+      message: "Sections reordered successfully",
     };
   }
 

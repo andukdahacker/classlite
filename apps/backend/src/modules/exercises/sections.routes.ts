@@ -3,12 +3,15 @@ import {
   UpdateQuestionSectionSchema,
   QuestionSectionResponseSchema,
   QuestionSectionListResponseSchema,
+  ReorderSectionsSchema,
+  ReorderSectionsResponseSchema,
   CreateQuestionSchema,
   UpdateQuestionSchema,
   QuestionResponseSchema,
   ErrorResponseSchema,
   CreateQuestionSectionInput,
   UpdateQuestionSectionInput,
+  ReorderSectionsInput,
   CreateQuestionInput,
   UpdateQuestionInput,
 } from "@workspace/types";
@@ -122,6 +125,58 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         return reply
           .status(500)
           .send({ message: "Failed to create section" });
+      }
+    },
+  });
+
+  // PATCH /:exerciseId/sections/reorder - Reorder sections
+  // Must be registered before /:exerciseId/sections/:sectionId to avoid route conflict
+  api.patch("/:exerciseId/sections/reorder", {
+    schema: {
+      params: z.object({
+        exerciseId: z.string(),
+      }),
+      body: ReorderSectionsSchema,
+      response: {
+        200: ReorderSectionsResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (
+      request: FastifyRequest<{
+        Params: { exerciseId: string };
+        Body: ReorderSectionsInput;
+      }>,
+      reply,
+    ) => {
+      try {
+        const result = await sectionsController.reorderSections(
+          request.params.exerciseId,
+          request.body,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply
+            .status(error.statusCode as 400)
+            .send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply
+            .status(prismaErr.statusCode as 400)
+            .send({ message: prismaErr.message });
+        }
+        return reply
+          .status(500)
+          .send({ message: "Failed to reorder sections" });
       }
     },
   });

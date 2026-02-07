@@ -6,6 +6,7 @@ import type {
   CreateQuestionInput,
   UpdateQuestionInput,
   Question,
+  ReorderSectionsInput,
 } from "@workspace/types";
 import { AppError } from "../../errors/app-error.js";
 
@@ -146,6 +147,62 @@ export class SectionsService {
     }
 
     await db.questionSection.delete({ where: { id: sectionId } });
+  }
+
+  async reorderSections(
+    centerId: string,
+    exerciseId: string,
+    input: ReorderSectionsInput,
+  ): Promise<QuestionSection[]> {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const exercise = await db.exercise.findUnique({
+      where: { id: exerciseId },
+    });
+    if (!exercise) {
+      throw AppError.notFound("Exercise not found");
+    }
+    if (exercise.status !== "DRAFT") {
+      throw AppError.badRequest(
+        "Sections can only be reordered on draft exercises",
+      );
+    }
+
+    // Verify all section IDs belong to this exercise
+    const existingSections = await db.questionSection.findMany({
+      where: { exerciseId },
+      select: { id: true },
+    });
+    const existingIds = new Set(existingSections.map((s) => s.id));
+
+    for (const id of input.sectionIds) {
+      if (!existingIds.has(id)) {
+        throw AppError.badRequest(`Section ${id} does not belong to this exercise`);
+      }
+    }
+    if (input.sectionIds.length !== existingSections.length) {
+      throw AppError.badRequest(
+        "sectionIds must include all sections of the exercise",
+      );
+    }
+
+    // Update all orderIndex values in a transaction
+    await db.$transaction(
+      input.sectionIds.map((id, idx) =>
+        db.questionSection.update({
+          where: { id },
+          data: { orderIndex: idx },
+        }),
+      ),
+    );
+
+    return await db.questionSection.findMany({
+      where: { exerciseId },
+      orderBy: { orderIndex: "asc" },
+      include: {
+        questions: { orderBy: { orderIndex: "asc" } },
+      },
+    });
   }
 
   // --- Question operations ---
