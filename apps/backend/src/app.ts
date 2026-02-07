@@ -85,6 +85,9 @@ export const buildApp = async () => {
         PLATFORM_ADMIN_API_KEY: {
           type: "string",
         },
+        FIREBASE_STORAGE_BUCKET: {
+          type: "string",
+        },
         EMAIL_FROM: {
           type: "string",
         },

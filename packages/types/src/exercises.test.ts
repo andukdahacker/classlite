@@ -12,6 +12,10 @@ import {
   WordBankAnswerSchema,
   MatchingOptionsSchema,
   MatchingAnswerSchema,
+  NoteTableFlowchartOptionsSchema,
+  NoteTableFlowchartAnswerSchema,
+  DiagramLabellingOptionsSchema,
+  DiagramLabellingAnswerSchema,
   QuestionOptionsSchema,
   CreateQuestionSchema,
   UpdateQuestionSchema,
@@ -302,6 +306,208 @@ describe("Exercise Type-Helper Schemas", () => {
     });
   });
 
+  // --- NoteTableFlowchartOptionsSchema (R13) ---
+  describe("NoteTableFlowchartOptionsSchema", () => {
+    it("should validate note sub-format", () => {
+      const result = NoteTableFlowchartOptionsSchema.safeParse({
+        subFormat: "note",
+        structure: "Main Topic\n• Point ___1___\n• Point ___2___",
+        wordLimit: 2,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate table sub-format", () => {
+      const result = NoteTableFlowchartOptionsSchema.safeParse({
+        subFormat: "table",
+        structure: '{"columns":["A","B"],"rows":[["___1___","text"]]}',
+        wordLimit: 3,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate flowchart sub-format", () => {
+      const result = NoteTableFlowchartOptionsSchema.safeParse({
+        subFormat: "flowchart",
+        structure: '{"steps":["Step ___1___","Step ___2___"]}',
+        wordLimit: 2,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should default wordLimit to 2", () => {
+      const result = NoteTableFlowchartOptionsSchema.safeParse({
+        subFormat: "note",
+        structure: "Some text ___1___",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.wordLimit).toBe(2);
+      }
+    });
+
+    it("should reject invalid sub-format", () => {
+      const result = NoteTableFlowchartOptionsSchema.safeParse({
+        subFormat: "diagram",
+        structure: "text",
+        wordLimit: 2,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject empty structure", () => {
+      const result = NoteTableFlowchartOptionsSchema.safeParse({
+        subFormat: "note",
+        structure: "",
+        wordLimit: 2,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject missing structure", () => {
+      const result = NoteTableFlowchartOptionsSchema.safeParse({
+        subFormat: "note",
+        wordLimit: 2,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject wordLimit below 1", () => {
+      const result = NoteTableFlowchartOptionsSchema.safeParse({
+        subFormat: "note",
+        structure: "text ___1___",
+        wordLimit: 0,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject wordLimit above 5", () => {
+      const result = NoteTableFlowchartOptionsSchema.safeParse({
+        subFormat: "note",
+        structure: "text ___1___",
+        wordLimit: 6,
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  // --- NoteTableFlowchartAnswerSchema (R13) ---
+  describe("NoteTableFlowchartAnswerSchema", () => {
+    it("should validate blanks with string keys and values", () => {
+      const result = NoteTableFlowchartAnswerSchema.safeParse({
+        blanks: { "1": "fifteen percent", "2": "developing nations", "3": "carbon emissions" },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept empty blanks (structure valid)", () => {
+      const result = NoteTableFlowchartAnswerSchema.safeParse({ blanks: {} });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject missing blanks field", () => {
+      const result = NoteTableFlowchartAnswerSchema.safeParse({});
+      expect(result.success).toBe(false);
+    });
+  });
+
+  // --- DiagramLabellingOptionsSchema (R14) ---
+  describe("DiagramLabellingOptionsSchema", () => {
+    it("should validate without word bank", () => {
+      const result = DiagramLabellingOptionsSchema.safeParse({
+        diagramUrl: "https://storage.example.com/diagram.png",
+        labelPositions: ["outer shell", "membrane", "air cell"],
+        wordLimit: 2,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate with word bank", () => {
+      const result = DiagramLabellingOptionsSchema.safeParse({
+        diagramUrl: "https://storage.example.com/diagram.png",
+        labelPositions: ["Position 1", "Position 2"],
+        wordBank: ["shell", "membrane", "air cell", "yolk"],
+        wordLimit: 2,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should default wordLimit to 2", () => {
+      const result = DiagramLabellingOptionsSchema.safeParse({
+        diagramUrl: "https://storage.example.com/diagram.png",
+        labelPositions: ["Position 1"],
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.wordLimit).toBe(2);
+      }
+    });
+
+    it("should reject empty diagramUrl", () => {
+      const result = DiagramLabellingOptionsSchema.safeParse({
+        diagramUrl: "",
+        labelPositions: ["Position 1"],
+        wordLimit: 2,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject empty labelPositions", () => {
+      const result = DiagramLabellingOptionsSchema.safeParse({
+        diagramUrl: "https://example.com/img.png",
+        labelPositions: [],
+        wordLimit: 2,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject missing diagramUrl", () => {
+      const result = DiagramLabellingOptionsSchema.safeParse({
+        labelPositions: ["Position 1"],
+        wordLimit: 2,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject wordLimit below 1", () => {
+      const result = DiagramLabellingOptionsSchema.safeParse({
+        diagramUrl: "https://example.com/img.png",
+        labelPositions: ["Position 1"],
+        wordLimit: 0,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject wordLimit above 5", () => {
+      const result = DiagramLabellingOptionsSchema.safeParse({
+        diagramUrl: "https://example.com/img.png",
+        labelPositions: ["Position 1"],
+        wordLimit: 6,
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  // --- DiagramLabellingAnswerSchema (R14) ---
+  describe("DiagramLabellingAnswerSchema", () => {
+    it("should validate labels with index keys", () => {
+      const result = DiagramLabellingAnswerSchema.safeParse({
+        labels: { "0": "outer shell", "1": "membrane", "2": "air cell" },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept empty labels (structure valid)", () => {
+      const result = DiagramLabellingAnswerSchema.safeParse({ labels: {} });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject missing labels field", () => {
+      const result = DiagramLabellingAnswerSchema.safeParse({});
+      expect(result.success).toBe(false);
+    });
+  });
+
   // --- Task 1.5: QuestionOptionsSchema discriminated union ---
   describe("QuestionOptionsSchema", () => {
     it("should validate R1_MCQ_SINGLE options + answer", () => {
@@ -498,6 +704,108 @@ describe("Exercise Type-Helper Schemas", () => {
           targetItems: ["Heading 1"],
         },
         correctAnswer: { matches: {} },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should validate R13_NOTE_TABLE_FLOWCHART note sub-format", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "R13_NOTE_TABLE_FLOWCHART",
+        options: {
+          subFormat: "note",
+          structure: "Main Topic\n• Impact ___1___\n• Solution ___2___",
+          wordLimit: 2,
+        },
+        correctAnswer: {
+          blanks: { "1": "fifteen percent", "2": "renewable energy" },
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate R13_NOTE_TABLE_FLOWCHART table sub-format", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "R13_NOTE_TABLE_FLOWCHART",
+        options: {
+          subFormat: "table",
+          structure: '{"columns":["Country","Population"],"rows":[["Vietnam","___1___"]]}',
+          wordLimit: 3,
+        },
+        correctAnswer: {
+          blanks: { "1": "98 million" },
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate R13_NOTE_TABLE_FLOWCHART flowchart sub-format", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "R13_NOTE_TABLE_FLOWCHART",
+        options: {
+          subFormat: "flowchart",
+          structure: '{"steps":["Seeds planted in ___1___","Roots absorb ___2___"]}',
+          wordLimit: 2,
+        },
+        correctAnswer: {
+          blanks: { "1": "moist soil", "2": "minerals" },
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject R13 with empty structure", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "R13_NOTE_TABLE_FLOWCHART",
+        options: {
+          subFormat: "note",
+          structure: "",
+          wordLimit: 2,
+        },
+        correctAnswer: { blanks: {} },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should validate R14_DIAGRAM_LABELLING without word bank", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "R14_DIAGRAM_LABELLING",
+        options: {
+          diagramUrl: "https://storage.example.com/diagram.png",
+          labelPositions: ["outer shell", "membrane", "air cell"],
+          wordLimit: 2,
+        },
+        correctAnswer: {
+          labels: { "0": "outer shell", "1": "membrane", "2": "air cell" },
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate R14_DIAGRAM_LABELLING with word bank", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "R14_DIAGRAM_LABELLING",
+        options: {
+          diagramUrl: "https://storage.example.com/diagram.png",
+          labelPositions: ["Position 1", "Position 2"],
+          wordBank: ["shell", "membrane", "air cell", "yolk"],
+          wordLimit: 2,
+        },
+        correctAnswer: {
+          labels: { "0": "shell", "1": "air cell" },
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject R14 with empty labelPositions", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "R14_DIAGRAM_LABELLING",
+        options: {
+          diagramUrl: "https://storage.example.com/diagram.png",
+          labelPositions: [],
+          wordLimit: 2,
+        },
+        correctAnswer: { labels: {} },
       });
       expect(result.success).toBe(false);
     });

@@ -5,6 +5,7 @@ import type {
   AutosaveExerciseInput,
   Exercise,
 } from "@workspace/types";
+import type { Storage } from "firebase-admin/storage";
 import { AppError } from "../../errors/app-error.js";
 
 const EXERCISE_INCLUDE = {
@@ -18,7 +19,11 @@ const EXERCISE_INCLUDE = {
 };
 
 export class ExercisesService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly firebaseStorage?: Storage,
+    private readonly bucketName?: string,
+  ) {}
 
   private async verifyDraftExercise(
     db: ReturnType<typeof getTenantedClient>,
@@ -207,5 +212,32 @@ export class ExercisesService {
       data: { status: "ARCHIVED" },
       include: EXERCISE_INCLUDE,
     });
+  }
+
+  async uploadDiagram(
+    centerId: string,
+    exerciseId: string,
+    fileBuffer: Buffer,
+    contentType: string,
+  ): Promise<string> {
+    if (!this.firebaseStorage || !this.bucketName) {
+      throw new Error("Storage not configured");
+    }
+
+    const ext = contentType.split("/")[1]?.replace("svg+xml", "svg") ?? "png";
+    const bucket = this.firebaseStorage.bucket(this.bucketName);
+    const filePath = `exercises/${centerId}/${exerciseId}/diagrams/${Date.now()}.${ext}`;
+    const file = bucket.file(filePath);
+
+    await file.save(fileBuffer, {
+      metadata: {
+        contentType,
+        cacheControl: "public, max-age=31536000",
+      },
+    });
+
+    await file.makePublic();
+
+    return `https://storage.googleapis.com/${bucket.name}/${filePath}`;
   }
 }

@@ -5,6 +5,8 @@ import { TFNGEditor } from "./TFNGEditor";
 import { TextInputEditor } from "./TextInputEditor";
 import { WordBankEditor } from "./WordBankEditor";
 import { MatchingEditor } from "./MatchingEditor";
+import { NoteTableFlowchartEditor } from "./NoteTableFlowchartEditor";
+import { DiagramLabellingEditor } from "./DiagramLabellingEditor";
 
 interface QuestionEditorFactoryProps {
   sectionType: IeltsQuestionType;
@@ -12,6 +14,7 @@ interface QuestionEditorFactoryProps {
   correctAnswer: unknown;
   wordLimit?: number | null;
   questionId?: string;
+  exerciseId?: string;
   onChange: (options: unknown, correctAnswer: unknown, wordLimit?: number | null) => void;
 }
 
@@ -46,6 +49,23 @@ const LenientMatchingOptions = z.object({
 const LenientMatchingAnswer = z.object({
   matches: z.record(z.string(), z.string()),
 });
+const LenientNoteTableFlowchartOptions = z.object({
+  subFormat: z.enum(["note", "table", "flowchart"]).default("note"),
+  structure: z.string(),
+  wordLimit: z.number().default(2),
+});
+const LenientNoteTableFlowchartAnswer = z.object({
+  blanks: z.record(z.string(), z.string()),
+});
+const LenientDiagramLabellingOptions = z.object({
+  diagramUrl: z.string(),
+  labelPositions: z.array(z.string()),
+  wordBank: z.array(z.string()).optional(),
+  wordLimit: z.number().default(2),
+});
+const LenientDiagramLabellingAnswer = z.object({
+  labels: z.record(z.string(), z.string()),
+});
 
 /** Safely parse unknown data, returning null on failure */
 function safeParse<T>(schema: { safeParse: (data: unknown) => { success: boolean; data?: T } }, data: unknown): T | null {
@@ -60,6 +80,7 @@ export function QuestionEditorFactory({
   correctAnswer,
   wordLimit,
   questionId,
+  exerciseId,
   onChange,
 }: QuestionEditorFactoryProps) {
   switch (sectionType) {
@@ -114,6 +135,25 @@ export function QuestionEditorFactory({
           sectionType={sectionType}
           options={safeParse(LenientMatchingOptions, options)}
           correctAnswer={safeParse(LenientMatchingAnswer, correctAnswer)}
+          onChange={(opts, ans) => onChange(opts, ans)}
+        />
+      );
+
+    case "R13_NOTE_TABLE_FLOWCHART":
+      return (
+        <NoteTableFlowchartEditor
+          options={safeParse(LenientNoteTableFlowchartOptions, options)}
+          correctAnswer={safeParse(LenientNoteTableFlowchartAnswer, correctAnswer)}
+          onChange={(opts, ans) => onChange(opts, ans)}
+        />
+      );
+
+    case "R14_DIAGRAM_LABELLING":
+      return (
+        <DiagramLabellingEditor
+          options={safeParse(LenientDiagramLabellingOptions, options)}
+          correctAnswer={safeParse(LenientDiagramLabellingAnswer, correctAnswer)}
+          exerciseId={exerciseId}
           onChange={(opts, ans) => onChange(opts, ans)}
         />
       );

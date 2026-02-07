@@ -4,6 +4,8 @@ import { TFNGPreview } from "./TFNGPreview";
 import { TextInputPreview } from "./TextInputPreview";
 import { WordBankPreview } from "./WordBankPreview";
 import { MatchingPreview } from "./MatchingPreview";
+import { NoteTableFlowchartPreview } from "./NoteTableFlowchartPreview";
+import { DiagramLabellingPreview } from "./DiagramLabellingPreview";
 
 interface QuestionPreviewFactoryProps {
   sectionType: IeltsQuestionType;
@@ -66,6 +68,22 @@ export function QuestionPreviewFactory({
           sectionType={sectionType}
           questionIndex={questionIndex}
           options={question.options as { sourceItems: string[]; targetItems: string[] } | null}
+        />
+      );
+
+    case "R13_NOTE_TABLE_FLOWCHART":
+      return (
+        <NoteTableFlowchartPreview
+          questionIndex={questionIndex}
+          options={question.options as { subFormat: "note" | "table" | "flowchart"; structure: string; wordLimit?: number } | null}
+        />
+      );
+
+    case "R14_DIAGRAM_LABELLING":
+      return (
+        <DiagramLabellingPreview
+          questionIndex={questionIndex}
+          options={question.options as { diagramUrl: string; labelPositions: string[]; wordBank?: string[]; wordLimit?: number } | null}
         />
       );
 

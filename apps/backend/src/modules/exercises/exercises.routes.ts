@@ -11,7 +11,7 @@ import {
   ExerciseSkillSchema,
   ExerciseStatusSchema,
 } from "@workspace/types";
-import { FastifyInstance, FastifyRequest } from "fastify";
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireRole } from "../../middlewares/role.middleware.js";
@@ -19,12 +19,18 @@ import { AppError } from "../../errors/app-error.js";
 import { mapPrismaError } from "../../errors/prisma-errors.js";
 import { ExercisesController } from "./exercises.controller.js";
 import { ExercisesService } from "./exercises.service.js";
+import Env from "../../env.js";
 import z from "zod";
 
 export async function exercisesRoutes(fastify: FastifyInstance) {
+  const env = fastify.getEnvs<Env>();
   const api = fastify.withTypeProvider<ZodTypeProvider>();
 
-  const exercisesService = new ExercisesService(fastify.prisma);
+  const exercisesService = new ExercisesService(
+    fastify.prisma,
+    fastify.firebaseStorage,
+    env.FIREBASE_STORAGE_BUCKET,
+  );
   const exercisesController = new ExercisesController(exercisesService);
 
   // All exercises routes require authentication
@@ -395,6 +401,86 @@ export async function exercisesRoutes(fastify: FastifyInstance) {
         return reply
           .status(500)
           .send({ message: "Failed to archive exercise" });
+      }
+    },
+  });
+
+  // POST /:exerciseId/diagram - Upload diagram image for R14
+  api.post("/:exerciseId/diagram", {
+    schema: {
+      params: z.object({
+        exerciseId: z.string(),
+      }),
+      response: {
+        200: z.object({
+          data: z.object({ diagramUrl: z.string() }),
+          message: z.string(),
+        }),
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { exerciseId: string } }>,
+      reply: FastifyReply,
+    ) => {
+      const { exerciseId } = request.params;
+      const centerId = request.jwtPayload?.centerId;
+
+      if (!centerId) {
+        return reply.status(401).send({ message: "Unauthorized" });
+      }
+
+      // Verify exercise belongs to the user's center (security: prevent cross-tenant uploads)
+      try {
+        await exercisesService.getExercise(centerId, exerciseId);
+      } catch {
+        return reply.status(404).send({ message: "Exercise not found" });
+      }
+
+      // Route-level file size override: 5MB for diagrams (global is 2MB)
+      const data = await request.file({
+        limits: { fileSize: 5 * 1024 * 1024 },
+      });
+
+      if (!data) {
+        return reply.status(400).send({ message: "No file uploaded" });
+      }
+
+      const allowedMimetypes = [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/svg+xml",
+      ];
+      if (!allowedMimetypes.includes(data.mimetype)) {
+        return reply.status(400).send({
+          message:
+            "Invalid file type. Only PNG, JPG, and SVG are allowed.",
+        });
+      }
+
+      try {
+        const buffer = await data.toBuffer();
+        const diagramUrl = await exercisesService.uploadDiagram(
+          centerId,
+          exerciseId,
+          buffer,
+          data.mimetype,
+        );
+
+        return reply.status(200).send({
+          data: { diagramUrl },
+          message: "Diagram uploaded",
+        });
+      } catch (error: unknown) {
+        request.log.error(error);
+        return reply
+          .status(500)
+          .send({ message: "Failed to upload diagram" });
       }
     },
   });

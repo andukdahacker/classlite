@@ -132,6 +132,35 @@ export const MatchingAnswerSchema = z.object({
 });
 export type MatchingAnswer = z.infer<typeof MatchingAnswerSchema>;
 
+// Note/Table/Flowchart Completion options (R13)
+export const NoteTableFlowchartOptionsSchema = z.object({
+  subFormat: z.enum(["note", "table", "flowchart"]),
+  structure: z.string().min(1),
+  wordLimit: z.number().int().min(1).max(5).default(2),
+});
+export type NoteTableFlowchartOptions = z.infer<typeof NoteTableFlowchartOptionsSchema>;
+
+// Note/Table/Flowchart Completion answer (R13)
+export const NoteTableFlowchartAnswerSchema = z.object({
+  blanks: z.record(z.string(), z.string()),
+});
+export type NoteTableFlowchartAnswer = z.infer<typeof NoteTableFlowchartAnswerSchema>;
+
+// Diagram Labelling options (R14)
+export const DiagramLabellingOptionsSchema = z.object({
+  diagramUrl: z.string().min(1),
+  labelPositions: z.array(z.string()).min(1),
+  wordBank: z.array(z.string()).optional(),
+  wordLimit: z.number().int().min(1).max(5).default(2),
+});
+export type DiagramLabellingOptions = z.infer<typeof DiagramLabellingOptionsSchema>;
+
+// Diagram Labelling answer (R14)
+export const DiagramLabellingAnswerSchema = z.object({
+  labels: z.record(z.string(), z.string()),
+});
+export type DiagramLabellingAnswer = z.infer<typeof DiagramLabellingAnswerSchema>;
+
 // Task 1.5: Discriminated union — validates options/correctAnswer per question type
 export const QuestionOptionsSchema = z.discriminatedUnion("questionType", [
   // R1: MCQ Single
@@ -206,6 +235,18 @@ export const QuestionOptionsSchema = z.discriminatedUnion("questionType", [
     options: MatchingOptionsSchema,
     correctAnswer: MatchingAnswerSchema,
   }),
+  // R13: Note/Table/Flowchart Completion
+  z.object({
+    questionType: z.literal("R13_NOTE_TABLE_FLOWCHART"),
+    options: NoteTableFlowchartOptionsSchema,
+    correctAnswer: NoteTableFlowchartAnswerSchema,
+  }),
+  // R14: Diagram Labelling
+  z.object({
+    questionType: z.literal("R14_DIAGRAM_LABELLING"),
+    options: DiagramLabellingOptionsSchema,
+    correctAnswer: DiagramLabellingAnswerSchema,
+  }),
 ]);
 export type QuestionOptions = z.infer<typeof QuestionOptionsSchema>;
 
@@ -267,6 +308,11 @@ export const UpdateQuestionSectionSchema = CreateQuestionSectionSchema.partial()
 export type UpdateQuestionSectionInput = z.infer<
   typeof UpdateQuestionSectionSchema
 >;
+
+export const ReorderSectionsSchema = z.object({
+  sectionIds: z.array(z.string()).min(1),
+});
+export type ReorderSectionsInput = z.infer<typeof ReorderSectionsSchema>;
 
 // --- Exercise ---
 
