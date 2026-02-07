@@ -52,6 +52,126 @@ export const IeltsQuestionTypeSchema = z.enum([
 ]);
 export type IeltsQuestionType = z.infer<typeof IeltsQuestionTypeSchema>;
 
+// --- Type-Helper Schemas (for editor type safety, not API validation) ---
+
+// Task 1.1: MCQ option structure
+export const MCQOptionSchema = z.object({
+  label: z.string().min(1),
+  text: z.string().min(1),
+});
+export type MCQOption = z.infer<typeof MCQOptionSchema>;
+
+// R1: MCQ Single options
+export const MCQOptionsSchema = z.object({
+  items: z.array(MCQOptionSchema).min(2),
+});
+export type MCQOptions = z.infer<typeof MCQOptionsSchema>;
+
+// R2: MCQ Multi options (extends MCQ with maxSelections)
+export const MCQMultiOptionsSchema = z.object({
+  items: z.array(MCQOptionSchema).min(2),
+  maxSelections: z.number().int().min(1),
+});
+export type MCQMultiOptions = z.infer<typeof MCQMultiOptionsSchema>;
+
+// R1: MCQ Single answer
+export const MCQSingleAnswerSchema = z.object({
+  answer: z.string().min(1),
+});
+export type MCQSingleAnswer = z.infer<typeof MCQSingleAnswerSchema>;
+
+// R2: MCQ Multi answer
+export const MCQMultiAnswerSchema = z.object({
+  answers: z.array(z.string().min(1)).min(1),
+});
+export type MCQMultiAnswer = z.infer<typeof MCQMultiAnswerSchema>;
+
+// Task 1.4: TFNG answer (R3)
+export const TFNGAnswerSchema = z.object({
+  answer: z.enum(["TRUE", "FALSE", "NOT_GIVEN"]),
+});
+export type TFNGAnswer = z.infer<typeof TFNGAnswerSchema>;
+
+// YNNG answer (R4)
+export const YNNGAnswerSchema = z.object({
+  answer: z.enum(["YES", "NO", "NOT_GIVEN"]),
+});
+export type YNNGAnswer = z.infer<typeof YNNGAnswerSchema>;
+
+// Task 1.3: Text answer (R5/R6/R8)
+export const TextAnswerSchema = z.object({
+  answer: z.string().min(1),
+  acceptedVariants: z.array(z.string()),
+  caseSensitive: z.boolean(),
+});
+export type TextAnswer = z.infer<typeof TextAnswerSchema>;
+
+// Task 1.2: Word bank options (R7)
+export const WordBankOptionsSchema = z.object({
+  wordBank: z.array(z.string()).min(1),
+  summaryText: z.string().min(1),
+});
+export type WordBankOptions = z.infer<typeof WordBankOptionsSchema>;
+
+// Word bank answer (R7)
+export const WordBankAnswerSchema = z.object({
+  blanks: z.record(z.string(), z.string()),
+});
+export type WordBankAnswer = z.infer<typeof WordBankAnswerSchema>;
+
+// Task 1.5: Discriminated union — validates options/correctAnswer per question type
+export const QuestionOptionsSchema = z.discriminatedUnion("questionType", [
+  // R1: MCQ Single
+  z.object({
+    questionType: z.literal("R1_MCQ_SINGLE"),
+    options: MCQOptionsSchema,
+    correctAnswer: MCQSingleAnswerSchema,
+  }),
+  // R2: MCQ Multi
+  z.object({
+    questionType: z.literal("R2_MCQ_MULTI"),
+    options: MCQMultiOptionsSchema,
+    correctAnswer: MCQMultiAnswerSchema,
+  }),
+  // R3: True/False/Not Given
+  z.object({
+    questionType: z.literal("R3_TFNG"),
+    options: z.null(),
+    correctAnswer: TFNGAnswerSchema,
+  }),
+  // R4: Yes/No/Not Given
+  z.object({
+    questionType: z.literal("R4_YNNG"),
+    options: z.null(),
+    correctAnswer: YNNGAnswerSchema,
+  }),
+  // R5: Sentence Completion
+  z.object({
+    questionType: z.literal("R5_SENTENCE_COMPLETION"),
+    options: z.null(),
+    correctAnswer: TextAnswerSchema,
+  }),
+  // R6: Short Answer
+  z.object({
+    questionType: z.literal("R6_SHORT_ANSWER"),
+    options: z.null(),
+    correctAnswer: TextAnswerSchema,
+  }),
+  // R7: Summary Word Bank
+  z.object({
+    questionType: z.literal("R7_SUMMARY_WORD_BANK"),
+    options: WordBankOptionsSchema,
+    correctAnswer: WordBankAnswerSchema,
+  }),
+  // R8: Summary Passage
+  z.object({
+    questionType: z.literal("R8_SUMMARY_PASSAGE"),
+    options: z.null(),
+    correctAnswer: TextAnswerSchema,
+  }),
+]);
+export type QuestionOptions = z.infer<typeof QuestionOptionsSchema>;
+
 // --- Question ---
 
 export const QuestionSchema = z.object({

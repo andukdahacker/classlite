@@ -5,6 +5,7 @@ import type {
   ExerciseSkill,
   IeltsQuestionType,
   CreateQuestionInput,
+  UpdateQuestionInput,
 } from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
@@ -32,6 +33,7 @@ import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { PassageEditor } from "./PassageEditor";
 import { QuestionSectionEditor } from "./QuestionSectionEditor";
+import { QuestionPreviewFactory } from "./question-types/QuestionPreviewFactory";
 import { SkillSelector } from "./SkillSelector";
 import type { Exercise } from "@workspace/types";
 
@@ -102,12 +104,12 @@ function ExercisePreview({
               </p>
             )}
             {(section.questions ?? []).map((q, qIdx) => (
-              <div key={q.id} className="flex gap-3 pl-4">
-                <span className="text-sm font-medium min-w-[2rem]">
-                  {qIdx + 1}.
-                </span>
-                <span className="text-sm">{q.questionText}</span>
-              </div>
+              <QuestionPreviewFactory
+                key={q.id}
+                sectionType={section.sectionType}
+                question={q}
+                questionIndex={qIdx}
+              />
             ))}
           </div>
         ))}
@@ -148,6 +150,7 @@ export function ExerciseEditor() {
     updateSection,
     deleteSection,
     createQuestion,
+    updateQuestion,
     deleteQuestion,
   } = useSections(id);
 
@@ -294,6 +297,18 @@ export function ExerciseEditor() {
     }
   };
 
+  const handleUpdateQuestion = async (
+    sectionId: string,
+    questionId: string,
+    input: UpdateQuestionInput,
+  ) => {
+    try {
+      await updateQuestion({ sectionId, questionId, input });
+    } catch {
+      toast.error("Failed to update question");
+    }
+  };
+
   const handleDeleteQuestion = async (
     sectionId: string,
     questionId: string,
@@ -427,6 +442,7 @@ export function ExerciseEditor() {
             onUpdateSection={handleUpdateSection}
             onDeleteSection={setDeleteSectionId}
             onCreateQuestion={handleCreateQuestion}
+            onUpdateQuestion={handleUpdateQuestion}
             onDeleteQuestion={handleDeleteQuestion}
           />
         ))}

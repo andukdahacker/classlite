@@ -4,6 +4,7 @@ import type {
   QuestionSection,
   Question,
   CreateQuestionInput,
+  UpdateQuestionInput,
 } from "@workspace/types";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
@@ -15,8 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, ChevronRight, GripVertical, Plus, Trash2 } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { QuestionEditorFactory } from "./question-types/QuestionEditorFactory";
 
 const QUESTION_TYPES_BY_SKILL: Record<
   ExerciseSkill,
@@ -65,6 +67,7 @@ interface QuestionSectionEditorProps {
   onUpdateSection: (sectionId: string, data: { sectionType?: IeltsQuestionType; instructions?: string | null }) => void;
   onDeleteSection: (sectionId: string) => void;
   onCreateQuestion: (sectionId: string, input: CreateQuestionInput) => void;
+  onUpdateQuestion: (sectionId: string, questionId: string, input: UpdateQuestionInput) => void;
   onDeleteQuestion: (sectionId: string, questionId: string) => void;
 }
 
@@ -75,10 +78,26 @@ export function QuestionSectionEditor({
   onUpdateSection,
   onDeleteSection,
   onCreateQuestion,
+  onUpdateQuestion,
   onDeleteQuestion,
 }: QuestionSectionEditorProps) {
   const [newQuestionText, setNewQuestionText] = useState("");
+  const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
   const questionTypes = QUESTION_TYPES_BY_SKILL[skill] ?? [];
+  const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const debouncedUpdate = useCallback(
+    (questionId: string, input: UpdateQuestionInput) => {
+      const existing = debounceTimers.current.get(questionId);
+      if (existing) clearTimeout(existing);
+      const timer = setTimeout(() => {
+        debounceTimers.current.delete(questionId);
+        onUpdateQuestion(section.id, questionId, input);
+      }, 500);
+      debounceTimers.current.set(questionId, timer);
+    },
+    [section.id, onUpdateQuestion],
+  );
 
   const handleAddQuestion = () => {
     if (!newQuestionText.trim()) return;
@@ -88,6 +107,26 @@ export function QuestionSectionEditor({
       orderIndex: section.questions?.length ?? 0,
     });
     setNewQuestionText("");
+  };
+
+  const handleEditorChange = (
+    question: Question,
+    options: unknown,
+    correctAnswer: unknown,
+    wordLimit?: number | null,
+  ) => {
+    const input: UpdateQuestionInput = {
+      options,
+      correctAnswer,
+    };
+    if (wordLimit !== undefined) {
+      input.wordLimit = wordLimit;
+    }
+    debouncedUpdate(question.id, input);
+  };
+
+  const toggleExpand = (questionId: string) => {
+    setExpandedQuestionId((prev) => (prev === questionId ? null : questionId));
   };
 
   return (
@@ -148,22 +187,69 @@ export function QuestionSectionEditor({
       <div className="space-y-2">
         <Label>Questions</Label>
         {(section.questions ?? []).map((q: Question, qIdx: number) => (
-          <div
-            key={q.id}
-            className="flex items-center gap-2 rounded border px-3 py-2"
-          >
-            <span className="text-sm font-medium text-muted-foreground min-w-[2rem]">
-              Q{qIdx + 1}
-            </span>
-            <span className="flex-1 text-sm">{q.questionText}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 text-destructive hover:text-destructive"
-              onClick={() => onDeleteQuestion(section.id, q.id)}
+          <div key={q.id} className="rounded border">
+            {/* Question header — click to expand */}
+            <div
+              role="button"
+              tabIndex={0}
+              className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-muted/50 cursor-pointer"
+              onClick={() => toggleExpand(q.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  toggleExpand(q.id);
+                }
+              }}
             >
-              <Trash2 className="size-3" />
-            </Button>
+              {expandedQuestionId === q.id ? (
+                <ChevronDown className="size-3 text-muted-foreground shrink-0" />
+              ) : (
+                <ChevronRight className="size-3 text-muted-foreground shrink-0" />
+              )}
+              <span className="text-sm font-medium text-muted-foreground min-w-[2rem]">
+                Q{qIdx + 1}
+              </span>
+              <span className="flex-1 text-sm truncate">{q.questionText}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 text-destructive hover:text-destructive shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteQuestion(section.id, q.id);
+                }}
+              >
+                <Trash2 className="size-3" />
+              </Button>
+            </div>
+
+            {/* Expanded inline editor */}
+            {expandedQuestionId === q.id && (
+              <div className="px-3 pb-3 pt-1 border-t space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Question Text</Label>
+                  <Input
+                    defaultValue={q.questionText}
+                    onChange={(e) =>
+                      debouncedUpdate(q.id, {
+                        questionText: e.target.value,
+                      })
+                    }
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <QuestionEditorFactory
+                  sectionType={section.sectionType}
+                  options={q.options}
+                  correctAnswer={q.correctAnswer}
+                  wordLimit={q.wordLimit}
+                  questionId={q.id}
+                  onChange={(opts, ans, wl) =>
+                    handleEditorChange(q, opts, ans, wl)
+                  }
+                />
+              </div>
+            )}
           </div>
         ))}
 

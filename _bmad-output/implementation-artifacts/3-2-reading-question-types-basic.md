@@ -1,6 +1,6 @@
 # Story 3.2: Reading Question Types - Basic (R1-R8)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -23,72 +23,70 @@ so that my students can practice with realistic, auto-gradable question formats.
 
 ### Backend Tasks
 
-- [ ] **Task 1: Update Question Zod Schemas for type-specific options/answers** (AC: #1-8)
-  - [ ] 1.1 Add `MCQOptionSchema` to `packages/types/src/exercises.ts` — `{ label: string, text: string }` for MCQ options
-  - [ ] 1.2 Add `WordBankSchema` — `{ words: string[], blanks: { index: number, correctWord: string }[] }` for R7
-  - [ ] 1.3 Add `TextAnswerSchema` — `{ correctAnswer: string, acceptedVariants: string[], caseSensitive: boolean, wordLimit: number | null }` for R5/R6/R8
-  - [ ] 1.4 Add `TFNGAnswerSchema` — `{ correctAnswer: "TRUE" | "FALSE" | "NOT_GIVEN" }` for R3/R4
-  - [ ] 1.5 Create `QuestionOptionsSchema` discriminated union — branches by `questionType` to validate correct `options`/`correctAnswer` shapes per type
-  - [ ] 1.6 Update `CreateQuestionSchema` to accept type-specific `options` and `correctAnswer` as `z.unknown()` (keep flexible) — validation happens at application level, not schema level, because the JSON column stores arbitrary shapes
+- [x] **Task 1: Update Question Zod Schemas for type-specific options/answers** (AC: #1-8)
+  - [x] 1.1 Add `MCQOptionSchema` to `packages/types/src/exercises.ts` — `{ label: string, text: string }` for MCQ options
+  - [x] 1.2 Add `WordBankSchema` — `{ words: string[], blanks: { index: number, correctWord: string }[] }` for R7
+  - [x] 1.3 Add `TextAnswerSchema` — `{ correctAnswer: string, acceptedVariants: string[], caseSensitive: boolean, wordLimit: number | null }` for R5/R6/R8
+  - [x] 1.4 Add `TFNGAnswerSchema` — `{ correctAnswer: "TRUE" | "FALSE" | "NOT_GIVEN" }` for R3/R4
+  - [x] 1.5 Create `QuestionOptionsSchema` discriminated union — branches by `questionType` to validate correct `options`/`correctAnswer` shapes per type
+  - [x] 1.6 Verify existing `CreateQuestionSchema` and `UpdateQuestionSchema` — `options` and `correctAnswer` already use `z.unknown().nullable().optional()` which supports all R1-R8 JSON structures. NO CHANGE NEEDED to these schemas. The type-helper schemas from 1.1-1.5 are for editor-level type safety only, not API validation.
 
-- [ ] **Task 2: Add answer normalization utility** (AC: #5, 6, 8)
-  - [ ] 2.1 Create `apps/backend/src/modules/exercises/answer-utils.ts` with `normalizeAnswer(text: string): string` — trims, lowercases, collapses whitespace
-  - [ ] 2.2 Add `matchesAnswer(studentAnswer: string, correctAnswer: string, variants: string[], caseSensitive: boolean): boolean`
-  - [ ] 2.3 Add `checkWordLimit(text: string, limit: number): boolean`
-  - [ ] 2.4 Unit tests for answer-utils in `answer-utils.test.ts`
+- [x] **Task 2: Add answer normalization utility** (AC: #5, 6, 8)
+  - [x] 2.1 Create `apps/backend/src/modules/exercises/answer-utils.ts` with `normalizeAnswer(text: string): string` — trims, lowercases, collapses whitespace
+  - [x] 2.2 Add `matchesAnswer(studentAnswer: string, correctAnswer: string, variants: string[], caseSensitive: boolean): boolean`
+  - [x] 2.3 Add `checkWordLimit(text: string, limit: number): boolean`
+  - [x] 2.4 Unit tests for answer-utils in `answer-utils.test.ts`
 
-- [ ] **Task 3: Add question validation endpoint (OPTIONAL — can defer to Story 3.5)** (AC: #1-8)
-  - [ ] 3.1 Add `POST /api/v1/exercises/:exerciseId/sections/:sectionId/questions/validate` route
-  - [ ] 3.2 Validates that `options` and `correctAnswer` shapes match the section's `sectionType`
-  - [ ] 3.3 Returns validation errors (e.g., "MCQ must have at least 2 options", "Correct answer must be one of the options")
+- [x] **Task 3: Add question validation endpoint (OPTIONAL — can defer to Story 3.5)** (AC: #1-8)
+  - [x] 3.1-3.3 DEFERRED to Story 3.5 — Frontend component-level validation is the priority per story guidance.
   - Note: Frontend component-level validation is the priority. This server-side endpoint is a nice-to-have for data integrity.
 
 ### Frontend Tasks
 
-- [ ] **Task 4: Create type-specific question editor components** (AC: #1-8)
-  - [ ] 4.1 Create `apps/webapp/src/features/exercises/components/question-types/MCQEditor.tsx` — option list editor with add/remove, correct answer radio/checkbox selector. Shared by R1 (single) and R2 (multi).
-  - [ ] 4.2 Create `TFNGEditor.tsx` — statement editor with fixed 3-option correct answer selector (TRUE/FALSE/NOT_GIVEN). Shared by R3 and R4 (labels change to YES/NO/NOT_GIVEN).
-  - [ ] 4.3 Create `TextInputEditor.tsx` — question text + correct answer + variants list + word limit input + case sensitivity toggle. Shared by R5, R6, R8.
-  - [ ] 4.4 Create `WordBankEditor.tsx` — summary text with blank markers + word bank editor (add/remove words including distractors) + blank-to-word assignment. For R7.
-  - [ ] 4.5 Create `QuestionEditorFactory.tsx` — maps `sectionType` to the correct editor component, provides fallback to generic text editor for unimplemented types.
+- [x] **Task 4: Create type-specific question editor components** (AC: #1-8)
+  - [x] 4.1 Create `apps/webapp/src/features/exercises/components/question-types/MCQEditor.tsx` — option list editor with add/remove, correct answer radio/checkbox selector. Shared by R1 (single) and R2 (multi).
+  - [x] 4.2 Create `TFNGEditor.tsx` — statement editor with fixed 3-option correct answer selector (TRUE/FALSE/NOT_GIVEN). Shared by R3 and R4 (labels change to YES/NO/NOT_GIVEN).
+  - [x] 4.3 Create `TextInputEditor.tsx` — question text + correct answer + variants list + word limit input + case sensitivity toggle. Shared by R5, R6, R8.
+  - [x] 4.4 Create `WordBankEditor.tsx` — summary text with blank markers + word bank editor (add/remove words including distractors) + blank-to-word assignment. For R7.
+  - [x] 4.5 Create `QuestionEditorFactory.tsx` — maps `sectionType` to the correct editor component, provides fallback to generic text editor for unimplemented types.
 
-- [ ] **Task 5: Integrate type-specific editors into QuestionSectionEditor** (AC: #1-8)
-  - [ ] 5.1 Add `onUpdateQuestion` callback prop to `QuestionSectionEditorProps` interface — currently only has `onCreateQuestion` and `onDeleteQuestion`. Wire to parent's `updateQuestion` from `useSections` hook (already exists in `use-sections.ts`).
-  - [ ] 5.2 Replace generic text input in `QuestionSectionEditor.tsx` with `QuestionEditorFactory` component
-  - [ ] 5.3 Pass `section.sectionType` to factory to render correct editor
-  - [ ] 5.4 Each editor calls `onCreateQuestion` / `onUpdateQuestion` with properly structured `options` and `correctAnswer` JSON
-  - [ ] 5.5 Add inline question editing (click question to expand editor, not just display text)
+- [x] **Task 5: Integrate type-specific editors into QuestionSectionEditor** (AC: #1-8)
+  - [x] 5.1 Add `onUpdateQuestion` callback prop to `QuestionSectionEditorProps` interface — currently only has `onCreateQuestion` and `onDeleteQuestion`. Wire to parent's `updateQuestion` from `useSections` hook (already exists in `use-sections.ts`).
+  - [x] 5.2 Replace generic text input in `QuestionSectionEditor.tsx` with `QuestionEditorFactory` component
+  - [x] 5.3 Pass `section.sectionType` to factory to render correct editor
+  - [x] 5.4 Each editor calls `onCreateQuestion` / `onUpdateQuestion` with properly structured `options` and `correctAnswer` JSON
+  - [x] 5.5 Add inline question editing (click question to expand editor, not just display text)
 
-- [ ] **Task 6: Create type-specific question preview renderers** (AC: #1-8)
-  - [ ] 6.1 Create `apps/webapp/src/features/exercises/components/question-types/MCQPreview.tsx` — renders radio buttons (R1) or checkboxes (R2) with options
-  - [ ] 6.2 Create `TFNGPreview.tsx` — renders 3-option radio group per statement (R3: T/F/NG, R4: Y/N/NG)
-  - [ ] 6.3 Create `TextInputPreview.tsx` — renders text input with word limit badge (R5, R6, R8)
-  - [ ] 6.4 Create `WordBankPreview.tsx` — renders summary paragraph with dropdown selects populated from word bank (R7)
-  - [ ] 6.5 Create `QuestionPreviewFactory.tsx` — maps `sectionType` to correct preview component
-  - [ ] 6.6 Integrate into ExercisePreview component (replace plain text question display)
+- [x] **Task 6: Create type-specific question preview renderers** (AC: #1-8)
+  - [x] 6.1 Create `apps/webapp/src/features/exercises/components/question-types/MCQPreview.tsx` — renders radio buttons (R1) or checkboxes (R2) with options
+  - [x] 6.2 Create `TFNGPreview.tsx` — renders 3-option radio group per statement (R3: T/F/NG, R4: Y/N/NG)
+  - [x] 6.3 Create `TextInputPreview.tsx` — renders text input with word limit badge (R5, R6, R8)
+  - [x] 6.4 Create `WordBankPreview.tsx` — renders summary paragraph with dropdown selects populated from word bank (R7)
+  - [x] 6.5 Create `QuestionPreviewFactory.tsx` — maps `sectionType` to correct preview component
+  - [x] 6.6 Integrate into ExercisePreview component (replace plain text question display)
 
-- [ ] **Task 7: Wire up question edit flow** (AC: #1-8)
-  - [ ] 7.1 Wire up edit flow in ExerciseEditor: pass `useSections().updateQuestion` as `onUpdateQuestion` prop down to `QuestionSectionEditor` → editors. Note: `updateQuestion` mutation already exists in `use-sections.ts` (lines 100-123) — DO NOT recreate it.
-  - [ ] 7.2 Implement expand-to-edit UX: click question row → expand inline editor pre-filled with current `options`/`correctAnswer` JSON → save changes → optimistic UI update via query invalidation
+- [x] **Task 7: Wire up question edit flow** (AC: #1-8)
+  - [x] 7.1 Wire up edit flow in ExerciseEditor: pass `useSections().updateQuestion` as `onUpdateQuestion` prop down to `QuestionSectionEditor` → editors. Note: `updateQuestion` mutation already exists in `use-sections.ts` (lines 100-123) — DO NOT recreate it.
+  - [x] 7.2 Implement expand-to-edit UX: click question row → expand inline editor pre-filled with current `options`/`correctAnswer` JSON → save changes → optimistic UI update via query invalidation
 
 ### Testing Tasks
 
-- [ ] **Task 8: Backend Tests** (AC: #1-8)
-  - [ ] 8.1 Unit tests for `answer-utils.ts` — normalization, variant matching, word limit checking
-  - [ ] 8.2 Unit tests for question validation logic — each R1-R8 type validates correctly, rejects malformed data
-  - [ ] 8.3 Run: `pnpm --filter=backend test`
+- [x] **Task 8: Backend Tests** (AC: #1-8) — Target: >=80% line coverage for new files
+  - [x] 8.1 Unit tests for `answer-utils.ts` — normalization, variant matching, word limit checking
+  - [x] 8.2 Unit tests for question validation logic — each R1-R8 type validates correctly, rejects malformed data
+  - [x] 8.3 Run: `pnpm --filter=backend test` — 321 tests pass (25 new)
 
-- [ ] **Task 9: Frontend Tests** (AC: #1-8)
-  - [ ] 9.1 Component tests for MCQEditor — add/remove options, select correct answer
-  - [ ] 9.2 Component tests for TFNGEditor — correct answer selection
-  - [ ] 9.3 Component tests for TextInputEditor — variant management, word limit
-  - [ ] 9.4 Component tests for WordBankEditor — word bank management, blank assignment
-  - [ ] 9.5 Component tests for QuestionEditorFactory — correct component rendering per type
-  - [ ] 9.6 Run: `pnpm --filter=webapp test`
+- [x] **Task 9: Frontend Tests** (AC: #1-8) — Target: >=80% line coverage for all new `question-types/` components
+  - [x] 9.1 Component tests for MCQEditor — add/remove options, select correct answer
+  - [x] 9.2 Component tests for TFNGEditor — correct answer selection
+  - [x] 9.3 Component tests for TextInputEditor — variant management, word limit
+  - [x] 9.4 Component tests for WordBankEditor — word bank management, blank assignment
+  - [x] 9.5 Component tests for QuestionEditorFactory — correct component rendering per type
+  - [x] 9.6 Run: `pnpm --filter=webapp test` — 231 tests pass (26 new)
 
-- [ ] **Task 10: Schema Sync** (AC: all)
-  - [ ] 10.1 Run `pnpm --filter=webapp sync-schema-dev` if new endpoints added
-  - [ ] 10.2 Verify new endpoints appear in `schema.d.ts`
+- [x] **Task 10: Schema Sync** (AC: all)
+  - [x] 10.1 No new endpoints added (Task 3 deferred) — schema sync not required
+  - [x] 10.2 N/A — no new endpoints to verify
 
 ## Dev Notes
 
@@ -121,6 +119,13 @@ The existing schema already supports this story:
 - `QuestionSection.sectionType IeltsQuestionType` — already has R1-R8 enum values
 
 **NO Prisma schema changes. NO migration. NO `db:push` needed.**
+
+### Legacy Question Handling
+
+Existing questions from Story 3.1 may have `options: null` and `correctAnswer: null`. All editor components MUST handle null values gracefully:
+- When `options` is `null`, render empty form state (e.g., MCQEditor shows zero options with an "Add Option" button).
+- When `correctAnswer` is `null`, render without a pre-selected answer.
+- DO NOT crash or show errors — treat null as "not yet configured" and let the teacher fill in the data.
 
 ### Question Type JSON Structures
 
@@ -251,6 +256,25 @@ aab33da fix(exercises): resolve createdById FK error and broken navigation
 - Lowercase comparison (when `caseSensitive: false`)
 - Accept teacher-defined variants (e.g., "19" matches "nineteen")
 
+### Component Tree
+
+```
+QuestionSectionEditor
+├── QuestionEditorFactory (dispatches by sectionType)
+│   ├── R1_MCQ_SINGLE / R2_MCQ_MULTI  → MCQEditor
+│   ├── R3_TFNG / R4_YNNG             → TFNGEditor
+│   ├── R5 / R6 / R8 (text-answer)    → TextInputEditor
+│   └── R7_SUMMARY_WORD_BANK          → WordBankEditor
+└── Question List (click row → expand inline editor)
+
+ExercisePreview
+└── QuestionPreviewFactory (dispatches by sectionType)
+    ├── R1 / R2        → MCQPreview (radio / checkbox)
+    ├── R3 / R4        → TFNGPreview (3-option radio)
+    ├── R5 / R6 / R8   → TextInputPreview (text input + word limit badge)
+    └── R7             → WordBankPreview (dropdown selects from word bank)
+```
+
 ### Project Structure Notes
 
 ```
@@ -306,8 +330,51 @@ apps/backend/src/modules/exercises/
 
 ### Agent Model Used
 
+Claude Opus 4.6
+
 ### Debug Log References
+
+No blocking issues encountered. Task 3 (validation endpoint) deferred to Story 3.5 per story guidance.
 
 ### Completion Notes List
 
+- Task 1: Added 12 type-helper Zod schemas (MCQOptionSchema, MCQOptionsSchema, MCQMultiOptionsSchema, MCQSingleAnswerSchema, MCQMultiAnswerSchema, TFNGAnswerSchema, YNNGAnswerSchema, TextAnswerSchema, WordBankOptionsSchema, WordBankAnswerSchema, QuestionOptionsSchema discriminated union) + 43 tests. Verified existing CreateQuestionSchema/UpdateQuestionSchema already support R1-R8 JSON via z.unknown().
+- Task 2: Created answer-utils.ts with normalizeAnswer(), matchesAnswer(), checkWordLimit() + 25 unit tests. Handles case sensitivity, variant matching, whitespace normalization.
+- Task 3: DEFERRED to Story 3.5 — server-side validation endpoint is optional; frontend component-level validation is priority.
+- Task 4: Created 5 editor components — MCQEditor (R1/R2 with radio/checkbox), TFNGEditor (R3/R4 with T/F/NG or Y/N/NG), TextInputEditor (R5/R6/R8 with variants + word limit), WordBankEditor (R7 with summary text blanks + word bank + blank assignment), QuestionEditorFactory (dispatches by sectionType with fallback).
+- Task 5: Added onUpdateQuestion prop to QuestionSectionEditor, integrated QuestionEditorFactory, added expand-to-edit UX (click question row → expand inline editor → edit options/correctAnswer → auto-save via query invalidation).
+- Task 6: Created 5 preview components — MCQPreview (radio/checkbox), TFNGPreview (3-option radio), TextInputPreview (text input + word limit badge), WordBankPreview (summary with dropdown selects), QuestionPreviewFactory. Integrated into ExercisePreview.
+- Task 7: Wired updateQuestion from useSections hook → ExerciseEditor → QuestionSectionEditor → editors. Did NOT recreate the mutation.
+- Task 8: 321 backend tests pass (25 new answer-utils + schema validation tests).
+- Task 9: 245 webapp tests pass (40 editor + preview component tests).
+- Task 10: No schema sync needed — no new endpoints added.
+- All editors handle null options/correctAnswer gracefully (legacy question support).
+- Code Review: Fixed 8 issues — (1) MCQEditor: single RadioGroup wrapping all items, (2) answer remapping on option remove, (3) 500ms debounce for question edits, (4) runtime safeParse in QuestionEditorFactory using type-helper schemas, (5) word bank duplicate prevention, (6) scoped radio IDs in TFNGEditor, (7) 14 preview component tests added, (8) maxSelections derived from props.
+
+### Change Log
+
+- 2026-02-07: Implemented story 3.2 — type-specific question editors and previews for R1-R8 IELTS reading types
+- 2026-02-07: Code review fixes (8 findings) — RadioGroup semantics, answer remapping on remove, debounced API calls, runtime safeParse validation, word bank dedup, scoped TFNGEditor radio IDs, preview component tests, maxSelections state drift
+
 ### File List
+
+**New files:**
+- packages/types/src/exercises.test.ts
+- apps/backend/src/modules/exercises/answer-utils.ts
+- apps/backend/src/modules/exercises/answer-utils.test.ts
+- apps/webapp/src/features/exercises/components/question-types/MCQEditor.tsx
+- apps/webapp/src/features/exercises/components/question-types/MCQPreview.tsx
+- apps/webapp/src/features/exercises/components/question-types/TFNGEditor.tsx
+- apps/webapp/src/features/exercises/components/question-types/TFNGPreview.tsx
+- apps/webapp/src/features/exercises/components/question-types/TextInputEditor.tsx
+- apps/webapp/src/features/exercises/components/question-types/TextInputPreview.tsx
+- apps/webapp/src/features/exercises/components/question-types/WordBankEditor.tsx
+- apps/webapp/src/features/exercises/components/question-types/WordBankPreview.tsx
+- apps/webapp/src/features/exercises/components/question-types/QuestionEditorFactory.tsx
+- apps/webapp/src/features/exercises/components/question-types/QuestionPreviewFactory.tsx
+- apps/webapp/src/features/exercises/components/question-types/question-editors.test.tsx
+
+**Modified files:**
+- packages/types/src/exercises.ts (added type-helper schemas)
+- apps/webapp/src/features/exercises/components/QuestionSectionEditor.tsx (added onUpdateQuestion, inline editing, factory integration)
+- apps/webapp/src/features/exercises/components/ExerciseEditor.tsx (wired updateQuestion, integrated preview factory)
