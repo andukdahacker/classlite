@@ -419,20 +419,18 @@ export const csvImportKeys = {
 export function useDownloadTemplate() {
   return useMutation({
     mutationFn: async () => {
-      // Use client.GET with type assertion since route isn't in schema yet
-      const result = await client.GET(
-        "/api/v1/users/import/template" as "/api/v1/users/",
-        {},
-      );
+      const result = await client.GET("/api/v1/users/import/template", {
+        parseAs: "blob",
+      });
 
       if (result.error) {
         throw new Error("Failed to download template");
       }
 
-      // The response is CSV text, trigger download
-      const blob = new Blob([result.data as unknown as string], {
-        type: "text/csv",
-      });
+      return result.data;
+    },
+    onSuccess: (data) => {
+      const blob = new Blob([data as Blob], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
