@@ -119,6 +119,19 @@ export const WordBankAnswerSchema = z.object({
 });
 export type WordBankAnswer = z.infer<typeof WordBankAnswerSchema>;
 
+// Matching options (R9-R12) — unified schema for all matching types
+export const MatchingOptionsSchema = z.object({
+  sourceItems: z.array(z.string()).min(1),
+  targetItems: z.array(z.string()).min(1),
+});
+export type MatchingOptions = z.infer<typeof MatchingOptionsSchema>;
+
+// Matching answer (R9-R12)
+export const MatchingAnswerSchema = z.object({
+  matches: z.record(z.string(), z.string()),
+});
+export type MatchingAnswer = z.infer<typeof MatchingAnswerSchema>;
+
 // Task 1.5: Discriminated union — validates options/correctAnswer per question type
 export const QuestionOptionsSchema = z.discriminatedUnion("questionType", [
   // R1: MCQ Single
@@ -168,6 +181,30 @@ export const QuestionOptionsSchema = z.discriminatedUnion("questionType", [
     questionType: z.literal("R8_SUMMARY_PASSAGE"),
     options: z.null(),
     correctAnswer: TextAnswerSchema,
+  }),
+  // R9: Matching Headings
+  z.object({
+    questionType: z.literal("R9_MATCHING_HEADINGS"),
+    options: MatchingOptionsSchema,
+    correctAnswer: MatchingAnswerSchema,
+  }),
+  // R10: Matching Information
+  z.object({
+    questionType: z.literal("R10_MATCHING_INFORMATION"),
+    options: MatchingOptionsSchema,
+    correctAnswer: MatchingAnswerSchema,
+  }),
+  // R11: Matching Features
+  z.object({
+    questionType: z.literal("R11_MATCHING_FEATURES"),
+    options: MatchingOptionsSchema,
+    correctAnswer: MatchingAnswerSchema,
+  }),
+  // R12: Matching Sentence Endings
+  z.object({
+    questionType: z.literal("R12_MATCHING_SENTENCE_ENDINGS"),
+    options: MatchingOptionsSchema,
+    correctAnswer: MatchingAnswerSchema,
   }),
 ]);
 export type QuestionOptions = z.infer<typeof QuestionOptionsSchema>;

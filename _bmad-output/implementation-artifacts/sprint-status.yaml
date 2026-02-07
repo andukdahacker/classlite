@@ -79,8 +79,8 @@ development_status:
   # OLD stories 3.1-3.5 replaced with comprehensive 3.1-3.16
   epic-3: in-progress
   3-1-exercise-builder-core-passage-management: done # Implementation complete 2026-02-06
-  3-2-reading-question-types-basic: review # R1-R8 — Implementation complete 2026-02-07
-  3-3-reading-question-types-matching: backlog # R9-R12 (Phase 1.5)
+  3-2-reading-question-types-basic: done # R1-R8 — Implementation complete 2026-02-07
+  3-3-reading-question-types-matching: done # R9-R12 (Phase 1.5) — Code review fixes applied 2026-02-07
   3-4-reading-question-types-advanced: backlog # R13-R14 (Phase 2)
   3-5-answer-key-management: backlog # Variants, normalization
   3-6-listening-exercise-builder: backlog # Audio upload

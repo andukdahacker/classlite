@@ -3,6 +3,7 @@ import { MCQPreview } from "./MCQPreview";
 import { TFNGPreview } from "./TFNGPreview";
 import { TextInputPreview } from "./TextInputPreview";
 import { WordBankPreview } from "./WordBankPreview";
+import { MatchingPreview } from "./MatchingPreview";
 
 interface QuestionPreviewFactoryProps {
   sectionType: IeltsQuestionType;
@@ -53,6 +54,18 @@ export function QuestionPreviewFactory({
         <WordBankPreview
           questionIndex={questionIndex}
           options={question.options as { wordBank: string[]; summaryText: string } | null}
+        />
+      );
+
+    case "R9_MATCHING_HEADINGS":
+    case "R10_MATCHING_INFORMATION":
+    case "R11_MATCHING_FEATURES":
+    case "R12_MATCHING_SENTENCE_ENDINGS":
+      return (
+        <MatchingPreview
+          sectionType={sectionType}
+          questionIndex={questionIndex}
+          options={question.options as { sourceItems: string[]; targetItems: string[] } | null}
         />
       );
 

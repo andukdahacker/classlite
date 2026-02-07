@@ -1,6 +1,6 @@
 # Story 3.2: Reading Question Types - Basic (R1-R8)
 
-Status: review
+Status: done
 
 ## Story
 

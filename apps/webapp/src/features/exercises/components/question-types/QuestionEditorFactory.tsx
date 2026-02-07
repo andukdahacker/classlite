@@ -4,6 +4,7 @@ import { MCQEditor } from "./MCQEditor";
 import { TFNGEditor } from "./TFNGEditor";
 import { TextInputEditor } from "./TextInputEditor";
 import { WordBankEditor } from "./WordBankEditor";
+import { MatchingEditor } from "./MatchingEditor";
 
 interface QuestionEditorFactoryProps {
   sectionType: IeltsQuestionType;
@@ -37,6 +38,13 @@ const LenientWordBankOptions = z.object({
 });
 const LenientWordBankAnswer = z.object({
   blanks: z.record(z.string(), z.string()),
+});
+const LenientMatchingOptions = z.object({
+  sourceItems: z.array(z.string()),
+  targetItems: z.array(z.string()),
+});
+const LenientMatchingAnswer = z.object({
+  matches: z.record(z.string(), z.string()),
 });
 
 /** Safely parse unknown data, returning null on failure */
@@ -93,6 +101,19 @@ export function QuestionEditorFactory({
         <WordBankEditor
           options={safeParse(LenientWordBankOptions, options)}
           correctAnswer={safeParse(LenientWordBankAnswer, correctAnswer)}
+          onChange={(opts, ans) => onChange(opts, ans)}
+        />
+      );
+
+    case "R9_MATCHING_HEADINGS":
+    case "R10_MATCHING_INFORMATION":
+    case "R11_MATCHING_FEATURES":
+    case "R12_MATCHING_SENTENCE_ENDINGS":
+      return (
+        <MatchingEditor
+          sectionType={sectionType}
+          options={safeParse(LenientMatchingOptions, options)}
+          correctAnswer={safeParse(LenientMatchingAnswer, correctAnswer)}
           onChange={(opts, ans) => onChange(opts, ans)}
         />
       );
