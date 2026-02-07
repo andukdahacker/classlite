@@ -455,6 +455,18 @@ None — clean implementation, all tests passed on first run.
 - Distractor management: Badge shows count, destructive warning when targets <= sources
 - Source item removal with index-based types correctly re-indexes match keys
 
+### Code Review Fixes Applied (2026-02-07)
+
+Adversarial code review found 7 issues (3 High, 3 Medium, 1 Low). All fixed:
+
+- **H1**: SelectItem values changed from target text to index-based strings (`String(ti)`) to prevent Radix Select crash on duplicate target items. Added `getMatchedTargetIndex()` helper for value resolution.
+- **H2**: Source/target item Input fields switched from `onChange` to `onBlur` to prevent excessive parent onChange calls on every keystroke and stale key mapping for R9.
+- **H3**: `getSourceKey()` now guards against empty/falsy values for value-based types (R9), falling back to `String(index)` instead of `""` key collision.
+- **M1**: MatchingPreview shows "No matching items configured." message when options is null or sourceItems is empty.
+- **M2**: `MatchingSectionType` exported from MatchingEditor, imported in MatchingPreview (deduplicated).
+- **M3**: Documented Radix Select test gap in test file (not testable in jsdom, logic covered by remove-item tests).
+- **L1**: Verified as non-issue — `export * from "./exercises.js"` in index.ts covers all new exports.
+
 ### File List
 
 **New files:**
