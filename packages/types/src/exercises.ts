@@ -398,6 +398,7 @@ export const ExerciseSchema = z.object({
   partialCredit: z.boolean().default(false),
   audioUrl: z.string().nullable().optional(),
   audioDuration: z.number().nullable().optional(),
+  // Permissive in response schema — Prisma returns string/JsonValue, strict validation is on input schemas
   playbackMode: z.string().nullable().optional(),
   audioSections: z.unknown().nullable().optional(),
   showTranscriptAfterSubmit: z.boolean().optional().default(false),

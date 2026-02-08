@@ -245,9 +245,7 @@ export function ExerciseEditor() {
       setInstructions(exercise.instructions ?? "");
       setPassageContent(exercise.passageContent ?? "");
       setSelectedSkill(exercise.skill);
-      setPlaybackMode(
-        (exercise.playbackMode as PlaybackMode) ?? undefined,
-      );
+      setPlaybackMode((exercise.playbackMode as PlaybackMode) ?? undefined);
       setAudioSections(
         Array.isArray(exercise.audioSections)
           ? (exercise.audioSections as AudioSection[])
@@ -602,18 +600,16 @@ export function ExerciseEditor() {
             onAudioChange={handleAudioChange}
             onDurationExtracted={handleDurationExtracted}
           />
+          <PlaybackModeSettings
+            playbackMode={playbackMode}
+            onPlaybackModeChange={handlePlaybackModeChange}
+          />
           {exercise?.audioUrl && (
-            <>
-              <PlaybackModeSettings
-                playbackMode={playbackMode}
-                onPlaybackModeChange={handlePlaybackModeChange}
-              />
-              <AudioSectionMarkers
-                sections={audioSections}
-                audioDuration={exercise?.audioDuration}
-                onSectionsChange={handleAudioSectionsChange}
-              />
-            </>
+            <AudioSectionMarkers
+              sections={audioSections}
+              audioDuration={exercise?.audioDuration}
+              onSectionsChange={handleAudioSectionsChange}
+            />
           )}
           <div className="flex items-start gap-3">
             <Checkbox
@@ -642,6 +638,7 @@ export function ExerciseEditor() {
             value={passageContent}
             onChange={(v) => handleFieldChange(setPassageContent, v)}
             label={selectedSkill === "LISTENING" ? "Transcript (Optional)" : undefined}
+            placeholder={selectedSkill === "LISTENING" ? "Enter the transcript here. Use blank lines to separate paragraphs..." : undefined}
           />
         </div>
       )}

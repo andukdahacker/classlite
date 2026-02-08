@@ -112,11 +112,8 @@ export function AudioSectionMarkers({
           {sections.map((section, index) => (
             <div key={index} className="flex items-center gap-2">
               <Input
-                value={section.label}
+                defaultValue={section.label}
                 onBlur={(e) =>
-                  handleFieldChange(index, "label", e.target.value)
-                }
-                onChange={(e) =>
                   handleFieldChange(index, "label", e.target.value)
                 }
                 placeholder="Label"

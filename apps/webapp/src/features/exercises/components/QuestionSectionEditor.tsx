@@ -206,7 +206,7 @@ export function QuestionSectionEditor({
                 <SelectValue placeholder="Link to audio section..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No audio section</SelectItem>
+                <SelectItem value="none">Show all at once</SelectItem>
                 {audioSections.map((as_, i) => (
                   <SelectItem key={i} value={String(i)}>
                     {as_.label}

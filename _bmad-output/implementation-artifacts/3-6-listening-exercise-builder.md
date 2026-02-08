@@ -1,6 +1,6 @@
 # Story 3.6: Listening Exercise Builder
 
-Status: dev-complete
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -626,4 +626,39 @@ apps/backend/src/modules/exercises/
 
 ### Completion Notes List
 
+**Code Review Fixes Applied (2026-02-08):**
+- **H2 fix:** `ExerciseSchema.playbackMode` changed from `z.string()` to `PlaybackModeSchema.nullable().optional()` for proper type safety
+- **H3 fix:** `ExerciseSchema.audioSections` changed from `z.unknown()` to `z.array(AudioSectionSchema).nullable().optional()` — eliminated unsafe casts in ExerciseEditor
+- **H4 fix:** Added 8 missing AudioUploadEditor tests (render states, upload, delete, file input, pending states)
+- **M1 fix:** Audio section linking dropdown label changed from "No audio section" to "Show all at once" per AC5
+- **M2 fix:** PlaybackModeSettings moved outside audioUrl conditional — now visible immediately for LISTENING exercises
+- **M3 fix:** AudioUploadEditor integration tests added as part of H4 fix
+- **M4 fix:** PassageEditor accepts optional `placeholder` prop; LISTENING exercises show "Enter the transcript here..." placeholder
+- **L1 fix:** showTranscriptAfterSubmit checkbox positioning kept consistent with PlaybackModeSettings (both outside audioUrl gate)
+- **L2 fix:** AudioSectionMarkers label input changed from `onChange`+`onBlur` to `onBlur`-only with `defaultValue` (matches time input pattern)
+
 ### File List
+
+**Backend:**
+- `packages/db/prisma/schema.prisma` — Added audio fields to Exercise model, audioSectionIndex to QuestionSection model
+- `packages/types/src/exercises.ts` — Added PlaybackModeSchema, AudioSectionSchema, audio fields to Exercise/Create/Update/Autosave schemas, audioSectionIndex to QuestionSection schemas
+- `packages/types/src/exercises.test.ts` — Added tests for PlaybackModeSchema, AudioSectionSchema, audioSectionIndex
+- `apps/backend/src/modules/exercises/exercises.service.ts` — Added uploadAudio(), deleteAudio(), extended updateDraftExercise() and createExercise() with audio fields
+- `apps/backend/src/modules/exercises/exercises.service.test.ts` — Added uploadAudio and deleteAudio unit tests
+- `apps/backend/src/modules/exercises/exercises.controller.ts` — Added uploadAudio(), deleteAudio() controller methods
+- `apps/backend/src/modules/exercises/exercises.routes.ts` — Added POST /:exerciseId/audio and DELETE /:exerciseId/audio routes
+- `apps/backend/src/modules/exercises/sections.service.ts` — Added audioSectionIndex passthrough in createSection() and updateSection()
+
+**Frontend:**
+- `apps/webapp/src/features/exercises/hooks/use-audio-upload.ts` — NEW: useAudioUpload and useAudioDelete mutation hooks
+- `apps/webapp/src/features/exercises/components/AudioUploadEditor.tsx` — NEW: Audio file upload with drag-drop, preview, remove
+- `apps/webapp/src/features/exercises/components/AudioSectionMarkers.tsx` — NEW: Section timestamp editor with validation
+- `apps/webapp/src/features/exercises/components/PlaybackModeSettings.tsx` — NEW: Test/Practice mode radio selector
+- `apps/webapp/src/features/exercises/components/PassageEditor.tsx` — Added optional label and placeholder props
+- `apps/webapp/src/features/exercises/components/ExerciseEditor.tsx` — Integrated audio components for LISTENING skill
+- `apps/webapp/src/features/exercises/components/QuestionSectionEditor.tsx` — Widened onUpdateSection callback, added audioSections prop, added audio section linking dropdown
+- `apps/webapp/src/features/exercises/components/audio-components.test.tsx` — Tests for PlaybackModeSettings, AudioSectionMarkers, AudioUploadEditor
+
+**Other:**
+- `apps/webapp/src/schema/schema.d.ts` — Auto-generated OpenAPI schema sync
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — Sprint tracking update

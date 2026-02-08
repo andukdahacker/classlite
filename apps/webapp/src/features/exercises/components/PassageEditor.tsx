@@ -5,9 +5,10 @@ interface PassageEditorProps {
   value: string;
   onChange: (value: string) => void;
   label?: string;
+  placeholder?: string;
 }
 
-export function PassageEditor({ value, onChange, label = "Reading Passage" }: PassageEditorProps) {
+export function PassageEditor({ value, onChange, label = "Reading Passage", placeholder }: PassageEditorProps) {
   // Split into paragraphs for lettering display
   const paragraphs = value
     .split(/\n\n+/)
@@ -26,7 +27,7 @@ export function PassageEditor({ value, onChange, label = "Reading Passage" }: Pa
         id="passage-editor"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Enter the reading passage here. Use blank lines to separate paragraphs..."
+        placeholder={placeholder ?? "Enter the reading passage here. Use blank lines to separate paragraphs..."}
         className="min-h-[300px] font-serif"
       />
       {paragraphs.length > 0 && (
