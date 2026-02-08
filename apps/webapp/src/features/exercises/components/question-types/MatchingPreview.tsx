@@ -13,6 +13,7 @@ const PREVIEW_LABELS: Record<MatchingSectionType, { sourceLabel: string; targetL
   R10_MATCHING_INFORMATION: { sourceLabel: "Statement", targetLabel: "paragraph" },
   R11_MATCHING_FEATURES: { sourceLabel: "Item", targetLabel: "category" },
   R12_MATCHING_SENTENCE_ENDINGS: { sourceLabel: "Sentence", targetLabel: "ending" },
+  L3_MATCHING: { sourceLabel: "Item", targetLabel: "option" },
 };
 
 interface MatchingPreviewProps {

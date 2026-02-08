@@ -278,6 +278,42 @@ export const QuestionOptionsSchema = z.discriminatedUnion("questionType", [
     options: DiagramLabellingOptionsSchema,
     correctAnswer: DiagramLabellingAnswerSchema,
   }),
+  // L1: Form/Note/Table Completion (same schemas as R13)
+  z.object({
+    questionType: z.literal("L1_FORM_NOTE_TABLE"),
+    options: NoteTableFlowchartOptionsSchema,
+    correctAnswer: NoteTableFlowchartAnswerSchema,
+  }),
+  // L2: MCQ (same schemas as R1 single-answer)
+  z.object({
+    questionType: z.literal("L2_MCQ"),
+    options: MCQOptionsSchema,
+    correctAnswer: MCQSingleAnswerSchema,
+  }),
+  // L3: Matching (same schemas as R11)
+  z.object({
+    questionType: z.literal("L3_MATCHING"),
+    options: MatchingOptionsSchema,
+    correctAnswer: MatchingAnswerSchema,
+  }),
+  // L4: Map/Plan Labelling (same schemas as R14)
+  z.object({
+    questionType: z.literal("L4_MAP_PLAN_LABELLING"),
+    options: DiagramLabellingOptionsSchema,
+    correctAnswer: DiagramLabellingAnswerSchema,
+  }),
+  // L5: Sentence Completion (same schemas as R5)
+  z.object({
+    questionType: z.literal("L5_SENTENCE_COMPLETION"),
+    options: z.null(),
+    correctAnswer: TextAnswerSchema,
+  }),
+  // L6: Short Answer (same schemas as R6)
+  z.object({
+    questionType: z.literal("L6_SHORT_ANSWER"),
+    options: z.null(),
+    correctAnswer: TextAnswerSchema,
+  }),
 ]);
 export type QuestionOptions = z.infer<typeof QuestionOptionsSchema>;
 

@@ -135,6 +135,8 @@ export function QuestionEditorFactory({
     case "R5_SENTENCE_COMPLETION":
     case "R6_SHORT_ANSWER":
     case "R8_SUMMARY_PASSAGE":
+    case "L5_SENTENCE_COMPLETION":
+    case "L6_SHORT_ANSWER":
       return (
         <TextInputEditor
           correctAnswer={safeParse(LenientTextAnswer, correctAnswer)}
@@ -166,6 +168,7 @@ export function QuestionEditorFactory({
       );
 
     case "R13_NOTE_TABLE_FLOWCHART":
+    case "L1_FORM_NOTE_TABLE":
       return (
         <NoteTableFlowchartEditor
           options={safeParse(LenientNoteTableFlowchartOptions, options)}
@@ -175,11 +178,32 @@ export function QuestionEditorFactory({
       );
 
     case "R14_DIAGRAM_LABELLING":
+    case "L4_MAP_PLAN_LABELLING":
       return (
         <DiagramLabellingEditor
           options={safeParse(LenientDiagramLabellingOptions, options)}
           correctAnswer={safeParse(LenientDiagramLabellingAnswer, correctAnswer)}
           exerciseId={exerciseId}
+          onChange={(opts, ans) => onChange(opts, ans)}
+        />
+      );
+
+    case "L2_MCQ":
+      return (
+        <MCQEditor
+          sectionType={sectionType}
+          options={safeParse(LenientMCQOptions, options)}
+          correctAnswer={safeParse(LenientMCQAnswer, correctAnswer)}
+          onChange={onChange}
+        />
+      );
+
+    case "L3_MATCHING":
+      return (
+        <MatchingEditor
+          sectionType={sectionType}
+          options={safeParse(LenientMatchingOptions, options)}
+          correctAnswer={safeParse(LenientMatchingAnswer, correctAnswer)}
           onChange={(opts, ans) => onChange(opts, ans)}
         />
       );

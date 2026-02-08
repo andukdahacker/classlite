@@ -43,6 +43,8 @@ export function QuestionPreviewFactory({
     case "R5_SENTENCE_COMPLETION":
     case "R6_SHORT_ANSWER":
     case "R8_SUMMARY_PASSAGE":
+    case "L5_SENTENCE_COMPLETION":
+    case "L6_SHORT_ANSWER":
       return (
         <TextInputPreview
           questionText={question.questionText}
@@ -72,6 +74,7 @@ export function QuestionPreviewFactory({
       );
 
     case "R13_NOTE_TABLE_FLOWCHART":
+    case "L1_FORM_NOTE_TABLE":
       return (
         <NoteTableFlowchartPreview
           questionIndex={questionIndex}
@@ -80,10 +83,30 @@ export function QuestionPreviewFactory({
       );
 
     case "R14_DIAGRAM_LABELLING":
+    case "L4_MAP_PLAN_LABELLING":
       return (
         <DiagramLabellingPreview
           questionIndex={questionIndex}
           options={question.options as { diagramUrl: string; labelPositions: string[]; wordBank?: string[]; wordLimit?: number } | null}
+        />
+      );
+
+    case "L2_MCQ":
+      return (
+        <MCQPreview
+          sectionType={sectionType}
+          questionText={question.questionText}
+          questionIndex={questionIndex}
+          options={question.options as { items: { label: string; text: string }[]; maxSelections?: number } | null}
+        />
+      );
+
+    case "L3_MATCHING":
+      return (
+        <MatchingPreview
+          sectionType={sectionType}
+          questionIndex={questionIndex}
+          options={question.options as { sourceItems: string[]; targetItems: string[] } | null}
         />
       );
 

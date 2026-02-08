@@ -129,7 +129,7 @@ export function MCQEditor({
               </span>
               <Input
                 defaultValue={item.text}
-                onChange={(e) => updateOptionText(idx, e.target.value)}
+                onBlur={(e) => updateOptionText(idx, e.target.value)}
                 placeholder={`Option ${item.label} text...`}
                 className="flex-1 h-8 text-sm"
               />
@@ -161,7 +161,7 @@ export function MCQEditor({
               </span>
               <Input
                 defaultValue={item.text}
-                onChange={(e) => updateOptionText(idx, e.target.value)}
+                onBlur={(e) => updateOptionText(idx, e.target.value)}
                 placeholder={`Option ${item.label} text...`}
                 className="flex-1 h-8 text-sm"
               />

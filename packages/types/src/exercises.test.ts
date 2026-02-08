@@ -916,6 +916,114 @@ describe("Exercise Type-Helper Schemas", () => {
       });
       expect(result.success).toBe(false);
     });
+
+    // --- L1-L6: Listening question types ---
+
+    it("should validate L1_FORM_NOTE_TABLE (same schemas as R13)", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "L1_FORM_NOTE_TABLE",
+        options: {
+          subFormat: "note",
+          structure: "Name: ___1___\nAddress: ___2___",
+          wordLimit: 2,
+        },
+        correctAnswer: {
+          blanks: {
+            "1": { answer: "John Smith" },
+            "2": { answer: "42 Main Street" },
+          },
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate L2_MCQ (same schemas as R1)", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "L2_MCQ",
+        options: {
+          items: [
+            { label: "A", text: "Monday" },
+            { label: "B", text: "Tuesday" },
+            { label: "C", text: "Wednesday" },
+          ],
+        },
+        correctAnswer: { answer: "B" },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate L3_MATCHING (same schemas as R11)", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "L3_MATCHING",
+        options: {
+          sourceItems: ["Speaker 1", "Speaker 2", "Speaker 3"],
+          targetItems: ["Agrees", "Disagrees", "Undecided", "Not mentioned"],
+        },
+        correctAnswer: {
+          matches: { "0": "Agrees", "1": "Disagrees", "2": "Undecided" },
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate L4_MAP_PLAN_LABELLING (same schemas as R14)", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "L4_MAP_PLAN_LABELLING",
+        options: {
+          diagramUrl: "https://storage.example.com/map.png",
+          labelPositions: ["Reception", "Library", "Cafe"],
+          wordLimit: 2,
+        },
+        correctAnswer: {
+          labels: { "0": "Reception", "1": "Library", "2": "Cafe" },
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate L5_SENTENCE_COMPLETION (same schemas as R5)", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "L5_SENTENCE_COMPLETION",
+        options: null,
+        correctAnswer: {
+          answer: "three weeks",
+          acceptedVariants: ["3 weeks"],
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate L6_SHORT_ANSWER (same schemas as R6)", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "L6_SHORT_ANSWER",
+        options: null,
+        correctAnswer: {
+          answer: "swimming pool",
+          acceptedVariants: ["the swimming pool"],
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject L1 with MCQ options (wrong schema)", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "L1_FORM_NOTE_TABLE",
+        options: {
+          items: [{ label: "A", text: "Option" }],
+        },
+        correctAnswer: { answer: "A" },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject L2 with null options (requires MCQ items)", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "L2_MCQ",
+        options: null,
+        correctAnswer: { answer: "A" },
+      });
+      expect(result.success).toBe(false);
+    });
   });
 
   // --- Task 1.6: Verify existing CreateQuestionSchema / UpdateQuestionSchema ---

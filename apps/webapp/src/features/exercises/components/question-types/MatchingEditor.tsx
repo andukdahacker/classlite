@@ -17,7 +17,8 @@ export type MatchingSectionType =
   | "R9_MATCHING_HEADINGS"
   | "R10_MATCHING_INFORMATION"
   | "R11_MATCHING_FEATURES"
-  | "R12_MATCHING_SENTENCE_ENDINGS";
+  | "R12_MATCHING_SENTENCE_ENDINGS"
+  | "L3_MATCHING";
 
 interface MatchingConfig {
   sourceLabel: string;
@@ -54,6 +55,13 @@ export const MATCHING_CONFIGS: Record<MatchingSectionType, MatchingConfig> = {
     targetLabel: "Sentence Endings",
     sourcePlaceholder: "e.g., The research team discovered that",
     targetPlaceholder: "e.g., climate change accelerated.",
+    sourceKeyType: "index",
+  },
+  L3_MATCHING: {
+    sourceLabel: "Items",
+    targetLabel: "Options",
+    sourcePlaceholder: "e.g., Speaker 1",
+    targetPlaceholder: "e.g., Supports renewable energy",
     sourceKeyType: "index",
   },
 };

@@ -795,13 +795,144 @@ describe("QuestionEditorFactory", () => {
     const onChange = vi.fn();
     render(
       <QuestionEditorFactory
-        sectionType="L1_FORM_NOTE_TABLE"
+        sectionType="W1_TASK1_ACADEMIC"
         options={null}
         correctAnswer={null}
         onChange={onChange}
       />,
     );
     expect(screen.getByText(/no editor available/i)).toBeInTheDocument();
+  });
+
+  // --- L1-L6 Listening question type editor wiring ---
+
+  it("renders NoteTableFlowchartEditor for L1_FORM_NOTE_TABLE", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="L1_FORM_NOTE_TABLE"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByText(/no editor available/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Sub-Format")).toBeInTheDocument();
+  });
+
+  it("renders MCQEditor for L2_MCQ", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="L2_MCQ"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByText(/no editor available/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Add Option")).toBeInTheDocument();
+  });
+
+  it("renders MCQEditor in single-answer mode by default for L2_MCQ", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="L2_MCQ"
+        options={{
+          items: [
+            { label: "A", text: "Option A" },
+            { label: "B", text: "Option B" },
+          ],
+        }}
+        correctAnswer={{ answer: "A" }}
+        onChange={onChange}
+      />,
+    );
+    // Single-answer mode renders radio buttons, not checkboxes
+    expect(screen.getAllByRole("radio")).toHaveLength(2);
+    expect(screen.queryByText("Max Selections")).not.toBeInTheDocument();
+  });
+
+  it("renders MCQEditor in single-answer mode for L2_MCQ even with maxSelections > 1", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="L2_MCQ"
+        options={{
+          items: [
+            { label: "A", text: "Option A" },
+            { label: "B", text: "Option B" },
+          ],
+          maxSelections: 2,
+        }}
+        correctAnswer={{ answer: "A" }}
+        onChange={onChange}
+      />,
+    );
+    // L2_MCQ is always single-answer (radio buttons)
+    expect(screen.getAllByRole("radio")).toHaveLength(2);
+    expect(screen.queryByText("Max Selections")).not.toBeInTheDocument();
+  });
+
+  it("renders MatchingEditor for L3_MATCHING with correct labels and placeholders", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="L3_MATCHING"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByText(/no editor available/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Items")).toBeInTheDocument();
+    expect(screen.getByText("Options")).toBeInTheDocument();
+    // L3-specific placeholder distinguishes from R11 (which uses "e.g., Dr. Smith")
+    expect(screen.getByPlaceholderText(/Add items.../i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Add options.../i)).toBeInTheDocument();
+  });
+
+  it("renders DiagramLabellingEditor for L4_MAP_PLAN_LABELLING", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="L4_MAP_PLAN_LABELLING"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByText(/no editor available/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Diagram Image")).toBeInTheDocument();
+  });
+
+  it("renders TextInputEditor for L5_SENTENCE_COMPLETION", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="L5_SENTENCE_COMPLETION"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByText(/no editor available/i)).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Enter the correct answer...")).toBeInTheDocument();
+  });
+
+  it("renders TextInputEditor for L6_SHORT_ANSWER", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="L6_SHORT_ANSWER"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByText(/no editor available/i)).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Enter the correct answer...")).toBeInTheDocument();
   });
 });
 
@@ -1174,12 +1305,135 @@ describe("QuestionPreviewFactory", () => {
   it("renders plain text fallback for unsupported types", () => {
     render(
       <QuestionPreviewFactory
-        sectionType="L1_FORM_NOTE_TABLE"
+        sectionType="W1_TASK1_ACADEMIC"
         question={baseQuestion}
         questionIndex={0}
       />,
     );
     expect(screen.getByText("Test question")).toBeInTheDocument();
+  });
+
+  // --- L1-L6 Listening question type preview wiring ---
+
+  it("renders NoteTableFlowchartPreview for L1_FORM_NOTE_TABLE", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="L1_FORM_NOTE_TABLE"
+        question={baseQuestion}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByText(/No structure configured/i)).toBeInTheDocument();
+  });
+
+  it("renders NoteTableFlowchartPreview with data for L1_FORM_NOTE_TABLE", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="L1_FORM_NOTE_TABLE"
+        question={{
+          ...baseQuestion,
+          options: {
+            subFormat: "note",
+            structure: "Main Topic\n• Impact ___1___",
+            wordLimit: 2,
+          },
+        }}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByText(/Main Topic/)).toBeInTheDocument();
+  });
+
+  it("renders MCQPreview for L2_MCQ", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="L2_MCQ"
+        question={{
+          ...baseQuestion,
+          options: {
+            items: [
+              { label: "A", text: "Option A" },
+              { label: "B", text: "Option B" },
+            ],
+          },
+        }}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByText("Test question")).toBeInTheDocument();
+    expect(screen.getAllByRole("radio")).toHaveLength(2);
+  });
+
+  it("renders MCQPreview with radio buttons for L2_MCQ even with maxSelections > 1", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="L2_MCQ"
+        question={{
+          ...baseQuestion,
+          options: {
+            items: [
+              { label: "A", text: "Option A" },
+              { label: "B", text: "Option B" },
+            ],
+            maxSelections: 2,
+          },
+        }}
+        questionIndex={0}
+      />,
+    );
+    // L2_MCQ is always single-answer (radio buttons)
+    expect(screen.getAllByRole("radio")).toHaveLength(2);
+  });
+
+  it("renders MatchingPreview for L3_MATCHING", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="L3_MATCHING"
+        question={{
+          ...baseQuestion,
+          options: {
+            sourceItems: ["Speaker 1", "Speaker 2"],
+            targetItems: ["Opinion A", "Opinion B", "Opinion C"],
+          },
+        }}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByText("Speaker 1")).toBeInTheDocument();
+    expect(screen.getByText("Speaker 2")).toBeInTheDocument();
+  });
+
+  it("renders DiagramLabellingPreview for L4_MAP_PLAN_LABELLING", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="L4_MAP_PLAN_LABELLING"
+        question={baseQuestion}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByText(/No diagram configured/i)).toBeInTheDocument();
+  });
+
+  it("renders TextInputPreview for L5_SENTENCE_COMPLETION", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="L5_SENTENCE_COMPLETION"
+        question={baseQuestion}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByPlaceholderText("Type your answer...")).toBeInTheDocument();
+  });
+
+  it("renders TextInputPreview for L6_SHORT_ANSWER", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="L6_SHORT_ANSWER"
+        question={baseQuestion}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByPlaceholderText("Type your answer...")).toBeInTheDocument();
   });
 });
 
