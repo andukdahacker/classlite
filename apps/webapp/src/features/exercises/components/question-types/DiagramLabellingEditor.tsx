@@ -6,6 +6,7 @@ import { Checkbox } from "@workspace/ui/components/checkbox";
 import { Plus, Trash2, Upload, Image } from "lucide-react";
 import { useRef, useState } from "react";
 import { useDiagramUpload } from "../../hooks/use-diagram-upload";
+import { AnswerVariantManager } from "./AnswerVariantManager";
 import { toast } from "sonner";
 
 interface DiagramLabellingOptions {
@@ -15,8 +16,16 @@ interface DiagramLabellingOptions {
   wordLimit: number;
 }
 
+interface StructuredLabel {
+  answer: string;
+  acceptedVariants: string[];
+  strictWordOrder: boolean;
+}
+
+type LabelValue = string | StructuredLabel;
+
 interface DiagramLabellingAnswer {
-  labels: Record<string, string>;
+  labels: Record<string, LabelValue>;
 }
 
 interface DiagramLabellingEditorProps {
@@ -51,7 +60,7 @@ export function DiagramLabellingEditor({
 
   const update = (
     newOptions: DiagramLabellingOptions,
-    newLabels: Record<string, string>,
+    newLabels: Record<string, LabelValue>,
   ) => {
     onChange(newOptions, { labels: newLabels });
   };
@@ -108,7 +117,7 @@ export function DiagramLabellingEditor({
   const removePosition = (index: number) => {
     const newPositions = labelPositions.filter((_, i) => i !== index);
     // Re-index labels
-    const newLabels: Record<string, string> = {};
+    const newLabels: Record<string, LabelValue> = {};
     for (const [key, val] of Object.entries(labels)) {
       const numKey = Number(key);
       if (numKey === index) continue;
@@ -127,9 +136,25 @@ export function DiagramLabellingEditor({
     update(buildOptions({ labelPositions: newPositions }), labels);
   };
 
-  const updateLabel = (index: number, value: string) => {
+  const updateLabel = (index: number, value: LabelValue) => {
     const newLabels = { ...labels, [String(index)]: value };
     update(buildOptions({}), newLabels);
+  };
+
+  /** Get the display string for a label value */
+  const getLabelAnswer = (index: number): string => {
+    const val = labels[String(index)];
+    if (!val) return "";
+    if (typeof val === "string") return val;
+    return val.answer;
+  };
+
+  /** Get structured label, creating default if needed */
+  const getStructuredLabel = (index: number): StructuredLabel => {
+    const val = labels[String(index)];
+    if (!val) return { answer: "", acceptedVariants: [], strictWordOrder: true };
+    if (typeof val === "string") return { answer: val, acceptedVariants: [], strictWordOrder: true };
+    return val;
   };
 
   // --- Word bank ---
@@ -138,7 +163,16 @@ export function DiagramLabellingEditor({
     if (checked) {
       update(buildOptions({ wordBank: [] }), labels);
     } else {
-      update(buildOptions({ wordBank: undefined }), labels);
+      // Convert string labels to structured format when disabling word bank
+      const migratedLabels: Record<string, LabelValue> = {};
+      for (const [key, val] of Object.entries(labels)) {
+        if (typeof val === "string") {
+          migratedLabels[key] = { answer: val, acceptedVariants: [], strictWordOrder: true };
+        } else {
+          migratedLabels[key] = val;
+        }
+      }
+      update(buildOptions({ wordBank: undefined }), migratedLabels);
     }
   };
 
@@ -209,33 +243,53 @@ export function DiagramLabellingEditor({
       {/* Label positions + answer assignment */}
       <div className="space-y-1.5">
         <Label className="text-xs">Label Positions & Correct Labels</Label>
-        <div className="space-y-1">
+        <div className="space-y-2">
           {labelPositions.map((pos, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Badge variant="outline" className="text-[10px] h-5 shrink-0">
-                {i + 1}
-              </Badge>
-              <Input
-                defaultValue={pos}
-                onBlur={(e) => updatePosition(i, e.target.value)}
-                placeholder="Label description..."
-                className="flex-1 h-7 text-xs"
-              />
-              <Input
-                defaultValue={labels[String(i)] ?? ""}
-                onBlur={(e) => updateLabel(i, e.target.value)}
-                placeholder="Correct label..."
-                className="flex-1 h-7 text-xs"
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 shrink-0"
-                onClick={() => removePosition(i)}
-                aria-label="Remove position"
-              >
-                <Trash2 className="size-3" />
-              </Button>
+            <div key={i} className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-[10px] h-5 shrink-0">
+                  {i + 1}
+                </Badge>
+                <Input
+                  defaultValue={pos}
+                  onBlur={(e) => updatePosition(i, e.target.value)}
+                  placeholder="Label description..."
+                  className="flex-1 h-7 text-xs"
+                />
+                <Input
+                  defaultValue={getLabelAnswer(i)}
+                  onBlur={(e) => {
+                    if (useWordBank) {
+                      updateLabel(i, e.target.value);
+                    } else {
+                      const current = getStructuredLabel(i);
+                      updateLabel(i, { ...current, answer: e.target.value });
+                    }
+                  }}
+                  placeholder="Correct label..."
+                  className="flex-1 h-7 text-xs"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 shrink-0"
+                  onClick={() => removePosition(i)}
+                  aria-label="Remove position"
+                >
+                  <Trash2 className="size-3" />
+                </Button>
+              </div>
+              {!useWordBank && (
+                <div className="pl-8">
+                  <AnswerVariantManager
+                    variants={getStructuredLabel(i).acceptedVariants}
+                    onVariantsChange={(newVariants) => {
+                      const current = getStructuredLabel(i);
+                      updateLabel(i, { ...current, acceptedVariants: newVariants });
+                    }}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>

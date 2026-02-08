@@ -1,10 +1,12 @@
 import { Button } from "@workspace/ui/components/button";
+import { Checkbox } from "@workspace/ui/components/checkbox";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { Badge } from "@workspace/ui/components/badge";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { RadioGroup, RadioGroupItem } from "@workspace/ui/components/radio-group";
 import { Plus, Trash2 } from "lucide-react";
+import { AnswerVariantManager } from "./AnswerVariantManager";
 import { safeParseJson } from "./utils";
 
 type SubFormat = "note" | "table" | "flowchart";
@@ -15,8 +17,14 @@ interface NoteTableFlowchartOptions {
   wordLimit: number;
 }
 
+interface StructuredBlank {
+  answer: string;
+  acceptedVariants: string[];
+  strictWordOrder: boolean;
+}
+
 interface NoteTableFlowchartAnswer {
-  blanks: Record<string, string>;
+  blanks: Record<string, StructuredBlank>;
 }
 
 interface NoteTableFlowchartEditorProps {
@@ -80,7 +88,7 @@ export function NoteTableFlowchartEditor({
     newSubFormat: SubFormat,
     newStructure: string,
     newWordLimit: number,
-    newBlanks: Record<string, string>,
+    newBlanks: Record<string, StructuredBlank>,
   ) => {
     onChange(
       { subFormat: newSubFormat, structure: newStructure, wordLimit: newWordLimit },
@@ -100,7 +108,7 @@ export function NoteTableFlowchartEditor({
     } else if (newSubFormat === "flowchart") {
       defaultStructure = JSON.stringify({ steps: [""] });
     }
-    update(newSubFormat, defaultStructure, wordLimit, {});
+    update(newSubFormat, defaultStructure, wordLimit, {} as Record<string, StructuredBlank>);
   };
 
   // Determine blank IDs from current structure
@@ -158,26 +166,60 @@ export function NoteTableFlowchartEditor({
 
       {/* Answer assignment panel */}
       {blankIds.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-3">
           <Label className="text-xs">Answer Assignment</Label>
-          <div className="space-y-1">
-            {blankIds.map((id) => (
-              <div key={id} className="flex items-center gap-2">
-                <span className="text-xs font-medium min-w-[4rem]">
-                  Blank {id}:
-                </span>
-                <Input
-                  defaultValue={blanks[id] ?? ""}
-                  onBlur={(e) => {
-                    const newBlanks = { ...blanks, [id]: e.target.value };
-                    update(subFormat, structure, wordLimit, newBlanks);
-                  }}
-                  placeholder="Correct answer..."
-                  className="flex-1 h-7 text-xs"
-                />
+          {blankIds.map((id) => {
+            const rawBlank = blanks[id];
+            // Handle both old flat format (string) and new structured format
+            const blank: StructuredBlank = rawBlank
+              ? (typeof rawBlank === "string"
+                ? { answer: rawBlank, acceptedVariants: [], strictWordOrder: true }
+                : { answer: rawBlank.answer ?? "", acceptedVariants: rawBlank.acceptedVariants ?? [], strictWordOrder: rawBlank.strictWordOrder ?? true })
+              : { answer: "", acceptedVariants: [], strictWordOrder: true };
+            const hasMultipleWords = blank.answer.trim().split(/\s+/).filter(Boolean).length >= 2;
+            return (
+              <div key={id} className="space-y-1.5 pl-2 border-l-2 border-muted">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium min-w-[4rem]">
+                    Blank {id}:
+                  </span>
+                  <Input
+                    defaultValue={blank.answer}
+                    onBlur={(e) => {
+                      const newBlanks = { ...blanks, [id]: { ...blank, answer: e.target.value } };
+                      update(subFormat, structure, wordLimit, newBlanks);
+                    }}
+                    placeholder="Correct answer..."
+                    className="flex-1 h-7 text-xs"
+                  />
+                </div>
+                {hasMultipleWords && (
+                  <div className="flex items-center gap-2 pl-[4.5rem]">
+                    <Checkbox
+                      id={`word-order-${id}`}
+                      checked={!blank.strictWordOrder}
+                      onCheckedChange={(checked) => {
+                        const newBlanks = { ...blanks, [id]: { ...blank, strictWordOrder: checked !== true } };
+                        update(subFormat, structure, wordLimit, newBlanks);
+                      }}
+                    />
+                    <Label htmlFor={`word-order-${id}`} className="text-xs cursor-pointer">
+                      Allow any word order
+                    </Label>
+                  </div>
+                )}
+                <div className="pl-[4.5rem]">
+                  <AnswerVariantManager
+                    variants={blank.acceptedVariants}
+                    onVariantsChange={(newVariants) => {
+                      const newBlanks = { ...blanks, [id]: { ...blank, acceptedVariants: newVariants } };
+                      update(subFormat, structure, wordLimit, newBlanks);
+                    }}
+                  />
+                </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       )}
 

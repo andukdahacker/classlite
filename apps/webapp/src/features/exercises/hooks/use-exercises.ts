@@ -74,7 +74,23 @@ export const useExercises = (
       if (error) throw error;
       return data?.data as Exercise;
     },
-    onSuccess: (_, { id }) => {
+    onMutate: async ({ id, input }) => {
+      await queryClient.cancelQueries({ queryKey: exercisesKeys.detail(id) });
+      const previous = queryClient.getQueryData<Exercise>(exercisesKeys.detail(id));
+      if (previous) {
+        queryClient.setQueryData<Exercise>(exercisesKeys.detail(id), {
+          ...previous,
+          ...input,
+        });
+      }
+      return { previous, id };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(exercisesKeys.detail(context.id), context.previous);
+      }
+    },
+    onSettled: (_, __, { id }) => {
       queryClient.invalidateQueries({ queryKey: exercisesKeys.lists() });
       queryClient.invalidateQueries({ queryKey: exercisesKeys.detail(id) });
     },

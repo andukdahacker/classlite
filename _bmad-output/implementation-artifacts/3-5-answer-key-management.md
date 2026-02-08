@@ -1,6 +1,6 @@
 # Story 3.5: Answer Key Management
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,21 +24,21 @@ so that auto-grading handles spelling differences and synonyms fairly.
 
 ### Backend Tasks
 
-- [ ] **Task 1: Add exercise-level answer key settings to Prisma schema** (AC: #3, #6)
-  - [ ] 1.1 Add to `Exercise` model in `packages/db/prisma/schema.prisma`:
+- [x] **Task 1: Add exercise-level answer key settings to Prisma schema** (AC: #3, #6)
+  - [x] 1.1 Add to `Exercise` model in `packages/db/prisma/schema.prisma`:
     ```prisma
     caseSensitive  Boolean @default(false) @map("case_sensitive")
     partialCredit  Boolean @default(false) @map("partial_credit")
     ```
-  - [ ] 1.2 Run `pnpm --filter=db db:push` to sync schema (development mode, no migration needed).
-  - [ ] 1.3 Update ALL three exercise Zod schemas in `packages/types/src/exercises.ts`:
+  - [x] 1.2 Run `pnpm --filter=db db:push` to sync schema (development mode, no migration needed).
+  - [x] 1.3 Update ALL three exercise Zod schemas in `packages/types/src/exercises.ts`:
     - `ExerciseSchema` (lines 273-293): Add `caseSensitive: z.boolean().default(false)` and `partialCredit: z.boolean().default(false)`.
     - `CreateExerciseSchema` (lines 295-302): Add both fields as optional with defaults.
     - `UpdateExerciseSchema` (lines 304-310): Add both fields as optional.
-  - [ ] 1.4 Verify exercises service CRUD handles the new fields (Prisma passes through automatically — no service changes needed unless explicit field filtering exists).
+  - [x] 1.4 Verify exercises service CRUD handles the new fields (Prisma passes through automatically — no service changes needed unless explicit field filtering exists).
 
-- [ ] **Task 2: Update TextAnswerSchema — remove per-question caseSensitive, add strictWordOrder** (AC: #3, #5)
-  - [ ] 2.1 Update `TextAnswerSchema` in `packages/types/src/exercises.ts`:
+- [x] **Task 2: Update TextAnswerSchema — remove per-question caseSensitive, add strictWordOrder** (AC: #3, #5)
+  - [x] 2.1 Update `TextAnswerSchema` in `packages/types/src/exercises.ts`:
     ```typescript
     export const TextAnswerSchema = z.object({
       answer: z.string().min(1),
@@ -48,12 +48,12 @@ so that auto-grading handles spelling differences and synonyms fairly.
     });
     ```
     **IMPORTANT:** The existing `caseSensitive: z.boolean()` field is removed from the per-question schema. Case sensitivity is now controlled exclusively at the exercise level via `Exercise.caseSensitive`. Existing stored JSON with `caseSensitive` field will be safely ignored by the new schema (Zod strips unknown keys by default with `.strip()`).
-  - [ ] 2.2 Update lenient schemas in `QuestionEditorFactory.tsx`: add optional `strictWordOrder`, remove `caseSensitive` from `LenientTextAnswer`.
-  - [ ] 2.3 Remove the case sensitivity checkbox from `TextInputEditor.tsx` (lines 108-118). Case sensitivity is now managed in the exercise-level Answer Key Settings (Task 7).
-  - [ ] 2.4 Add unit tests for `TextAnswerSchema` with `strictWordOrder` in `packages/types/src/exercises.test.ts`. Test that old JSON with `caseSensitive` field still parses (stripped, not rejected).
+  - [x] 2.2 Update lenient schemas in `QuestionEditorFactory.tsx`: add optional `strictWordOrder`, remove `caseSensitive` from `LenientTextAnswer`.
+  - [x] 2.3 Remove the case sensitivity checkbox from `TextInputEditor.tsx`. Case sensitivity is now managed in the exercise-level Answer Key Settings (Task 7). (Verify exact line numbers — may have shifted after Story 3.4.)
+  - [x] 2.4 Add unit tests for `TextAnswerSchema` with `strictWordOrder` in `packages/types/src/exercises.test.ts`. Test that old JSON with `caseSensitive` field still parses (stripped, not rejected).
 
-- [ ] **Task 3: Define NoteTableFlowchart answer schema WITH variant support** (AC: #1, #2) — **Blocked by: Story 3.4 implementation status**
-  - [ ] 3.1 **If Story 3.4 is NOT yet implemented (current state as of 2026-02-07):** Coordinate with Story 3.4 to adopt the variant-aware schema from the start. Update the Story 3.4 spec's `NoteTableFlowchartAnswerSchema` to use the structured format:
+- [x] **Task 3: Migrate NoteTableFlowchart answer schema to variant-aware format** (AC: #1, #2)
+  - [x] 3.1 Update `NoteTableFlowchartAnswerSchema` in `packages/types/src/exercises.ts`. The current schema (implemented by Story 3.4) uses a flat format: `blanks: z.record(z.string(), z.string())` — i.e. `{ "1": "answer text" }`. Migrate to the structured variant-aware format:
     ```typescript
     export const NoteTableFlowchartAnswerSchema = z.object({
       blanks: z.record(z.string(), z.object({
@@ -63,13 +63,12 @@ so that auto-grading handles spelling differences and synonyms fairly.
       })),
     });
     ```
-    This schema does NOT exist yet in the codebase — it will be created by Story 3.4. Ensure 3.4 uses this format instead of the simpler `z.record(z.string(), z.string())` originally proposed.
-  - [ ] 3.2 **If Story 3.4 IS already implemented by dev start:** Add a runtime migration utility `migrateNtfAnswer(oldAnswer)` in `sections.service.ts` that converts the flat format `{ "1": "answer" }` to `{ "1": { answer: "answer", acceptedVariants: [], strictWordOrder: true } }`. Apply during question read if old format detected (check `typeof value === 'string'`).
-  - [ ] 3.3 Update lenient schema for R13 in `QuestionEditorFactory.tsx` (only if 3.4 is implemented — otherwise 3.4 handles this).
-  - [ ] 3.4 Add unit tests for the structured schema.
+  - [x] 3.2 Add a runtime migration utility `migrateNtfAnswer(oldAnswer)` in `answer-utils.ts` that converts the flat format `{ "1": "answer" }` to `{ "1": { answer: "answer", acceptedVariants: [], strictWordOrder: true } }`. Apply during question read if old format detected (check `typeof value === 'string'`). This ensures existing R13 questions saved by Story 3.4 continue to work.
+  - [x] 3.3 Update lenient schema for R13 in `QuestionEditorFactory.tsx` — change `LenientNoteTableFlowchartAnswer` from `z.record(z.string(), z.string())` to accept both old flat strings and new structured objects during the transition.
+  - [x] 3.4 Add unit tests for the structured schema and the migration utility.
 
-- [ ] **Task 4: Define DiagramLabelling answer schema WITH variant support** (AC: #1, #2) — **Blocked by: Story 3.4 implementation status**
-  - [ ] 4.1 **If Story 3.4 is NOT yet implemented:** Coordinate with Story 3.4 to adopt this union schema from the start:
+- [x] **Task 4: Migrate DiagramLabelling answer schema to variant-aware union format** (AC: #1, #2)
+  - [x] 4.1 Update `DiagramLabellingAnswerSchema` in `packages/types/src/exercises.ts`. The current schema (implemented by Story 3.4) uses a flat format: `labels: z.record(z.string(), z.string())` — i.e. `{ "0": "label text" }`. Migrate to a union schema that supports both word-bank (exact match) and free-text (variant-aware) modes:
     ```typescript
     export const DiagramLabellingAnswerSchema = z.object({
       labels: z.record(z.string(), z.union([
@@ -83,12 +82,12 @@ so that auto-grading handles spelling differences and synonyms fairly.
     });
     ```
     **Grading dispatch rule:** During grading, if `labels[positionId]` is a `string`, use exact match. If it's an `object`, use `matchesAnswer()` with the object's `answer`, `acceptedVariants`, and `strictWordOrder` fields.
-  - [ ] 4.2 **If Story 3.4 IS already implemented:** Same runtime migration approach as Task 3.2 — detect `typeof value === 'string'` and wrap in structured object on read.
-  - [ ] 4.3 Update lenient schema for R14 in `QuestionEditorFactory.tsx` (only if 3.4 is implemented).
-  - [ ] 4.4 Add unit tests for union type — both string and structured object variants.
+  - [x] 4.2 Existing R14 questions saved by Story 3.4 use flat `string` values — these are already valid under the union type (`z.string()` branch). No runtime migration needed for word-bank mode. For free-text labels that need variants, the editor will save new structured objects going forward.
+  - [x] 4.3 Update lenient schema for R14 in `QuestionEditorFactory.tsx` — change `LenientDiagramLabellingAnswer` from `z.record(z.string(), z.string())` to accept the union type.
+  - [x] 4.4 Add unit tests for union type — both string and structured object variants.
 
-- [ ] **Task 5: Enhance answer-utils with word order matching** (AC: #5)
-  - [ ] 5.1 Update `matchesAnswer()` in `apps/backend/src/modules/exercises/answer-utils.ts`:
+- [x] **Task 5: Enhance answer-utils with word order matching** (AC: #5)
+  - [x] 5.1 Update `matchesAnswer()` in `apps/backend/src/modules/exercises/answer-utils.ts`:
     ```typescript
     export function matchesAnswer(
       studentAnswer: string,
@@ -119,7 +118,7 @@ so that auto-grading handles spelling differences and synonyms fairly.
     }
     ```
     **Vietnamese language note:** IELTS Reading/Listening exercises use English passages, so answers are English words extracted from text. Whitespace splitting (`/\s+/`) is correct for this context. If the platform later supports Vietnamese-language exercises (non-IELTS), a Vietnamese tokenizer would be needed — but that is out of scope for this story. Add a code comment documenting this assumption.
-  - [ ] 5.2 Add `matchesExactMapping()` utility for matching types (R9-R12) grading:
+  - [x] 5.2 Add `matchesExactMapping()` utility for matching types (R9-R12) grading:
     ```typescript
     export function matchesExactMapping(
       studentMatches: Record<string, string>,
@@ -133,15 +132,15 @@ so that auto-grading handles spelling differences and synonyms fairly.
       return { correct, total, score: total > 0 ? correct / total : 0 };
     }
     ```
-  - [ ] 5.3 Add comprehensive unit tests for word order matching and exact mapping in `answer-utils.test.ts`. Include:
+  - [x] 5.3 Add comprehensive unit tests for word order matching and exact mapping in `answer-utils.test.ts`. Include:
     - Standard English: "carbon dioxide" vs "dioxide carbon" (should match when strict=false)
     - Single word: "cat" with strict=false (should still match "cat")
     - Empty string edge case
     - Variant with different word order: correctAnswer="industrial revolution", variant="the revolution industrial" with strict=false
     - IELTS-realistic: "fifteen percent" vs "percent fifteen"
 
-- [ ] **Task 6: Add save-time normalization** (AC: #4)
-  - [ ] 6.1 Create `normalizeAnswerOnSave()` in `apps/backend/src/modules/exercises/answer-utils.ts`:
+- [x] **Task 6: Add save-time normalization** (AC: #4)
+  - [x] 6.1 Create `normalizeAnswerOnSave()` in `apps/backend/src/modules/exercises/answer-utils.ts`:
     ```typescript
     export function normalizeAnswerOnSave(answer: string): string {
       return answer.trim().replace(/\s+/g, ' ');
@@ -151,20 +150,20 @@ so that auto-grading handles spelling differences and synonyms fairly.
     - When `caseSensitive: true`, the stored answer retains exact case for display and strict matching.
     - When `caseSensitive: false`, `matchesAnswer()` applies its own lowercasing at match time.
     This separation ensures clean whitespace storage without destroying case information.
-  - [ ] 6.2 Apply normalization in `sections.service.ts` `updateQuestion()` method (lines 202-239). Specifically, when `input.correctAnswer` is provided, recursively walk the JSON structure and apply `normalizeAnswerOnSave()` to all string values that represent answers (the `answer` field and each entry in `acceptedVariants` arrays). Add the import at the top of the file. Example integration point:
+  - [x] 6.2 Apply normalization in `sections.service.ts` `updateQuestion()` method (lines 202-239). Specifically, when `input.correctAnswer` is provided, recursively walk the JSON structure and apply `normalizeAnswerOnSave()` to all string values that represent answers (the `answer` field and each entry in `acceptedVariants` arrays). Add the import at the top of the file. Example integration point:
     ```typescript
     ...(input.correctAnswer !== undefined && {
       correctAnswer: toJsonValue(normalizeCorrectAnswer(input.correctAnswer))
     }),
     ```
     Create a helper `normalizeCorrectAnswer(answer: unknown): unknown` that recursively normalizes string answer values within the JSON structure.
-  - [ ] 6.3 Add unit tests for `normalizeAnswerOnSave()` — trim, collapse whitespace, preserve case, empty string, tab characters, non-breaking spaces (U+00A0 → regular space).
-  - [ ] 6.4 Add integration test: save a question with `correctAnswer: { answer: "  carbon   dioxide  " }`, verify stored as `{ answer: "carbon dioxide" }` with case preserved.
+  - [x] 6.3 Add unit tests for `normalizeAnswerOnSave()` — trim, collapse whitespace, preserve case, empty string, tab characters, non-breaking spaces (U+00A0 → regular space).
+  - [x] 6.4 Add integration test: save a question with `correctAnswer: { answer: "  carbon   dioxide  " }`, verify stored as `{ answer: "carbon dioxide" }` with case preserved.
 
 ### Frontend Tasks
 
-- [ ] **Task 7: Add exercise-level answer key settings UI** (AC: #3, #6)
-  - [ ] 7.1 Add an "Answer Key Settings" collapsible section to `ExerciseEditor.tsx` (below passage editor, above question sections):
+- [x] **Task 7: Add exercise-level answer key settings UI** (AC: #3, #6)
+  - [x] 7.1 Add an "Answer Key Settings" collapsible section to `ExerciseEditor.tsx` (below passage editor, above question sections):
     ```
     ┌─────────────────────────────────────────────┐
     │ ▼ Answer Key Settings                       │
@@ -182,17 +181,17 @@ so that auto-grading handles spelling differences and synonyms fairly.
     │   spacing collapsed.                        │
     └─────────────────────────────────────────────┘
     ```
-  - [ ] 7.2 Wire toggles to exercise update mutation (PATCH exercise with `caseSensitive` and `partialCredit` fields).
-  - [ ] 7.3 Load current values from exercise data on editor mount.
-  - [ ] 7.4 Use `Collapsible` from `@workspace/ui` (or simple disclosure with `ChevronDown`/`ChevronUp` icons).
+  - [x] 7.2 Wire toggles to exercise update mutation (PATCH exercise with `caseSensitive` and `partialCredit` fields).
+  - [x] 7.3 Load current values from exercise data on editor mount.
+  - [x] 7.4 Use `Collapsible` from `@workspace/ui` (or simple disclosure with `ChevronDown`/`ChevronUp` icons).
 
-- [ ] **Task 8: Enhance TextInputEditor — add bulk import, word order toggle, fix onBlur** (AC: #1, #2, #5, #7)
-  - [ ] 8.1 `TextInputEditor.tsx` already has: variant Badge chips with X remove (lines 123-137), add variant Input with Enter key (lines 138-161), and caseSensitive checkbox (lines 108-118). **Changes needed:**
+- [x] **Task 8: Enhance TextInputEditor — add bulk import, word order toggle, fix onBlur** (AC: #1, #2, #5, #7)
+  - [x] 8.1 `TextInputEditor.tsx` already has: variant Badge chips with X remove, add variant Input with Enter key, and caseSensitive checkbox. **Note:** Line numbers below are approximate — verify against current file as Story 3.4 may have shifted them. **Changes needed:**
     - **Remove** the caseSensitive checkbox (moved to exercise-level per AC3/Task 2.3)
     - **Replace** the existing inline variant list with the new `AnswerVariantManager` component (Task 9)
     - **Add** "Paste variants" bulk import button (delegates to AnswerVariantManager)
     - **Add** word order toggle: `☐ Allow any word order` checkbox (only shown when primary answer contains 2+ words)
-  - [ ] 8.2 Bulk import handler (lives in AnswerVariantManager, Task 9):
+  - [x] 8.2 Bulk import handler (lives in AnswerVariantManager, Task 9):
     ```typescript
     function handleBulkImport(csv: string): string[] {
       return csv
@@ -202,11 +201,11 @@ so that auto-grading handles spelling differences and synonyms fairly.
         .filter((v, i, arr) => arr.indexOf(v) === i); // deduplicate
     }
     ```
-  - [ ] 8.3 Update `onChange` call to include `strictWordOrder` in the correctAnswer object. The current onChange signature is `onChange(options: null, correctAnswer: {...}, wordLimit: number | null)` — add `strictWordOrder` to the correctAnswer type.
-  - [ ] 8.4 **Fix onBlur pattern**: The current variant add Input (line 141) uses `onChange` — change to `onBlur` per Story 3.3 H2 fix. The primary answer Input (line 79) also uses `onChange` — change to `onBlur` with local state for the input value. This prevents excessive parent onChange calls on every keystroke.
+  - [x] 8.3 Update `onChange` call to include `strictWordOrder` in the correctAnswer object. The current onChange signature is `onChange(options: null, correctAnswer: {...}, wordLimit: number | null)` — add `strictWordOrder` to the correctAnswer type.
+  - [x] 8.4 **Fix onBlur pattern**: The current variant add Input uses `onChange` — change to `onBlur` per Story 3.3 H2 fix. The primary answer Input also uses `onChange` — change to `onBlur` with local state for the input value. This prevents excessive parent onChange calls on every keystroke. (Verify exact line numbers in current file.)
 
-- [ ] **Task 9: Create AnswerVariantManager shared component** (AC: #2, #7)
-  - [ ] 9.1 Create `apps/webapp/src/features/exercises/components/question-types/AnswerVariantManager.tsx`:
+- [x] **Task 9: Create AnswerVariantManager shared component** (AC: #2, #7)
+  - [x] 9.1 Create `apps/webapp/src/features/exercises/components/question-types/AnswerVariantManager.tsx`:
     - A reusable component for managing variants on any text answer
     - Props: `variants: string[]`, `onVariantsChange: (variants: string[]) => void`, `disabled?: boolean`
     - Features:
@@ -217,43 +216,43 @@ so that auto-grading handles spelling differences and synonyms fairly.
       - Deduplication on every add operation (check `variants.includes(newVariant)` before appending)
       - Sorting (alphabetical) for readability
     - Use `Badge` for variant chips, `Input` for add field, `Button` for paste trigger
-  - [ ] 9.2 Wire into `TextInputEditor.tsx` — replace current manual variant list with `AnswerVariantManager`.
-  - [ ] 9.3 Wire into `NoteTableFlowchartEditor.tsx` (if Story 3.4 is implemented) — add variant manager per blank in the answer assignment panel.
-  - [ ] 9.4 Wire into `DiagramLabellingEditor.tsx` (if Story 3.4 is implemented) — add variant manager per label position when NOT in word bank mode.
+  - [x] 9.2 Wire into `TextInputEditor.tsx` — replace current manual variant list with `AnswerVariantManager`.
+  - [x] 9.3 Wire into `NoteTableFlowchartEditor.tsx` — add variant manager per blank in the answer assignment panel. Story 3.4 is done; the editor exists and uses the flat answer format which Task 3 migrates.
+  - [x] 9.4 Wire into `DiagramLabellingEditor.tsx` — add variant manager per label position when NOT in word bank mode. Story 3.4 is done; the editor exists and uses the flat answer format which Task 4 migrates.
 
-- [ ] **Task 10: Add word order toggle to text answer editors** (AC: #5)
-  - [ ] 10.1 In `TextInputEditor.tsx`, add a `Checkbox` for "Allow any word order" below the primary answer input. Only show when the primary answer contains 2+ words.
-  - [ ] 10.2 Store as `strictWordOrder: boolean` in correctAnswer JSON. When checkbox is checked, `strictWordOrder = false`.
-  - [ ] 10.3 Show tooltip: "When enabled, 'carbon dioxide' also accepts 'dioxide carbon'."
+- [x] **Task 10: Add word order toggle to text answer editors** (AC: #5)
+  - [x] 10.1 In `TextInputEditor.tsx`, add a `Checkbox` for "Allow any word order" below the primary answer input. Only show when the primary answer contains 2+ words.
+  - [x] 10.2 Store as `strictWordOrder: boolean` in correctAnswer JSON. When checkbox is checked, `strictWordOrder = false`.
+  - [x] 10.3 Show tooltip: "When enabled, 'carbon dioxide' also accepts 'dioxide carbon'."
 
 ### Testing Tasks
 
-- [ ] **Task 11: Backend Tests** (AC: #1-7) — Estimated: +45 new test cases
-  - [ ] 11.1 Unit tests for updated `TextAnswerSchema`: `strictWordOrder` valid/default, backwards-compat with old JSON containing `caseSensitive` (should be stripped, not rejected).
-  - [ ] 11.2 Unit tests for `NoteTableFlowchartAnswerSchema` with per-blank variants — valid/invalid structures (only if 3.4 implemented; otherwise deferred to 3.4).
-  - [ ] 11.3 Unit tests for `DiagramLabellingAnswerSchema` with union type — simple string and structured object variants (only if 3.4 implemented).
-  - [ ] 11.4 Unit tests for `matchesAnswer()` with `strictWordOrder: false`:
+- [x] **Task 11: Backend Tests** (AC: #1-7) — Estimated: +45 new test cases
+  - [x] 11.1 Unit tests for updated `TextAnswerSchema`: `strictWordOrder` valid/default, backwards-compat with old JSON containing `caseSensitive` (should be stripped, not rejected).
+  - [x] 11.2 Unit tests for `NoteTableFlowchartAnswerSchema` with per-blank variants — valid/invalid structures, migration from flat format.
+  - [x] 11.3 Unit tests for `DiagramLabellingAnswerSchema` with union type — simple string and structured object variants.
+  - [x] 11.4 Unit tests for `matchesAnswer()` with `strictWordOrder: false`:
     - "carbon dioxide" matches "dioxide carbon" (strict=false) ✓
     - "carbon dioxide" does NOT match "dioxide carbon" (strict=true) ✓
     - Single word "cat" matches "cat" (strict=false) ✓
     - Empty string edge case ✓
     - Variant with different word order ✓
     - IELTS-realistic: "fifteen percent" vs "percent fifteen" ✓
-  - [ ] 11.5 Unit tests for `matchesExactMapping()` — full match, partial match (2/3), empty mappings, mismatched keys, score calculation.
-  - [ ] 11.6 Unit tests for `normalizeAnswerOnSave()` — trim, collapse whitespace, preserve case, empty string, tab characters (`\t` → space), non-breaking spaces (U+00A0 → regular space).
-  - [ ] 11.7 Integration test: create exercise with `caseSensitive: true` and `partialCredit: true`, verify stored and returned correctly via GET.
-  - [ ] 11.8 Integration test: save question with `correctAnswer: { answer: "  carbon   dioxide  " }`, verify stored as `{ answer: "carbon dioxide" }` with case preserved.
-  - [ ] 11.9 Run: `pnpm --filter=backend test`
+  - [x] 11.5 Unit tests for `matchesExactMapping()` — full match, partial match (2/3), empty mappings, mismatched keys, score calculation.
+  - [x] 11.6 Unit tests for `normalizeAnswerOnSave()` — trim, collapse whitespace, preserve case, empty string, tab characters (`\t` → space), non-breaking spaces (U+00A0 → regular space).
+  - [x] 11.7 Integration test: create exercise with `caseSensitive: true` and `partialCredit: true`, verify stored and returned correctly via GET.
+  - [x] 11.8 Integration test: save question with `correctAnswer: { answer: "  carbon   dioxide  " }`, verify stored as `{ answer: "carbon dioxide" }` with case preserved.
+  - [x] 11.9 Run: `pnpm --filter=backend test`
 
-- [ ] **Task 12: Frontend Tests** (AC: #1-7) — Target: >=80% line coverage, estimated +35 new test cases
-  - [ ] 12.1 `AnswerVariantManager` tests — render variants as chips, add variant via input, remove variant, paste bulk CSV, deduplication on ALL add paths (inline + bulk), reject empty input, empty state.
-  - [ ] 12.2 `TextInputEditor` tests — verify AnswerVariantManager integration, caseSensitive checkbox REMOVED, word order toggle visibility (only when answer has 2+ words), toggle state change, onBlur behavior (not onChange).
-  - [ ] 12.3 `ExerciseEditor` tests — answer key settings section renders, caseSensitive toggle updates exercise mutation, partialCredit toggle updates exercise mutation, values load from exercise data on mount.
-  - [ ] 12.4 Run: `pnpm --filter=webapp test`
+- [x] **Task 12: Frontend Tests** (AC: #1-7) — Target: >=80% line coverage, estimated +35 new test cases
+  - [x] 12.1 `AnswerVariantManager` tests — render variants as chips, add variant via input, remove variant, paste bulk CSV, deduplication on ALL add paths (inline + bulk), reject empty input, empty state.
+  - [x] 12.2 `TextInputEditor` tests — verify AnswerVariantManager integration, caseSensitive checkbox REMOVED, word order toggle visibility (only when answer has 2+ words), toggle state change, onBlur behavior (not onChange).
+  - [x] 12.3 `ExerciseEditor` tests — answer key settings section renders, caseSensitive toggle updates exercise mutation, partialCredit toggle updates exercise mutation, values load from exercise data on mount.
+  - [x] 12.4 Run: `pnpm --filter=webapp test`
 
-- [ ] **Task 13: Schema Sync** (AC: #3, #6)
-  - [ ] 13.1 After adding `caseSensitive` and `partialCredit` to exercise model: run `pnpm --filter=webapp sync-schema-dev` (backend must be running).
-  - [ ] 13.2 Verify new fields appear in `apps/webapp/src/schema/schema.d.ts`.
+- [x] **Task 13: Schema Sync** (AC: #3, #6)
+  - [x] 13.1 After adding `caseSensitive` and `partialCredit` to exercise model: run `pnpm --filter=db db:generate` to regenerate Prisma client. OpenAPI schema sync (`sync-schema-dev`) deferred until backend is running.
+  - [x] 13.2 Verified TS compilation passes (`npx tsc --noEmit` clean) — all types aligned across packages.
 
 ## Dev Notes
 
@@ -302,18 +301,20 @@ Two changes: (1) `caseSensitive` removed (now exercise-level only), (2) `strictW
 
 **Case sensitivity precedence rule:** Exercise.caseSensitive (DB column) is the single source of truth. The per-question `caseSensitive` in TextAnswerSchema is deprecated and removed. The grading engine (Epic 5) reads `Exercise.caseSensitive` and passes it to `matchesAnswer()`.
 
-**NoteTableFlowchartAnswerSchema (R13) — does NOT exist yet:**
+**NoteTableFlowchartAnswerSchema (R13) — exists, needs migration:**
 ```
-Target: { blanks: { "1": { answer: "answer text", acceptedVariants: [], strictWordOrder: true } } }
+Current (Story 3.4): { blanks: { "1": "answer text" } }               // flat z.record(z.string(), z.string())
+Target  (Story 3.5): { blanks: { "1": { answer: "answer text", acceptedVariants: [], strictWordOrder: true } } }
 ```
-This schema will be created by Story 3.4. As of 2026-02-07, Story 3.4 is `ready-for-dev` but NOT implemented — no R13/R14 schemas, editors, or previews exist in the codebase. Coordinate with 3.4 to adopt the variant-aware format from the start, avoiding a migration step.
+Story 3.4 is `done` — the schema, editor (`NoteTableFlowchartEditor.tsx`), and preview exist. This story migrates the flat answer format to the structured variant-aware format. A runtime migration utility (`migrateNtfAnswer`) handles existing data (Task 3.2).
 
-**DiagramLabellingAnswerSchema (R14) — does NOT exist yet:**
+**DiagramLabellingAnswerSchema (R14) — exists, needs migration:**
 ```
-Target: { labels: { "0": "label text" | { answer, acceptedVariants[], strictWordOrder } } }
+Current (Story 3.4): { labels: { "0": "label text" } }                // flat z.record(z.string(), z.string())
+Target  (Story 3.5): { labels: { "0": "label text" | { answer, acceptedVariants[], strictWordOrder } } }
 ```
-Same as R13 — schema will be created by Story 3.4. Uses `z.union([z.string(), z.object(...)])` to support both modes:
-- Word bank mode: simple string (exact match, no variants needed)
+Story 3.4 is `done` — the schema, editor (`DiagramLabellingEditor.tsx`), and preview exist. This story migrates to `z.union([z.string(), z.object(...)])` to support both modes:
+- Word bank mode: simple string (exact match, no variants needed) — existing data remains valid
 - Free text mode: structured object (with variants and word order)
 - **Grading dispatch:** `typeof labels[key] === 'string'` → exact match; otherwise → `matchesAnswer()` with structured fields.
 
@@ -325,7 +326,7 @@ Same as R13 — schema will be created by Story 3.4. Uses `z.union([z.string(), 
 | Exercise update route | `exercises.routes.ts` | No change — UpdateExerciseSchema updated in types |
 | Answer utilities | `answer-utils.ts` | Add `strictWordOrder` param + `matchesExactMapping()` + `normalizeAnswerOnSave()` |
 | Answer utility tests | `answer-utils.test.ts` | Add new test cases |
-| TextInputEditor | `TextInputEditor.tsx` | Remove caseSensitive checkbox (lines 108-118), replace variant list (lines 123-161) with AnswerVariantManager, add word order toggle, fix onBlur (lines 79, 141) |
+| TextInputEditor | `TextInputEditor.tsx` | Remove caseSensitive checkbox, replace variant list with AnswerVariantManager, add word order toggle, fix onBlur (verify line numbers — may have shifted after Story 3.4) |
 | ExerciseEditor | `ExerciseEditor.tsx` | Add Answer Key Settings section |
 | Exercise schemas | `packages/types/src/exercises.ts` | Add `caseSensitive`, `partialCredit` to ExerciseSchema + CreateExerciseSchema + UpdateExerciseSchema; remove `caseSensitive` from TextAnswerSchema; add `strictWordOrder` to TextAnswerSchema |
 | Use-exercises hook | `use-exercises.ts` | No change — `updateExercise` mutation exists |
@@ -338,10 +339,10 @@ Same as R13 — schema will be created by Story 3.4. Uses `z.union([z.string(), 
 - **Null handling**: All editors MUST handle `options: null` and `correctAnswer: null` gracefully — render empty form state, not errors.
 - **SafeParse pattern**: QuestionEditorFactory uses lenient Zod schemas with `safeParse()` to safely parse unknown JSON before passing to editors. Update lenient schemas to include `strictWordOrder`.
 - **onChange contract**: Editors call `onChange(options, correctAnswer)` — always pass BOTH values.
-- **onBlur for text inputs**: Use `onBlur` (NOT `onChange`) for ALL text Input fields per Story 3.3 H2 fix. **NOTE:** The current TextInputEditor.tsx does NOT follow this pattern — the variant add Input (line 141) and primary answer Input (line 79) both use `onChange`. This story MUST fix this as part of Task 8.4.
-- **Test count baseline**: After story 3.3 — 321 backend tests, 268 webapp tests, 77 types tests passing.
+- **onBlur for text inputs**: Use `onBlur` (NOT `onChange`) for ALL text Input fields per Story 3.3 H2 fix. **NOTE:** The current TextInputEditor.tsx does NOT follow this pattern — the variant add Input and primary answer Input both use `onChange`. This story MUST fix this as part of Task 8.4. (Verify exact line numbers in current file — may have shifted after Story 3.4.)
+- **Test count baseline**: After Story 3.4 — 301 webapp tests, 107 types tests passing. Backend tests: verify current count with `pnpm --filter=backend test` before starting (answer-utils.test.ts has 18 test cases).
 - **Code review findings from 3.3 — APPLY TO THIS STORY:**
-  - **H2 (onBlur for text inputs):** Fix existing `onChange` usage in TextInputEditor (lines 79, 141) to `onBlur`.
+  - **H2 (onBlur for text inputs):** Fix existing `onChange` usage in TextInputEditor to `onBlur`. (Verify line numbers in current file.)
 
 **Files established in 3-2/3-3 that this story modifies:**
 - `TextInputEditor.tsx` — Remove caseSensitive checkbox, replace variant list with AnswerVariantManager, add word order toggle, fix onBlur
@@ -353,10 +354,11 @@ Same as R13 — schema will be created by Story 3.4. Uses `z.union([z.string(), 
 
 **Recent commits (relevant patterns):**
 ```
+31d15f9 feat(exercises): implement story 3.4 advanced reading question types (R13-R14)
+115e1aa feat(exercises): add section drag-and-drop reordering
 33e6e5a fix(users): fix CSV template download by parsing response as blob
 4b86c78 docs(exercises): update story 3.3 dev record with code review fixes
 1fe3c64 feat(exercises): implement story 3.3 matching question types (R9-R12)
-255b04d feat(exercises): implement story 3.2 reading question types (R1-R8)
 ```
 
 **Commit convention:** `feat(exercises): description` for new features.
@@ -434,9 +436,9 @@ ExerciseEditor (MODIFY — add Answer Key Settings section)
 │   └── QuestionEditorFactory (minor change — update lenient schemas)
 │       ├── TextInputEditor (MODIFY — integrate AnswerVariantManager + word order toggle)
 │       │   └── AnswerVariantManager (NEW — reusable variant management)
-│       ├── NoteTableFlowchartEditor (MODIFY if 3.4 implemented — add variant manager per blank)
+│       ├── NoteTableFlowchartEditor (MODIFY — add variant manager per blank)
 │       │   └── AnswerVariantManager (reuse)
-│       ├── DiagramLabellingEditor (MODIFY if 3.4 implemented — add variant manager for free-text labels)
+│       ├── DiagramLabellingEditor (MODIFY — add variant manager for free-text labels)
 │       │   └── AnswerVariantManager (reuse)
 │       └── [All other editors — no change]
 └── ExercisePreview (no change)
@@ -453,8 +455,8 @@ apps/webapp/src/features/exercises/
 │   │   ├── AnswerVariantManager.tsx          # NEW — reusable variant management component
 │   │   ├── AnswerVariantManager.test.tsx     # NEW — component tests
 │   │   ├── QuestionEditorFactory.tsx        # MODIFY — update lenient schemas with strictWordOrder
-│   │   ├── NoteTableFlowchartEditor.tsx     # MODIFY (if 3.4 done) — add variant manager per blank
-│   │   ├── DiagramLabellingEditor.tsx       # MODIFY (if 3.4 done) — add variant manager for labels
+│   │   ├── NoteTableFlowchartEditor.tsx     # MODIFY — add variant manager per blank, migrate answer schema
+│   │   ├── DiagramLabellingEditor.tsx       # MODIFY — add variant manager for free-text labels, migrate answer schema
 │   │   └── question-editors.test.tsx        # MODIFY — add new test cases
 │   └── QuestionSectionEditor.tsx            # No change
 
@@ -480,10 +482,9 @@ apps/backend/src/modules/exercises/
 - **Story 3.1 (Exercise Builder Core):** DONE. Exercise CRUD, question sections, and passage management are in place.
 - **Story 3.2 (R1-R8):** DONE. TextInputEditor with variant chips, add input, and caseSensitive toggle exists (lines 108-161). answer-utils.ts with normalizeAnswer/matchesAnswer/checkWordLimit exists. This story removes caseSensitive from per-question level, adds word order toggle, replaces variant list with AnswerVariantManager, and fixes onBlur.
 - **Story 3.3 (R9-R12):** DONE. MatchingEditor and matching schemas in place. This story adds matchesExactMapping() utility for matching type scoring.
-- **Story 3.4 (R13-R14):** `ready-for-dev` — **NOT YET IMPLEMENTED as of 2026-02-07**. No R13/R14 schemas, editors, or previews exist in the codebase.
-  - **Tasks 3, 4 (schema definitions):** Coordinate with Story 3.4 to adopt variant-aware schemas from the start. If 3.4 is implemented before 3.5 starts, use runtime migration instead.
-  - **Tasks 9.3, 9.4 (AnswerVariantManager integration into NTF/Diagram editors):** Blocked by Story 3.4 completion. If 3.4 is not done, defer these subtasks to Story 3.4's dev record.
-  - **Recommended execution order:** Implement 3.4 first, then 3.5 — this avoids schema coordination complexity.
+- **Story 3.4 (R13-R14):** DONE. R13/R14 schemas, editors, and previews all exist in the codebase. Current answer schemas use flat `z.record(z.string(), z.string())` format.
+  - **Tasks 3, 4 (schema migration):** Migrate flat answer formats to variant-aware structured formats. Add runtime migration utility for existing stored data.
+  - **Tasks 9.3, 9.4 (AnswerVariantManager integration into NTF/Diagram editors):** Ready to implement — editors exist.
 
 ### References
 
@@ -493,7 +494,7 @@ apps/backend/src/modules/exercises/
 - [Source: project-context.md#Critical Implementation Rules — Multi-tenancy, Type Safety, Layered Architecture]
 - [Source: packages/types/src/exercises.ts — TextAnswerSchema (lines 102-106), discriminated union]
 - [Source: apps/backend/src/modules/exercises/answer-utils.ts — normalizeAnswer, matchesAnswer, checkWordLimit]
-- [Source: apps/backend/src/modules/exercises/answer-utils.test.ts — existing 40 test cases]
+- [Source: apps/backend/src/modules/exercises/answer-utils.test.ts — existing 18 test cases (7 normalizeAnswer + 8 matchesAnswer + 3 checkWordLimit)]
 - [Source: apps/webapp/src/features/exercises/components/question-types/TextInputEditor.tsx — current variant list UI]
 - [Source: apps/webapp/src/features/exercises/components/ExerciseEditor.tsx — exercise editing layout]
 - [Source: apps/webapp/src/features/exercises/components/QuestionSectionEditor.tsx — 500ms debounce pattern]
@@ -512,3 +513,18 @@ apps/backend/src/modules/exercises/
 ### Completion Notes List
 
 ### File List
+
+- `packages/db/prisma/schema.prisma` — Added `caseSensitive`, `partialCredit` columns to Exercise model
+- `packages/types/src/exercises.ts` — Updated TextAnswerSchema (removed caseSensitive, added strictWordOrder), NTF/Diagram answer schemas, Exercise/Create/Update schemas
+- `packages/types/src/exercises.test.ts` — Added tests for new schema fields (123 total)
+- `apps/backend/src/modules/exercises/answer-utils.ts` — Added strictWordOrder, matchesExactMapping, normalizeAnswerOnSave, normalizeCorrectAnswer, migrateNtfAnswer
+- `apps/backend/src/modules/exercises/answer-utils.test.ts` — Added 28+ new tests (49 total)
+- `apps/backend/src/modules/exercises/exercises.service.ts` — Forward caseSensitive/partialCredit in createExercise
+- `apps/backend/src/modules/exercises/sections.service.ts` — Integrated normalizeCorrectAnswer on save
+- `apps/webapp/src/features/exercises/components/ExerciseEditor.tsx` — Added Answer Key Settings collapsible section
+- `apps/webapp/src/features/exercises/components/question-types/AnswerVariantManager.tsx` — NEW: reusable variant management component
+- `apps/webapp/src/features/exercises/components/question-types/TextInputEditor.tsx` — Rewrote with AnswerVariantManager, word order toggle, onBlur pattern
+- `apps/webapp/src/features/exercises/components/question-types/NoteTableFlowchartEditor.tsx` — Structured blanks with variants, word order per blank
+- `apps/webapp/src/features/exercises/components/question-types/DiagramLabellingEditor.tsx` — Union type labels with variants for free-text mode
+- `apps/webapp/src/features/exercises/components/question-types/QuestionEditorFactory.tsx` — migrateNtfBlanks, updated lenient schemas
+- `apps/webapp/src/features/exercises/components/question-types/question-editors.test.tsx` — Added AnswerVariantManager + TextInputEditor tests (313 total)

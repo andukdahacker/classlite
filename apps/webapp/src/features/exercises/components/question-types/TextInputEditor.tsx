@@ -1,16 +1,14 @@
-import { Button } from "@workspace/ui/components/button";
+import { Checkbox } from "@workspace/ui/components/checkbox";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
-import { Badge } from "@workspace/ui/components/badge";
-import { Checkbox } from "@workspace/ui/components/checkbox";
-import { Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AnswerVariantManager } from "./AnswerVariantManager";
 
 interface TextInputEditorProps {
   correctAnswer: {
     answer: string;
     acceptedVariants: string[];
-    caseSensitive: boolean;
+    strictWordOrder: boolean;
   } | null;
   wordLimit: number | null;
   onChange: (
@@ -18,7 +16,7 @@ interface TextInputEditorProps {
     correctAnswer: {
       answer: string;
       acceptedVariants: string[];
-      caseSensitive: boolean;
+      strictWordOrder: boolean;
     },
     wordLimit: number | null,
   ) => void;
@@ -31,10 +29,14 @@ export function TextInputEditor({
 }: TextInputEditorProps) {
   const answer = correctAnswer?.answer ?? "";
   const variants = correctAnswer?.acceptedVariants ?? [];
-  const caseSensitive = correctAnswer?.caseSensitive ?? false;
+  const strictWordOrder = correctAnswer?.strictWordOrder ?? true;
 
+  const [localAnswer, setLocalAnswer] = useState(answer);
   const [localWordLimit, setLocalWordLimit] = useState(wordLimit);
-  const [newVariant, setNewVariant] = useState("");
+
+  useEffect(() => {
+    setLocalAnswer(answer);
+  }, [answer]);
 
   useEffect(() => {
     setLocalWordLimit(wordLimit);
@@ -43,7 +45,7 @@ export function TextInputEditor({
   const update = (
     newAnswer: string,
     newVariants: string[],
-    newCaseSensitive: boolean,
+    newStrictWordOrder: boolean,
     newWordLimit: number | null,
   ) => {
     onChange(
@@ -51,36 +53,26 @@ export function TextInputEditor({
       {
         answer: newAnswer,
         acceptedVariants: newVariants,
-        caseSensitive: newCaseSensitive,
+        strictWordOrder: newStrictWordOrder,
       },
       newWordLimit,
     );
   };
 
-  const addVariant = () => {
-    if (!newVariant.trim()) return;
-    update(answer, [...variants, newVariant.trim()], caseSensitive, wordLimit);
-    setNewVariant("");
-  };
-
-  const removeVariant = (index: number) => {
-    update(
-      answer,
-      variants.filter((_, i) => i !== index),
-      caseSensitive,
-      wordLimit,
-    );
-  };
+  const hasMultipleWords = localAnswer.trim().split(/\s+/).filter(Boolean).length >= 2;
 
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
         <Label className="text-xs">Correct Answer</Label>
         <Input
-          defaultValue={answer}
-          onChange={(e) =>
-            update(e.target.value, variants, caseSensitive, wordLimit)
-          }
+          value={localAnswer}
+          onChange={(e) => setLocalAnswer(e.target.value)}
+          onBlur={() => {
+            if (localAnswer !== answer) {
+              update(localAnswer, variants, strictWordOrder, wordLimit);
+            }
+          }}
           placeholder="Enter the correct answer..."
           className="h-8 text-sm"
         />
@@ -98,68 +90,42 @@ export function TextInputEditor({
                 ? Number(e.target.value)
                 : null;
               setLocalWordLimit(val);
-              update(answer, variants, caseSensitive, val);
+            }}
+            onBlur={() => {
+              if (localWordLimit !== wordLimit) {
+                update(localAnswer, variants, strictWordOrder, localWordLimit);
+              }
             }}
             placeholder="—"
             className="w-20 h-8 text-sm"
           />
         </div>
-        <div className="flex items-center gap-1.5">
-          <Checkbox
-            id="case-sensitive"
-            checked={caseSensitive}
-            onCheckedChange={(checked) =>
-              update(answer, variants, checked === true, wordLimit)
-            }
-          />
-          <Label htmlFor="case-sensitive" className="text-xs cursor-pointer">
-            Case Sensitive
-          </Label>
-        </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label className="text-xs">Accepted Variants</Label>
-        <div className="flex flex-wrap gap-1">
-          {variants.map((v, i) => (
-            <Badge key={i} variant="secondary" className="gap-1 text-xs">
-              {v}
-              <button
-                type="button"
-                onClick={() => removeVariant(i)}
-                className="hover:text-destructive"
-                aria-label={`Remove variant ${v}`}
-              >
-                <X className="size-3" />
-              </button>
-            </Badge>
-          ))}
-        </div>
+      {hasMultipleWords && (
         <div className="flex items-center gap-2">
-          <Input
-            value={newVariant}
-            onChange={(e) => setNewVariant(e.target.value)}
-            placeholder="Add accepted variant..."
-            className="flex-1 h-7 text-xs"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addVariant();
-              }
-            }}
+          <Checkbox
+            id="word-order-toggle"
+            checked={!strictWordOrder}
+            onCheckedChange={(checked) =>
+              update(localAnswer, variants, checked !== true, wordLimit)
+            }
           />
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-xs"
-            onClick={addVariant}
-            disabled={!newVariant.trim()}
-          >
-            <Plus className="mr-1 size-3" />
-            Add
-          </Button>
+          <Label htmlFor="word-order-toggle" className="text-xs cursor-pointer">
+            Allow any word order
+          </Label>
+          <span className="text-xs text-muted-foreground">
+            (e.g. &quot;carbon dioxide&quot; also accepts &quot;dioxide carbon&quot;)
+          </span>
         </div>
-      </div>
+      )}
+
+      <AnswerVariantManager
+        variants={variants}
+        onVariantsChange={(newVariants) =>
+          update(localAnswer, newVariants, strictWordOrder, wordLimit)
+        }
+      />
     </div>
   );
 }

@@ -426,6 +426,8 @@ model Exercise {
   status         ExerciseStatus @default(DRAFT)
   passageContent String?        @map("passage_content") @db.Text
   passageFormat  String?        @map("passage_format")
+  caseSensitive  Boolean        @default(false) @map("case_sensitive")
+  partialCredit  Boolean        @default(false) @map("partial_credit")
   createdById    String         @map("created_by_id")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")

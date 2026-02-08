@@ -32,8 +32,8 @@ const LenientMCQAnswer = z.object({
 const LenientTFNGAnswer = z.object({ answer: z.string() });
 const LenientTextAnswer = z.object({
   answer: z.string(),
-  acceptedVariants: z.array(z.string()),
-  caseSensitive: z.boolean(),
+  acceptedVariants: z.array(z.string()).default([]),
+  strictWordOrder: z.boolean().default(true),
 });
 const LenientWordBankOptions = z.object({
   wordBank: z.array(z.string()),
@@ -54,8 +54,13 @@ const LenientNoteTableFlowchartOptions = z.object({
   structure: z.string(),
   wordLimit: z.number().default(2),
 });
+const LenientNoteTableFlowchartBlank = z.object({
+  answer: z.string(),
+  acceptedVariants: z.array(z.string()).default([]),
+  strictWordOrder: z.boolean().default(true),
+});
 const LenientNoteTableFlowchartAnswer = z.object({
-  blanks: z.record(z.string(), z.string()),
+  blanks: z.record(z.string(), z.union([z.string(), LenientNoteTableFlowchartBlank])),
 });
 const LenientDiagramLabellingOptions = z.object({
   diagramUrl: z.string(),
@@ -63,9 +68,30 @@ const LenientDiagramLabellingOptions = z.object({
   wordBank: z.array(z.string()).optional(),
   wordLimit: z.number().default(2),
 });
-const LenientDiagramLabellingAnswer = z.object({
-  labels: z.record(z.string(), z.string()),
+const LenientDiagramLabellingStructuredLabel = z.object({
+  answer: z.string(),
+  acceptedVariants: z.array(z.string()).default([]),
+  strictWordOrder: z.boolean().default(true),
 });
+const LenientDiagramLabellingAnswer = z.object({
+  labels: z.record(z.string(), z.union([z.string(), LenientDiagramLabellingStructuredLabel])),
+});
+
+/** Migrate NTF blanks from flat string to structured format */
+function migrateNtfBlanks(
+  parsed: { blanks: Record<string, string | { answer: string; acceptedVariants: string[]; strictWordOrder: boolean }> } | null,
+): { blanks: Record<string, { answer: string; acceptedVariants: string[]; strictWordOrder: boolean }> } | null {
+  if (!parsed) return null;
+  const migrated: Record<string, { answer: string; acceptedVariants: string[]; strictWordOrder: boolean }> = {};
+  for (const [key, value] of Object.entries(parsed.blanks)) {
+    if (typeof value === "string") {
+      migrated[key] = { answer: value, acceptedVariants: [], strictWordOrder: true };
+    } else {
+      migrated[key] = value;
+    }
+  }
+  return { blanks: migrated };
+}
 
 /** Safely parse unknown data, returning null on failure */
 function safeParse<T>(schema: { safeParse: (data: unknown) => { success: boolean; data?: T } }, data: unknown): T | null {
@@ -143,7 +169,7 @@ export function QuestionEditorFactory({
       return (
         <NoteTableFlowchartEditor
           options={safeParse(LenientNoteTableFlowchartOptions, options)}
-          correctAnswer={safeParse(LenientNoteTableFlowchartAnswer, correctAnswer)}
+          correctAnswer={migrateNtfBlanks(safeParse(LenientNoteTableFlowchartAnswer, correctAnswer))}
           onChange={(opts, ans) => onChange(opts, ans)}
         />
       );

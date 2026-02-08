@@ -108,6 +108,8 @@ export class ExercisesService {
         skill: input.skill,
         passageContent: input.passageContent ?? null,
         passageFormat: input.passageFormat ?? null,
+        caseSensitive: input.caseSensitive,
+        partialCredit: input.partialCredit,
         createdById: authAccount.userId,
       },
       include: EXERCISE_INCLUDE,
@@ -137,6 +139,14 @@ export class ExercisesService {
         ...(input.passageFormat !== undefined && {
           passageFormat: input.passageFormat,
         }),
+        ...("caseSensitive" in input &&
+          input.caseSensitive !== undefined && {
+            caseSensitive: input.caseSensitive,
+          }),
+        ...("partialCredit" in input &&
+          input.partialCredit !== undefined && {
+            partialCredit: input.partialCredit,
+          }),
       },
       include: EXERCISE_INCLUDE,
     });

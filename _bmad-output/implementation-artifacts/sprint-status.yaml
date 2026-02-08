@@ -82,7 +82,7 @@ development_status:
   3-2-reading-question-types-basic: done # R1-R8 — Implementation complete 2026-02-07
   3-3-reading-question-types-matching: done # R9-R12 (Phase 1.5) — Code review fixes applied 2026-02-07
   3-4-reading-question-types-advanced: done # R13-R14 (Phase 2) — Code review fixes applied 2026-02-07
-  3-5-answer-key-management: ready-for-dev # Variants, normalization — Story created 2026-02-07
+  3-5-answer-key-management: done # Variants, normalization, word order — Completed 2026-02-07
   3-6-listening-exercise-builder: backlog # Audio upload
   3-7-listening-question-types: backlog # L1-L6
   3-8-writing-task-builder: backlog # W1-W3 with rubrics

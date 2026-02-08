@@ -14,6 +14,12 @@ import {
   type DropResult,
 } from "@hello-pangea/dnd";
 import { Button } from "@workspace/ui/components/button";
+import { Checkbox } from "@workspace/ui/components/checkbox";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { Textarea } from "@workspace/ui/components/textarea";
@@ -29,10 +35,12 @@ import {
 } from "@workspace/ui/components/alert-dialog";
 import {
   ArrowLeft,
+  ChevronDown,
   Eye,
   Loader2,
   Plus,
   Save,
+  Settings,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -146,7 +154,7 @@ export function ExerciseEditor() {
   const userHasEdited = useRef(false);
 
   // Hooks
-  const { createExercise, publishExercise } = useExercises(centerId);
+  const { createExercise, updateExercise, publishExercise } = useExercises(centerId);
   const { exercise, isLoading, autosave, isAutosaving } = useExercise(
     centerId,
     id,
@@ -327,6 +335,15 @@ export function ExerciseEditor() {
     }
   };
 
+  const handleAnswerKeySettingChange = async (field: "caseSensitive" | "partialCredit", value: boolean) => {
+    if (!id) return;
+    try {
+      await updateExercise({ id, input: { [field]: value } });
+    } catch {
+      toast.error("Failed to update answer key settings");
+    }
+  };
+
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
     if (result.source.index === result.destination.index) return;
@@ -443,6 +460,58 @@ export function ExerciseEditor() {
             value={passageContent}
             onChange={(v) => handleFieldChange(setPassageContent, v)}
           />
+        </div>
+      )}
+
+      {/* Answer Key Settings */}
+      {isEditing && exercise && (
+        <div className="max-w-3xl">
+          <Collapsible>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors">
+              <Settings className="size-4" />
+              Answer Key Settings
+              <ChevronDown className="size-4" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-3 space-y-4 pl-6">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="case-sensitive"
+                  checked={exercise.caseSensitive ?? false}
+                  onCheckedChange={(checked) =>
+                    handleAnswerKeySettingChange("caseSensitive", checked === true)
+                  }
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="case-sensitive" className="text-sm font-medium cursor-pointer">
+                    Case-sensitive matching
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Default: case-insensitive. Enable for exact capitalization matching.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="partial-credit"
+                  checked={exercise.partialCredit ?? false}
+                  onCheckedChange={(checked) =>
+                    handleAnswerKeySettingChange("partialCredit", checked === true)
+                  }
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="partial-credit" className="text-sm font-medium cursor-pointer">
+                    Enable partial credit
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Award proportional marks for partially correct multi-answer questions.
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground italic">
+                Whitespace is automatically normalized: leading/trailing spaces trimmed, internal spacing collapsed.
+              </p>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       )}
 

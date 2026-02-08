@@ -98,11 +98,11 @@ export const YNNGAnswerSchema = z.object({
 });
 export type YNNGAnswer = z.infer<typeof YNNGAnswerSchema>;
 
-// Task 1.3: Text answer (R5/R6/R8)
+// Text answer (R5/R6/R8) — Story 3.5: caseSensitive removed (now exercise-level), strictWordOrder added
 export const TextAnswerSchema = z.object({
   answer: z.string().min(1),
-  acceptedVariants: z.array(z.string()),
-  caseSensitive: z.boolean(),
+  acceptedVariants: z.array(z.string()).default([]),
+  strictWordOrder: z.boolean().default(true),
 });
 export type TextAnswer = z.infer<typeof TextAnswerSchema>;
 
@@ -140,9 +140,16 @@ export const NoteTableFlowchartOptionsSchema = z.object({
 });
 export type NoteTableFlowchartOptions = z.infer<typeof NoteTableFlowchartOptionsSchema>;
 
-// Note/Table/Flowchart Completion answer (R13)
+// Note/Table/Flowchart Completion answer (R13) — Story 3.5: variant-aware structured format
+export const NoteTableFlowchartBlankSchema = z.object({
+  answer: z.string(),
+  acceptedVariants: z.array(z.string()).default([]),
+  strictWordOrder: z.boolean().default(true),
+});
+export type NoteTableFlowchartBlank = z.infer<typeof NoteTableFlowchartBlankSchema>;
+
 export const NoteTableFlowchartAnswerSchema = z.object({
-  blanks: z.record(z.string(), z.string()),
+  blanks: z.record(z.string(), NoteTableFlowchartBlankSchema),
 });
 export type NoteTableFlowchartAnswer = z.infer<typeof NoteTableFlowchartAnswerSchema>;
 
@@ -155,9 +162,19 @@ export const DiagramLabellingOptionsSchema = z.object({
 });
 export type DiagramLabellingOptions = z.infer<typeof DiagramLabellingOptionsSchema>;
 
-// Diagram Labelling answer (R14)
+// Diagram Labelling answer (R14) — Story 3.5: union type for word-bank (string) and free-text (structured) modes
+export const DiagramLabellingStructuredLabelSchema = z.object({
+  answer: z.string(),
+  acceptedVariants: z.array(z.string()).default([]),
+  strictWordOrder: z.boolean().default(true),
+});
+export type DiagramLabellingStructuredLabel = z.infer<typeof DiagramLabellingStructuredLabelSchema>;
+
 export const DiagramLabellingAnswerSchema = z.object({
-  labels: z.record(z.string(), z.string()),
+  labels: z.record(z.string(), z.union([
+    z.string(),
+    DiagramLabellingStructuredLabelSchema,
+  ])),
 });
 export type DiagramLabellingAnswer = z.infer<typeof DiagramLabellingAnswerSchema>;
 
@@ -325,6 +342,8 @@ export const ExerciseSchema = z.object({
   status: ExerciseStatusSchema,
   passageContent: z.string().nullable().optional(),
   passageFormat: z.string().nullable().optional(),
+  caseSensitive: z.boolean().default(false),
+  partialCredit: z.boolean().default(false),
   createdById: z.string(),
   createdAt: z.union([z.date(), z.string()]),
   updatedAt: z.union([z.date(), z.string()]),
@@ -344,6 +363,8 @@ export const CreateExerciseSchema = z.object({
   skill: ExerciseSkillSchema,
   passageContent: z.string().nullable().optional(),
   passageFormat: z.string().nullable().optional(),
+  caseSensitive: z.boolean().optional().default(false),
+  partialCredit: z.boolean().optional().default(false),
 });
 export type CreateExerciseInput = z.infer<typeof CreateExerciseSchema>;
 
@@ -352,6 +373,8 @@ export const UpdateExerciseSchema = z.object({
   instructions: z.string().nullable().optional(),
   passageContent: z.string().nullable().optional(),
   passageFormat: z.string().nullable().optional(),
+  caseSensitive: z.boolean().optional(),
+  partialCredit: z.boolean().optional(),
 });
 export type UpdateExerciseInput = z.infer<typeof UpdateExerciseSchema>;
 

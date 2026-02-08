@@ -9,6 +9,7 @@ import type {
   ReorderSectionsInput,
 } from "@workspace/types";
 import { AppError } from "../../errors/app-error.js";
+import { normalizeCorrectAnswer } from "./answer-utils.js";
 
 // Prisma requires DbNull instead of null for optional Json fields
 function toJsonValue(val: unknown): Prisma.InputJsonValue | typeof Prisma.DbNull {
@@ -249,7 +250,7 @@ export class SectionsService {
         questionText: input.questionText,
         questionType: input.questionType,
         options: toJsonValue(input.options ?? null),
-        correctAnswer: toJsonValue(input.correctAnswer ?? null),
+        correctAnswer: toJsonValue(normalizeCorrectAnswer(input.correctAnswer) ?? null),
         orderIndex: input.orderIndex,
         wordLimit: input.wordLimit ?? null,
       },
@@ -288,7 +289,7 @@ export class SectionsService {
         ...(input.questionText !== undefined && { questionText: input.questionText }),
         ...(input.questionType !== undefined && { questionType: input.questionType }),
         ...(input.options !== undefined && { options: toJsonValue(input.options) }),
-        ...(input.correctAnswer !== undefined && { correctAnswer: toJsonValue(input.correctAnswer) }),
+        ...(input.correctAnswer !== undefined && { correctAnswer: toJsonValue(normalizeCorrectAnswer(input.correctAnswer)) }),
         ...(input.orderIndex !== undefined && { orderIndex: input.orderIndex }),
         ...(input.wordLimit !== undefined && { wordLimit: input.wordLimit }),
       },

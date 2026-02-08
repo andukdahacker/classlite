@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, vi, expect } from "vitest";
+import { AnswerVariantManager } from "./AnswerVariantManager";
 import { MCQEditor } from "./MCQEditor";
 import { TFNGEditor } from "./TFNGEditor";
 import { TextInputEditor } from "./TextInputEditor";
@@ -180,7 +181,7 @@ describe("TFNGEditor", () => {
   });
 });
 
-// --- Task 9.3: TextInputEditor ---
+// --- Story 3.5: TextInputEditor ---
 describe("TextInputEditor", () => {
   it("renders correct answer input", () => {
     const onChange = vi.fn();
@@ -189,7 +190,7 @@ describe("TextInputEditor", () => {
         correctAnswer={{
           answer: "revolution",
           acceptedVariants: ["revolt"],
-          caseSensitive: false,
+          strictWordOrder: true,
         }}
         wordLimit={3}
         onChange={onChange}
@@ -199,14 +200,14 @@ describe("TextInputEditor", () => {
     expect(screen.getByText("revolt")).toBeInTheDocument();
   });
 
-  it("adds a variant", () => {
+  it("adds a variant via AnswerVariantManager", () => {
     const onChange = vi.fn();
     render(
       <TextInputEditor
         correctAnswer={{
           answer: "answer",
           acceptedVariants: [],
-          caseSensitive: false,
+          strictWordOrder: true,
         }}
         wordLimit={null}
         onChange={onChange}
@@ -227,7 +228,7 @@ describe("TextInputEditor", () => {
         correctAnswer={{
           answer: "test",
           acceptedVariants: [],
-          caseSensitive: false,
+          strictWordOrder: true,
         }}
         wordLimit={3}
         onChange={onChange}
@@ -246,6 +247,71 @@ describe("TextInputEditor", () => {
       />,
     );
     expect(screen.getByPlaceholderText("Enter the correct answer...")).toBeInTheDocument();
+  });
+
+  it("does NOT render caseSensitive checkbox (removed)", () => {
+    const onChange = vi.fn();
+    render(
+      <TextInputEditor
+        correctAnswer={{ answer: "test", acceptedVariants: [], strictWordOrder: true }}
+        wordLimit={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByText(/case.sensitive/i)).not.toBeInTheDocument();
+  });
+
+  it("shows word order toggle when answer has 2+ words", () => {
+    const onChange = vi.fn();
+    render(
+      <TextInputEditor
+        correctAnswer={{ answer: "carbon dioxide", acceptedVariants: [], strictWordOrder: true }}
+        wordLimit={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText(/Allow any word order/)).toBeInTheDocument();
+  });
+
+  it("hides word order toggle for single-word answer", () => {
+    const onChange = vi.fn();
+    render(
+      <TextInputEditor
+        correctAnswer={{ answer: "cat", acceptedVariants: [], strictWordOrder: true }}
+        wordLimit={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByText(/Allow any word order/)).not.toBeInTheDocument();
+  });
+
+  it("uses onBlur for primary answer (not onChange per keystroke)", () => {
+    const onChange = vi.fn();
+    render(
+      <TextInputEditor
+        correctAnswer={{ answer: "test", acceptedVariants: [], strictWordOrder: true }}
+        wordLimit={null}
+        onChange={onChange}
+      />,
+    );
+    const input = screen.getByDisplayValue("test");
+    fireEvent.change(input, { target: { value: "updated" } });
+    // onChange should NOT be called on change — only on blur
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it("renders Paste variants button from AnswerVariantManager", () => {
+    const onChange = vi.fn();
+    render(
+      <TextInputEditor
+        correctAnswer={{ answer: "test", acceptedVariants: [], strictWordOrder: true }}
+        wordLimit={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText("Paste variants")).toBeInTheDocument();
   });
 });
 
@@ -1143,7 +1209,7 @@ describe("NoteTableFlowchartEditor", () => {
           structure: "Topic\n• Point ___1___",
           wordLimit: 2,
         }}
-        correctAnswer={{ blanks: { "1": "answer" } }}
+        correctAnswer={{ blanks: { "1": { answer: "answer", acceptedVariants: [], strictWordOrder: true } } }}
         onChange={onChange}
       />,
     );
@@ -1163,7 +1229,7 @@ describe("NoteTableFlowchartEditor", () => {
           }),
           wordLimit: 2,
         }}
-        correctAnswer={{ blanks: { "1": "98 million" } }}
+        correctAnswer={{ blanks: { "1": { answer: "98 million", acceptedVariants: [], strictWordOrder: true } } }}
         onChange={onChange}
       />,
     );
@@ -1402,7 +1468,7 @@ describe("DiagramLabellingEditor", () => {
           labelPositions: ["outer shell", "membrane"],
           wordLimit: 2,
         }}
-        correctAnswer={{ labels: { "0": "answer1" } }}
+        correctAnswer={{ labels: { "0": { answer: "answer1", acceptedVariants: [], strictWordOrder: true } } }}
         onChange={onChange}
       />,
     );
@@ -1440,6 +1506,7 @@ describe("DiagramLabellingEditor", () => {
         options={{
           diagramUrl: "",
           labelPositions: ["shell", "membrane", "yolk"],
+          wordBank: ["shell", "membrane", "yolk", "albumen"],
           wordLimit: 2,
         }}
         correctAnswer={{ labels: { "0": "shell", "1": "membrane", "2": "yolk" } }}
@@ -1557,5 +1624,99 @@ describe("DiagramLabellingEditor", () => {
     );
     expect(screen.getByText(/4 labels, 2 positions/)).toBeInTheDocument();
     expect(screen.getByText(/2 distractors/)).toBeInTheDocument();
+  });
+});
+
+// --- Story 3.5 Task 12.1: AnswerVariantManager ---
+describe("AnswerVariantManager", () => {
+  it("renders variant chips", () => {
+    const onVariantsChange = vi.fn();
+    render(
+      <AnswerVariantManager
+        variants={["nineteen", "19"]}
+        onVariantsChange={onVariantsChange}
+      />,
+    );
+    expect(screen.getByText("nineteen")).toBeInTheDocument();
+    expect(screen.getByText("19")).toBeInTheDocument();
+  });
+
+  it("adds a variant via input", () => {
+    const onVariantsChange = vi.fn();
+    render(
+      <AnswerVariantManager
+        variants={["existing"]}
+        onVariantsChange={onVariantsChange}
+      />,
+    );
+    const input = screen.getByPlaceholderText("Add accepted variant...");
+    fireEvent.change(input, { target: { value: "new" } });
+    fireEvent.click(screen.getByText("Add"));
+    expect(onVariantsChange).toHaveBeenCalled();
+    const newVariants = onVariantsChange.mock.calls[0][0];
+    expect(newVariants).toContain("new");
+    expect(newVariants).toContain("existing");
+  });
+
+  it("removes a variant", () => {
+    const onVariantsChange = vi.fn();
+    render(
+      <AnswerVariantManager
+        variants={["alpha", "beta"]}
+        onVariantsChange={onVariantsChange}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText("Remove variant alpha"));
+    expect(onVariantsChange).toHaveBeenCalledWith(["beta"]);
+  });
+
+  it("rejects empty input", () => {
+    const onVariantsChange = vi.fn();
+    render(
+      <AnswerVariantManager
+        variants={[]}
+        onVariantsChange={onVariantsChange}
+      />,
+    );
+    fireEvent.click(screen.getByText("Add"));
+    expect(onVariantsChange).not.toHaveBeenCalled();
+  });
+
+  it("deduplicates on add", () => {
+    const onVariantsChange = vi.fn();
+    render(
+      <AnswerVariantManager
+        variants={["existing"]}
+        onVariantsChange={onVariantsChange}
+      />,
+    );
+    const input = screen.getByPlaceholderText("Add accepted variant...");
+    fireEvent.change(input, { target: { value: "existing" } });
+    fireEvent.click(screen.getByText("Add"));
+    expect(onVariantsChange).not.toHaveBeenCalled();
+  });
+
+  it("renders empty state", () => {
+    const onVariantsChange = vi.fn();
+    render(
+      <AnswerVariantManager
+        variants={[]}
+        onVariantsChange={onVariantsChange}
+      />,
+    );
+    expect(screen.getByText("Accepted Variants")).toBeInTheDocument();
+    expect(screen.getByText("Paste variants")).toBeInTheDocument();
+  });
+
+  it("shows paste variants popover", () => {
+    const onVariantsChange = vi.fn();
+    render(
+      <AnswerVariantManager
+        variants={[]}
+        onVariantsChange={onVariantsChange}
+      />,
+    );
+    fireEvent.click(screen.getByText("Paste variants"));
+    expect(screen.getByPlaceholderText("e.g. 19, nineteen, Nineteen")).toBeInTheDocument();
   });
 });

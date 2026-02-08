@@ -19,6 +19,9 @@ import {
   QuestionOptionsSchema,
   CreateQuestionSchema,
   UpdateQuestionSchema,
+  ExerciseSchema,
+  CreateExerciseSchema,
+  UpdateExerciseSchema,
 } from "./exercises.js";
 
 describe("Exercise Type-Helper Schemas", () => {
@@ -164,33 +167,71 @@ describe("Exercise Type-Helper Schemas", () => {
     });
   });
 
-  // --- Task 1.3: TextAnswerSchema (R5/R6/R8) ---
+  // --- Task 1.3 / Story 3.5 Task 2: TextAnswerSchema (R5/R6/R8) ---
   describe("TextAnswerSchema", () => {
-    it("should validate a complete text answer", () => {
+    it("should validate a complete text answer with strictWordOrder", () => {
       const result = TextAnswerSchema.safeParse({
         answer: "the industrial revolution",
         acceptedVariants: ["industrial revolution", "Industrial Revolution"],
-        caseSensitive: false,
+        strictWordOrder: true,
       });
       expect(result.success).toBe(true);
     });
 
-    it("should default caseSensitive to false", () => {
+    it("should default strictWordOrder to true", () => {
       const result = TextAnswerSchema.safeParse({
         answer: "answer",
         acceptedVariants: [],
-        caseSensitive: false,
       });
       expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.strictWordOrder).toBe(true);
+      }
+    });
+
+    it("should default acceptedVariants to empty array", () => {
+      const result = TextAnswerSchema.safeParse({
+        answer: "answer",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.acceptedVariants).toEqual([]);
+      }
+    });
+
+    it("should accept strictWordOrder false", () => {
+      const result = TextAnswerSchema.safeParse({
+        answer: "carbon dioxide",
+        acceptedVariants: [],
+        strictWordOrder: false,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.strictWordOrder).toBe(false);
+      }
     });
 
     it("should reject empty answer", () => {
       const result = TextAnswerSchema.safeParse({
         answer: "",
         acceptedVariants: [],
-        caseSensitive: false,
       });
       expect(result.success).toBe(false);
+    });
+
+    it("should strip old caseSensitive field from stored JSON (backwards-compat)", () => {
+      const result = TextAnswerSchema.safeParse({
+        answer: "carbon dioxide",
+        acceptedVariants: ["CO2"],
+        caseSensitive: false,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        // caseSensitive should be stripped by Zod (not present in parsed output)
+        expect("caseSensitive" in result.data).toBe(false);
+        // strictWordOrder should default to true
+        expect(result.data.strictWordOrder).toBe(true);
+      }
     });
   });
 
@@ -391,13 +432,29 @@ describe("Exercise Type-Helper Schemas", () => {
     });
   });
 
-  // --- NoteTableFlowchartAnswerSchema (R13) ---
+  // --- NoteTableFlowchartAnswerSchema (R13) — Story 3.5: variant-aware structured format ---
   describe("NoteTableFlowchartAnswerSchema", () => {
-    it("should validate blanks with string keys and values", () => {
+    it("should validate blanks with structured answer objects", () => {
       const result = NoteTableFlowchartAnswerSchema.safeParse({
-        blanks: { "1": "fifteen percent", "2": "developing nations", "3": "carbon emissions" },
+        blanks: {
+          "1": { answer: "fifteen percent", acceptedVariants: ["15%", "15 percent"], strictWordOrder: true },
+          "2": { answer: "developing nations", acceptedVariants: [], strictWordOrder: false },
+        },
       });
       expect(result.success).toBe(true);
+    });
+
+    it("should default acceptedVariants and strictWordOrder", () => {
+      const result = NoteTableFlowchartAnswerSchema.safeParse({
+        blanks: {
+          "1": { answer: "carbon dioxide" },
+        },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.blanks["1"].acceptedVariants).toEqual([]);
+        expect(result.data.blanks["1"].strictWordOrder).toBe(true);
+      }
     });
 
     it("should accept empty blanks (structure valid)", () => {
@@ -407,6 +464,13 @@ describe("Exercise Type-Helper Schemas", () => {
 
     it("should reject missing blanks field", () => {
       const result = NoteTableFlowchartAnswerSchema.safeParse({});
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject flat string values (old format)", () => {
+      const result = NoteTableFlowchartAnswerSchema.safeParse({
+        blanks: { "1": "fifteen percent" },
+      });
       expect(result.success).toBe(false);
     });
   });
@@ -488,11 +552,38 @@ describe("Exercise Type-Helper Schemas", () => {
     });
   });
 
-  // --- DiagramLabellingAnswerSchema (R14) ---
+  // --- DiagramLabellingAnswerSchema (R14) — Story 3.5: union type ---
   describe("DiagramLabellingAnswerSchema", () => {
-    it("should validate labels with index keys", () => {
+    it("should validate labels with simple string values (word-bank mode)", () => {
       const result = DiagramLabellingAnswerSchema.safeParse({
         labels: { "0": "outer shell", "1": "membrane", "2": "air cell" },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate labels with structured objects (free-text mode)", () => {
+      const result = DiagramLabellingAnswerSchema.safeParse({
+        labels: {
+          "0": { answer: "outer shell", acceptedVariants: ["shell"], strictWordOrder: true },
+          "1": { answer: "membrane", acceptedVariants: [], strictWordOrder: true },
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate mixed string and structured labels", () => {
+      const result = DiagramLabellingAnswerSchema.safeParse({
+        labels: {
+          "0": "word-bank-label",
+          "1": { answer: "free text label", acceptedVariants: ["alt"], strictWordOrder: false },
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should default acceptedVariants and strictWordOrder in structured labels", () => {
+      const result = DiagramLabellingAnswerSchema.safeParse({
+        labels: { "0": { answer: "test" } },
       });
       expect(result.success).toBe(true);
     });
@@ -565,7 +656,6 @@ describe("Exercise Type-Helper Schemas", () => {
         correctAnswer: {
           answer: "the industrial revolution",
           acceptedVariants: ["industrial revolution"],
-          caseSensitive: false,
         },
       });
       expect(result.success).toBe(true);
@@ -578,7 +668,6 @@ describe("Exercise Type-Helper Schemas", () => {
         correctAnswer: {
           answer: "carbon dioxide",
           acceptedVariants: ["CO2"],
-          caseSensitive: false,
         },
       });
       expect(result.success).toBe(true);
@@ -603,7 +692,6 @@ describe("Exercise Type-Helper Schemas", () => {
         correctAnswer: {
           answer: "deforestation",
           acceptedVariants: [],
-          caseSensitive: false,
         },
       });
       expect(result.success).toBe(true);
@@ -717,7 +805,10 @@ describe("Exercise Type-Helper Schemas", () => {
           wordLimit: 2,
         },
         correctAnswer: {
-          blanks: { "1": "fifteen percent", "2": "renewable energy" },
+          blanks: {
+            "1": { answer: "fifteen percent" },
+            "2": { answer: "renewable energy" },
+          },
         },
       });
       expect(result.success).toBe(true);
@@ -732,7 +823,7 @@ describe("Exercise Type-Helper Schemas", () => {
           wordLimit: 3,
         },
         correctAnswer: {
-          blanks: { "1": "98 million" },
+          blanks: { "1": { answer: "98 million" } },
         },
       });
       expect(result.success).toBe(true);
@@ -747,7 +838,10 @@ describe("Exercise Type-Helper Schemas", () => {
           wordLimit: 2,
         },
         correctAnswer: {
-          blanks: { "1": "moist soil", "2": "minerals" },
+          blanks: {
+            "1": { answer: "moist soil" },
+            "2": { answer: "minerals" },
+          },
         },
       });
       expect(result.success).toBe(true);
@@ -866,7 +960,6 @@ describe("Exercise Type-Helper Schemas", () => {
         correctAnswer: {
           answer: "revolution",
           acceptedVariants: [],
-          caseSensitive: false,
         },
         orderIndex: 0,
         wordLimit: 3,
@@ -886,6 +979,101 @@ describe("Exercise Type-Helper Schemas", () => {
     it("should accept partial updates with correctAnswer only", () => {
       const result = UpdateQuestionSchema.safeParse({
         correctAnswer: { answer: "B" },
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  // --- Story 3.5: Exercise-level answer key settings (Task 1) ---
+  describe("ExerciseSchema — answer key settings", () => {
+    const baseExercise = {
+      id: "ex1",
+      centerId: "c1",
+      title: "Test Exercise",
+      skill: "READING",
+      status: "DRAFT",
+      createdById: "u1",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    it("should accept caseSensitive and partialCredit fields", () => {
+      const result = ExerciseSchema.safeParse({
+        ...baseExercise,
+        caseSensitive: true,
+        partialCredit: true,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.caseSensitive).toBe(true);
+        expect(result.data.partialCredit).toBe(true);
+      }
+    });
+
+    it("should default caseSensitive to false", () => {
+      const result = ExerciseSchema.safeParse(baseExercise);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.caseSensitive).toBe(false);
+      }
+    });
+
+    it("should default partialCredit to false", () => {
+      const result = ExerciseSchema.safeParse(baseExercise);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.partialCredit).toBe(false);
+      }
+    });
+  });
+
+  describe("CreateExerciseSchema — answer key settings", () => {
+    it("should accept optional caseSensitive and partialCredit", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Test",
+        skill: "READING",
+        caseSensitive: true,
+        partialCredit: true,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.caseSensitive).toBe(true);
+        expect(result.data.partialCredit).toBe(true);
+      }
+    });
+
+    it("should default to false when not provided", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Test",
+        skill: "READING",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.caseSensitive).toBe(false);
+        expect(result.data.partialCredit).toBe(false);
+      }
+    });
+  });
+
+  describe("UpdateExerciseSchema — answer key settings", () => {
+    it("should accept caseSensitive update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        caseSensitive: true,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept partialCredit update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        partialCredit: true,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept both together", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        caseSensitive: false,
+        partialCredit: true,
       });
       expect(result.success).toBe(true);
     });
