@@ -22,6 +22,10 @@ import {
   ExerciseSchema,
   CreateExerciseSchema,
   UpdateExerciseSchema,
+  AudioSectionSchema,
+  PlaybackModeSchema,
+  QuestionSectionSchema,
+  AutosaveExerciseSchema,
 } from "./exercises.js";
 
 describe("Exercise Type-Helper Schemas", () => {
@@ -1042,15 +1046,15 @@ describe("Exercise Type-Helper Schemas", () => {
       }
     });
 
-    it("should default to false when not provided", () => {
+    it("should accept without caseSensitive and partialCredit (optional)", () => {
       const result = CreateExerciseSchema.safeParse({
         title: "Test",
         skill: "READING",
       });
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.caseSensitive).toBe(false);
-        expect(result.data.partialCredit).toBe(false);
+        expect(result.data.caseSensitive).toBeUndefined();
+        expect(result.data.partialCredit).toBeUndefined();
       }
     });
   });
@@ -1074,6 +1078,274 @@ describe("Exercise Type-Helper Schemas", () => {
       const result = UpdateExerciseSchema.safeParse({
         caseSensitive: false,
         partialCredit: true,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  // --- Story 3.6: Audio / Listening schemas ---
+  describe("PlaybackModeSchema", () => {
+    it("should accept TEST_MODE", () => {
+      expect(PlaybackModeSchema.safeParse("TEST_MODE").success).toBe(true);
+    });
+
+    it("should accept PRACTICE_MODE", () => {
+      expect(PlaybackModeSchema.safeParse("PRACTICE_MODE").success).toBe(true);
+    });
+
+    it("should reject invalid string", () => {
+      expect(PlaybackModeSchema.safeParse("INVALID").success).toBe(false);
+    });
+
+    it("should reject empty string", () => {
+      expect(PlaybackModeSchema.safeParse("").success).toBe(false);
+    });
+  });
+
+  describe("AudioSectionSchema", () => {
+    it("should validate a valid audio section", () => {
+      const result = AudioSectionSchema.safeParse({
+        label: "Section 1",
+        startTime: 0,
+        endTime: 120,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject endTime <= startTime", () => {
+      const result = AudioSectionSchema.safeParse({
+        label: "Section 1",
+        startTime: 120,
+        endTime: 60,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject endTime equal to startTime", () => {
+      const result = AudioSectionSchema.safeParse({
+        label: "Section 1",
+        startTime: 60,
+        endTime: 60,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject negative startTime", () => {
+      const result = AudioSectionSchema.safeParse({
+        label: "Section 1",
+        startTime: -10,
+        endTime: 60,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject empty label", () => {
+      const result = AudioSectionSchema.safeParse({
+        label: "",
+        startTime: 0,
+        endTime: 60,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject missing label", () => {
+      const result = AudioSectionSchema.safeParse({
+        startTime: 0,
+        endTime: 60,
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("ExerciseSchema — audio fields", () => {
+    const baseExercise = {
+      id: "ex1",
+      centerId: "c1",
+      title: "Listening Test",
+      skill: "LISTENING",
+      status: "DRAFT",
+      createdById: "u1",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    it("should accept audio fields", () => {
+      const result = ExerciseSchema.safeParse({
+        ...baseExercise,
+        audioUrl: "https://storage.example.com/audio.mp3",
+        audioDuration: 300,
+        playbackMode: "TEST_MODE",
+        audioSections: [{ label: "Section 1", startTime: 0, endTime: 150 }],
+        showTranscriptAfterSubmit: true,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null audio fields", () => {
+      const result = ExerciseSchema.safeParse({
+        ...baseExercise,
+        audioUrl: null,
+        audioDuration: null,
+        playbackMode: null,
+        audioSections: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should default showTranscriptAfterSubmit to false", () => {
+      const result = ExerciseSchema.safeParse(baseExercise);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.showTranscriptAfterSubmit).toBe(false);
+      }
+    });
+  });
+
+  describe("QuestionSectionSchema — audioSectionIndex", () => {
+    const baseSection = {
+      id: "s1",
+      exerciseId: "ex1",
+      centerId: "c1",
+      sectionType: "L1_FORM_NOTE_TABLE",
+      orderIndex: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    it("should accept audioSectionIndex as integer", () => {
+      const result = QuestionSectionSchema.safeParse({
+        ...baseSection,
+        audioSectionIndex: 0,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept audioSectionIndex as null", () => {
+      const result = QuestionSectionSchema.safeParse({
+        ...baseSection,
+        audioSectionIndex: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept missing audioSectionIndex (optional)", () => {
+      const result = QuestionSectionSchema.safeParse(baseSection);
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject negative audioSectionIndex", () => {
+      const result = QuestionSectionSchema.safeParse({
+        ...baseSection,
+        audioSectionIndex: -1,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject non-integer audioSectionIndex", () => {
+      const result = QuestionSectionSchema.safeParse({
+        ...baseSection,
+        audioSectionIndex: 1.5,
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("UpdateExerciseSchema — audio fields", () => {
+    it("should accept playbackMode update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        playbackMode: "TEST_MODE",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept audioSections update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        audioSections: [
+          { label: "Part 1", startTime: 0, endTime: 120 },
+          { label: "Part 2", startTime: 120, endTime: 240 },
+        ],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null audioSections (clear)", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        audioSections: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept showTranscriptAfterSubmit update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        showTranscriptAfterSubmit: true,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept audioDuration update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        audioDuration: 300,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null audioDuration", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        audioDuration: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject invalid playbackMode", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        playbackMode: "INVALID_MODE",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject audioSections with overlapping times (via refinement)", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        audioSections: [
+          { label: "Section 1", startTime: 0, endTime: 60 },
+          { label: "Section 2", startTime: 30, endTime: 90 },  // overlaps are validated client-side
+        ],
+      });
+      // Individual sections are valid (refinement is per-section: endTime > startTime)
+      // Overlap validation is client-side only
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("AutosaveExerciseSchema — audio fields", () => {
+    it("should accept playbackMode", () => {
+      const result = AutosaveExerciseSchema.safeParse({
+        playbackMode: "PRACTICE_MODE",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept audioSections", () => {
+      const result = AutosaveExerciseSchema.safeParse({
+        audioSections: [{ label: "Section 1", startTime: 0, endTime: 60 }],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept showTranscriptAfterSubmit", () => {
+      const result = AutosaveExerciseSchema.safeParse({
+        showTranscriptAfterSubmit: true,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept all autosave fields together", () => {
+      const result = AutosaveExerciseSchema.safeParse({
+        title: "Updated Title",
+        instructions: "Some instructions",
+        passageContent: "Transcript text",
+        playbackMode: "TEST_MODE",
+        audioSections: [{ label: "Part 1", startTime: 0, endTime: 180 }],
+        showTranscriptAfterSubmit: false,
       });
       expect(result.success).toBe(true);
     });

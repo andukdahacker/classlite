@@ -6,6 +6,8 @@ import type {
   IeltsQuestionType,
   CreateQuestionInput,
   UpdateQuestionInput,
+  AudioSection,
+  PlaybackMode,
 } from "@workspace/types";
 import {
   DragDropContext,
@@ -49,6 +51,9 @@ import { PassageEditor } from "./PassageEditor";
 import { QuestionSectionEditor } from "./QuestionSectionEditor";
 import { QuestionPreviewFactory } from "./question-types/QuestionPreviewFactory";
 import { SkillSelector } from "./SkillSelector";
+import { AudioUploadEditor } from "./AudioUploadEditor";
+import { AudioSectionMarkers } from "./AudioSectionMarkers";
+import { PlaybackModeSettings } from "./PlaybackModeSettings";
 import type { Exercise } from "@workspace/types";
 
 // Default first question type per skill
@@ -67,7 +72,18 @@ interface ExercisePreviewProps {
   passageContent: string;
   showPassage: boolean;
   sections: Exercise["sections"];
+  skill: ExerciseSkill | null;
+  audioUrl?: string | null;
+  audioDuration?: number | null;
+  audioSections?: AudioSection[];
+  showTranscriptAfterSubmit?: boolean;
   onBack: () => void;
+}
+
+function formatPreviewDuration(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 function ExercisePreview({
@@ -76,8 +92,15 @@ function ExercisePreview({
   passageContent,
   showPassage,
   sections,
+  skill,
+  audioUrl,
+  audioDuration,
+  audioSections,
+  showTranscriptAfterSubmit,
   onBack,
 }: ExercisePreviewProps) {
+  const isListening = skill === "LISTENING";
+
   return (
     <div className="container py-10">
       <div className="flex items-center justify-between mb-6">
@@ -92,21 +115,64 @@ function ExercisePreview({
         {instructions && (
           <p className="text-muted-foreground italic">{instructions}</p>
         )}
-        {showPassage && passageContent && (
-          <div className="rounded-md border p-6 space-y-3">
-            {passageContent
-              .split(/\n\n+/)
-              .filter((p) => p.trim())
-              .map((para, idx) => (
-                <div key={idx} className="flex gap-3">
-                  <span className="font-bold text-primary min-w-[1.5rem] text-right">
-                    {String.fromCharCode(65 + idx)}
-                  </span>
-                  <p className="leading-relaxed">{para.trim()}</p>
-                </div>
-              ))}
+
+        {/* Audio Player (LISTENING only) */}
+        {isListening && audioUrl && (
+          <div className="rounded-md border p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">Audio</h3>
+              {audioDuration != null && (
+                <span className="text-sm text-muted-foreground">
+                  ({formatPreviewDuration(audioDuration)})
+                </span>
+              )}
+            </div>
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+            <audio controls src={audioUrl} className="w-full" preload="metadata">
+              Your browser does not support the audio element.
+            </audio>
+            {audioSections && audioSections.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Sections:</p>
+                {audioSections.map((s, i) => (
+                  <p key={i} className="text-sm text-muted-foreground">
+                    {s.label}: {formatPreviewDuration(s.startTime)} - {formatPreviewDuration(s.endTime)}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
         )}
+
+        {/* Passage / Transcript */}
+        {showPassage && passageContent && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">{isListening ? "Transcript" : "Passage"}</h3>
+              {isListening && (
+                <span className="text-xs rounded-full border px-2 py-0.5 text-muted-foreground">
+                  {showTranscriptAfterSubmit
+                    ? "Visible after submission"
+                    : "Hidden until submission"}
+                </span>
+              )}
+            </div>
+            <div className="rounded-md border p-6 space-y-3">
+              {passageContent
+                .split(/\n\n+/)
+                .filter((p) => p.trim())
+                .map((para, idx) => (
+                  <div key={idx} className="flex gap-3">
+                    <span className="font-bold text-primary min-w-[1.5rem] text-right">
+                      {String.fromCharCode(65 + idx)}
+                    </span>
+                    <p className="leading-relaxed">{para.trim()}</p>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         {(sections ?? []).map((section, sIdx) => (
           <div key={section.id} className="space-y-3">
             <h3 className="font-semibold">
@@ -146,6 +212,9 @@ export function ExerciseEditor() {
   const [title, setTitle] = useState("");
   const [instructions, setInstructions] = useState("");
   const [passageContent, setPassageContent] = useState("");
+  const [playbackMode, setPlaybackMode] = useState<PlaybackMode | undefined>(undefined);
+  const [audioSections, setAudioSections] = useState<AudioSection[]>([]);
+  const [showTranscriptAfterSubmit, setShowTranscriptAfterSubmit] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [showPreview, setShowPreview] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
@@ -176,6 +245,17 @@ export function ExerciseEditor() {
       setInstructions(exercise.instructions ?? "");
       setPassageContent(exercise.passageContent ?? "");
       setSelectedSkill(exercise.skill);
+      setPlaybackMode(
+        (exercise.playbackMode as PlaybackMode) ?? undefined,
+      );
+      setAudioSections(
+        Array.isArray(exercise.audioSections)
+          ? (exercise.audioSections as AudioSection[])
+          : [],
+      );
+      setShowTranscriptAfterSubmit(
+        exercise.showTranscriptAfterSubmit ?? false,
+      );
       // Reset edit tracking — data was just loaded, not user-edited
       userHasEdited.current = false;
     }
@@ -202,13 +282,16 @@ export function ExerciseEditor() {
           title: title || undefined,
           instructions: instructions || null,
           passageContent: passageContent || null,
+          playbackMode: playbackMode || undefined,
+          audioSections: audioSections.length > 0 ? audioSections : null,
+          showTranscriptAfterSubmit,
         });
         setSaveStatus("saved");
       } catch {
         setSaveStatus("unsaved");
       }
     }, 30000);
-  }, [id, title, instructions, passageContent, autosave]);
+  }, [id, title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, autosave]);
 
   useEffect(() => {
     if (isEditing && exercise && userHasEdited.current) {
@@ -217,7 +300,7 @@ export function ExerciseEditor() {
     return () => {
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     };
-  }, [title, instructions, passageContent, isEditing, exercise, scheduleAutosave]);
+  }, [title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, isEditing, exercise, scheduleAutosave]);
 
   // Handlers
   const handleSkillSelect = async (skill: ExerciseSkill) => {
@@ -244,6 +327,9 @@ export function ExerciseEditor() {
         title: title || undefined,
         instructions: instructions || null,
         passageContent: passageContent || null,
+        playbackMode: playbackMode || undefined,
+        audioSections: audioSections.length > 0 ? audioSections : null,
+        showTranscriptAfterSubmit,
       });
       setSaveStatus("saved");
       toast.success("Draft saved");
@@ -281,7 +367,7 @@ export function ExerciseEditor() {
 
   const handleUpdateSection = async (
     sectionId: string,
-    data: { sectionType?: IeltsQuestionType; instructions?: string | null },
+    data: { sectionType?: IeltsQuestionType; instructions?: string | null; audioSectionIndex?: number | null },
   ) => {
     try {
       await updateSection({ sectionId, input: data });
@@ -344,6 +430,54 @@ export function ExerciseEditor() {
     }
   };
 
+  const handleAudioChange = useCallback(() => {
+    if (id) {
+      // Refetch exercise data to get updated audioUrl
+      // The query will be invalidated by the upload/delete mutation
+    }
+  }, [id]);
+
+  const handleDurationExtracted = useCallback(
+    async (duration: number) => {
+      if (!id) return;
+      try {
+        await updateExercise({ id, input: { audioDuration: duration } });
+      } catch {
+        toast.error("Failed to save audio duration");
+      }
+    },
+    [id, updateExercise],
+  );
+
+  const handlePlaybackModeChange = useCallback(
+    (mode: "TEST_MODE" | "PRACTICE_MODE") => {
+      setPlaybackMode(mode);
+      userHasEdited.current = true;
+    },
+    [],
+  );
+
+  const handleAudioSectionsChange = useCallback(
+    (sections: AudioSection[]) => {
+      setAudioSections(sections);
+      userHasEdited.current = true;
+    },
+    [],
+  );
+
+  const handleShowTranscriptChange = useCallback(
+    async (checked: boolean) => {
+      setShowTranscriptAfterSubmit(checked);
+      if (!id) return;
+      try {
+        await updateExercise({ id, input: { showTranscriptAfterSubmit: checked } });
+      } catch {
+        toast.error("Failed to update transcript setting");
+      }
+    },
+    [id, updateExercise],
+  );
+
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
     if (result.source.index === result.destination.index) return;
@@ -392,6 +526,11 @@ export function ExerciseEditor() {
         passageContent={passageContent}
         showPassage={showPassage}
         sections={exercise?.sections}
+        skill={selectedSkill}
+        audioUrl={exercise?.audioUrl}
+        audioDuration={exercise?.audioDuration}
+        audioSections={audioSections}
+        showTranscriptAfterSubmit={showTranscriptAfterSubmit}
         onBack={() => setShowPreview(false)}
       />
     );
@@ -453,12 +592,56 @@ export function ExerciseEditor() {
         </div>
       </div>
 
+      {/* Audio Upload & Settings (LISTENING only) */}
+      {selectedSkill === "LISTENING" && isEditing && id && (
+        <div className="max-w-3xl space-y-4">
+          <AudioUploadEditor
+            exerciseId={id}
+            audioUrl={exercise?.audioUrl ?? null}
+            audioDuration={exercise?.audioDuration}
+            onAudioChange={handleAudioChange}
+            onDurationExtracted={handleDurationExtracted}
+          />
+          {exercise?.audioUrl && (
+            <>
+              <PlaybackModeSettings
+                playbackMode={playbackMode}
+                onPlaybackModeChange={handlePlaybackModeChange}
+              />
+              <AudioSectionMarkers
+                sections={audioSections}
+                audioDuration={exercise?.audioDuration}
+                onSectionsChange={handleAudioSectionsChange}
+              />
+            </>
+          )}
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="show-transcript"
+              checked={showTranscriptAfterSubmit}
+              onCheckedChange={(checked) =>
+                handleShowTranscriptChange(checked === true)
+              }
+            />
+            <div className="space-y-1">
+              <Label htmlFor="show-transcript" className="text-sm font-medium cursor-pointer">
+                Show transcript after submit
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Display the passage/transcript to students after they submit their answers.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Passage Editor */}
       {showPassage && (
         <div className="max-w-3xl">
           <PassageEditor
             value={passageContent}
             onChange={(v) => handleFieldChange(setPassageContent, v)}
+            label={selectedSkill === "LISTENING" ? "Transcript (Optional)" : undefined}
           />
         </div>
       )}
@@ -549,6 +732,7 @@ export function ExerciseEditor() {
                           skill={selectedSkill!}
                           index={idx}
                           exerciseId={exercise?.id}
+                          audioSections={selectedSkill === "LISTENING" ? audioSections : undefined}
                           onUpdateSection={handleUpdateSection}
                           onDeleteSection={setDeleteSectionId}
                           onCreateQuestion={handleCreateQuestion}

@@ -18,6 +18,20 @@ export const ExerciseStatusSchema = z.enum([
 ]);
 export type ExerciseStatus = z.infer<typeof ExerciseStatusSchema>;
 
+export const PlaybackModeSchema = z.enum(["TEST_MODE", "PRACTICE_MODE"]);
+export type PlaybackMode = z.infer<typeof PlaybackModeSchema>;
+
+export const AudioSectionSchema = z
+  .object({
+    label: z.string().min(1),
+    startTime: z.number().min(0),
+    endTime: z.number().min(0),
+  })
+  .refine((s) => s.endTime > s.startTime, {
+    message: "endTime must be greater than startTime",
+  });
+export type AudioSection = z.infer<typeof AudioSectionSchema>;
+
 export const IeltsQuestionTypeSchema = z.enum([
   // Reading
   "R1_MCQ_SINGLE",
@@ -306,6 +320,7 @@ export const QuestionSectionSchema = z.object({
   sectionType: IeltsQuestionTypeSchema,
   instructions: z.string().nullable().optional(),
   orderIndex: z.number(),
+  audioSectionIndex: z.number().int().min(0).nullable().optional(),
   createdAt: z.union([z.date(), z.string()]),
   updatedAt: z.union([z.date(), z.string()]),
   questions: z.array(QuestionSchema).optional(),
@@ -316,6 +331,7 @@ export const CreateQuestionSectionSchema = z.object({
   sectionType: IeltsQuestionTypeSchema,
   instructions: z.string().nullable().optional(),
   orderIndex: z.number().int().min(0),
+  audioSectionIndex: z.number().int().min(0).nullable().optional(),
 });
 export type CreateQuestionSectionInput = z.infer<
   typeof CreateQuestionSectionSchema
@@ -344,6 +360,11 @@ export const ExerciseSchema = z.object({
   passageFormat: z.string().nullable().optional(),
   caseSensitive: z.boolean().default(false),
   partialCredit: z.boolean().default(false),
+  audioUrl: z.string().nullable().optional(),
+  audioDuration: z.number().nullable().optional(),
+  playbackMode: z.string().nullable().optional(),
+  audioSections: z.unknown().nullable().optional(),
+  showTranscriptAfterSubmit: z.boolean().optional().default(false),
   createdById: z.string(),
   createdAt: z.union([z.date(), z.string()]),
   updatedAt: z.union([z.date(), z.string()]),
@@ -363,8 +384,10 @@ export const CreateExerciseSchema = z.object({
   skill: ExerciseSkillSchema,
   passageContent: z.string().nullable().optional(),
   passageFormat: z.string().nullable().optional(),
-  caseSensitive: z.boolean().optional().default(false),
-  partialCredit: z.boolean().optional().default(false),
+  caseSensitive: z.boolean().optional(),
+  partialCredit: z.boolean().optional(),
+  playbackMode: PlaybackModeSchema.optional(),
+  showTranscriptAfterSubmit: z.boolean().optional(),
 });
 export type CreateExerciseInput = z.infer<typeof CreateExerciseSchema>;
 
@@ -375,6 +398,10 @@ export const UpdateExerciseSchema = z.object({
   passageFormat: z.string().nullable().optional(),
   caseSensitive: z.boolean().optional(),
   partialCredit: z.boolean().optional(),
+  audioDuration: z.number().nullable().optional(),
+  playbackMode: PlaybackModeSchema.optional(),
+  audioSections: z.array(AudioSectionSchema).nullable().optional(),
+  showTranscriptAfterSubmit: z.boolean().optional(),
 });
 export type UpdateExerciseInput = z.infer<typeof UpdateExerciseSchema>;
 
@@ -383,6 +410,9 @@ export const AutosaveExerciseSchema = z.object({
   instructions: z.string().nullable().optional(),
   passageContent: z.string().nullable().optional(),
   passageFormat: z.string().nullable().optional(),
+  playbackMode: PlaybackModeSchema.optional(),
+  audioSections: z.array(AudioSectionSchema).nullable().optional(),
+  showTranscriptAfterSubmit: z.boolean().optional(),
 });
 export type AutosaveExerciseInput = z.infer<typeof AutosaveExerciseSchema>;
 

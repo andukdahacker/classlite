@@ -426,11 +426,16 @@ model Exercise {
   status         ExerciseStatus @default(DRAFT)
   passageContent String?        @map("passage_content") @db.Text
   passageFormat  String?        @map("passage_format")
-  caseSensitive  Boolean        @default(false) @map("case_sensitive")
-  partialCredit  Boolean        @default(false) @map("partial_credit")
-  createdById    String         @map("created_by_id")
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
+  caseSensitive             Boolean        @default(false) @map("case_sensitive")
+  partialCredit             Boolean        @default(false) @map("partial_credit")
+  audioUrl                  String?        @map("audio_url")
+  audioDuration             Int?           @map("audio_duration")
+  playbackMode              String?        @map("playback_mode")
+  audioSections             Json?          @map("audio_sections")
+  showTranscriptAfterSubmit Boolean        @default(false) @map("show_transcript_after_submit")
+  createdById               String         @map("created_by_id")
+  createdAt                 DateTime       @default(now()) @map("created_at")
+  updatedAt                 DateTime       @updatedAt @map("updated_at")
 
   createdBy User              @relation("ExerciseCreator", fields: [createdById], references: [id])
   sections  QuestionSection[]
@@ -446,10 +451,11 @@ model QuestionSection {
   id           String            @id @default(cuid())
   exerciseId   String            @map("exercise_id")
   centerId     String            @map("center_id")
-  sectionType  IeltsQuestionType @map("section_type")
-  instructions String?
-  orderIndex   Int               @map("order_index")
-  createdAt    DateTime          @default(now()) @map("created_at")
+  sectionType       IeltsQuestionType @map("section_type")
+  instructions      String?
+  orderIndex        Int               @map("order_index")
+  audioSectionIndex Int?              @map("audio_section_index")
+  createdAt         DateTime          @default(now()) @map("created_at")
   updatedAt    DateTime          @updatedAt @map("updated_at")
 
   exercise  Exercise   @relation(fields: [exerciseId], references: [id], onDelete: Cascade)

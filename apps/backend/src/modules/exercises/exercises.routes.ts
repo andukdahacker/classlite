@@ -484,4 +484,128 @@ export async function exercisesRoutes(fastify: FastifyInstance) {
       }
     },
   });
+
+  // POST /:exerciseId/audio - Upload audio file for Listening exercises
+  api.post("/:exerciseId/audio", {
+    schema: {
+      params: z.object({
+        exerciseId: z.string(),
+      }),
+      response: {
+        200: z.object({
+          data: z.object({ audioUrl: z.string() }),
+          message: z.string(),
+        }),
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { exerciseId: string } }>,
+      reply: FastifyReply,
+    ) => {
+      const { exerciseId } = request.params;
+      const user = request.jwtPayload;
+
+      if (!user?.centerId) {
+        return reply.status(401).send({ message: "Unauthorized" });
+      }
+
+      // Route-level file size override: 100MB for audio
+      const data = await request.file({
+        limits: { fileSize: 100 * 1024 * 1024 },
+      });
+
+      if (!data) {
+        return reply.status(400).send({ message: "No file uploaded" });
+      }
+
+      const allowedMimetypes = [
+        "audio/mpeg",
+        "audio/wav",
+        "audio/mp4",
+        "audio/x-m4a",
+      ];
+      if (!allowedMimetypes.includes(data.mimetype)) {
+        return reply.status(400).send({
+          message:
+            "Invalid file type. Only MP3, WAV, and M4A files are allowed.",
+        });
+      }
+
+      try {
+        const buffer = await data.toBuffer();
+        const result = await exercisesController.uploadAudio(
+          exerciseId,
+          buffer,
+          data.mimetype,
+          user,
+        );
+
+        return reply.status(200).send(result);
+      } catch (error: unknown) {
+        if (error instanceof AppError) {
+          return reply
+            .status(error.statusCode)
+            .send({ message: error.message });
+        }
+        request.log.error(error);
+        return reply
+          .status(500)
+          .send({ message: "Failed to upload audio" });
+      }
+    },
+  });
+
+  // DELETE /:exerciseId/audio - Remove audio file from exercise
+  api.delete("/:exerciseId/audio", {
+    schema: {
+      params: z.object({
+        exerciseId: z.string(),
+      }),
+      response: {
+        200: z.object({ message: z.string() }),
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { exerciseId: string } }>,
+      reply: FastifyReply,
+    ) => {
+      const { exerciseId } = request.params;
+      const user = request.jwtPayload;
+
+      if (!user?.centerId) {
+        return reply.status(401).send({ message: "Unauthorized" });
+      }
+
+      try {
+        const result = await exercisesController.deleteAudio(
+          exerciseId,
+          user,
+        );
+
+        return reply.status(200).send(result);
+      } catch (error: unknown) {
+        if (error instanceof AppError) {
+          return reply
+            .status(error.statusCode)
+            .send({ message: error.message });
+        }
+        request.log.error(error);
+        return reply
+          .status(500)
+          .send({ message: "Failed to delete audio" });
+      }
+    },
+  });
 }

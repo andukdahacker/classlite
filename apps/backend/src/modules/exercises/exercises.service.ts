@@ -1,4 +1,4 @@
-import { PrismaClient, getTenantedClient } from "@workspace/db";
+import { Prisma, PrismaClient, getTenantedClient } from "@workspace/db";
 import type {
   CreateExerciseInput,
   UpdateExerciseInput,
@@ -110,6 +110,8 @@ export class ExercisesService {
         passageFormat: input.passageFormat ?? null,
         caseSensitive: input.caseSensitive,
         partialCredit: input.partialCredit,
+        playbackMode: input.playbackMode ?? null,
+        showTranscriptAfterSubmit: input.showTranscriptAfterSubmit ?? false,
         createdById: authAccount.userId,
       },
       include: EXERCISE_INCLUDE,
@@ -146,6 +148,25 @@ export class ExercisesService {
         ...("partialCredit" in input &&
           input.partialCredit !== undefined && {
             partialCredit: input.partialCredit,
+          }),
+        ...("audioDuration" in input &&
+          input.audioDuration !== undefined && {
+            audioDuration: input.audioDuration,
+          }),
+        ...("playbackMode" in input &&
+          input.playbackMode !== undefined && {
+            playbackMode: input.playbackMode,
+          }),
+        ...("audioSections" in input &&
+          input.audioSections !== undefined && {
+            audioSections:
+              input.audioSections === null
+                ? Prisma.DbNull
+                : (input.audioSections as Prisma.InputJsonValue),
+          }),
+        ...("showTranscriptAfterSubmit" in input &&
+          input.showTranscriptAfterSubmit !== undefined && {
+            showTranscriptAfterSubmit: input.showTranscriptAfterSubmit,
           }),
       },
       include: EXERCISE_INCLUDE,
@@ -221,6 +242,94 @@ export class ExercisesService {
       where: { id },
       data: { status: "ARCHIVED" },
       include: EXERCISE_INCLUDE,
+    });
+  }
+
+  async uploadAudio(
+    centerId: string,
+    exerciseId: string,
+    fileBuffer: Buffer,
+    contentType: string,
+  ): Promise<{ audioUrl: string }> {
+    if (!this.firebaseStorage || !this.bucketName) {
+      throw new Error("Storage not configured");
+    }
+
+    const db = getTenantedClient(this.prisma, centerId);
+    await this.verifyDraftExercise(
+      db,
+      exerciseId,
+      "Only draft exercises can have audio uploaded",
+    );
+
+    const mimeToExt: Record<string, string> = {
+      "audio/mpeg": "mp3",
+      "audio/wav": "wav",
+      "audio/mp4": "m4a",
+      "audio/x-m4a": "m4a",
+    };
+    const ext = mimeToExt[contentType] ?? "mp3";
+    const bucket = this.firebaseStorage.bucket(this.bucketName);
+    const filePath = `exercises/${centerId}/${exerciseId}/audio/${Date.now()}.${ext}`;
+    const file = bucket.file(filePath);
+
+    await file.save(fileBuffer, {
+      metadata: {
+        contentType,
+        cacheControl: "public, max-age=31536000",
+      },
+    });
+
+    await file.makePublic();
+
+    const audioUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+
+    await db.exercise.update({
+      where: { id: exerciseId },
+      data: { audioUrl },
+    });
+
+    return { audioUrl };
+  }
+
+  async deleteAudio(centerId: string, exerciseId: string): Promise<void> {
+    if (!this.firebaseStorage || !this.bucketName) {
+      throw new Error("Storage not configured");
+    }
+
+    const db = getTenantedClient(this.prisma, centerId);
+    const exercise = await this.verifyDraftExercise(
+      db,
+      exerciseId,
+      "Only draft exercises can have audio removed",
+    );
+
+    if (exercise.audioUrl) {
+      const bucket = this.firebaseStorage.bucket(this.bucketName);
+      const prefix = `https://storage.googleapis.com/${bucket.name}/`;
+      if (exercise.audioUrl.startsWith(prefix)) {
+        const storagePath = exercise.audioUrl.slice(prefix.length);
+        try {
+          await bucket.file(storagePath).delete();
+        } catch {
+          // File may already be deleted — continue
+        }
+      }
+    }
+
+    await db.exercise.update({
+      where: { id: exerciseId },
+      data: {
+        audioUrl: null,
+        audioDuration: null,
+        audioSections: Prisma.DbNull,
+      },
+    });
+
+    // Clear audioSectionIndex on all related question sections
+    await db.questionSection.updateMany({
+      where: { exerciseId },
+      data: { audioSectionIndex: null },
     });
   }
 

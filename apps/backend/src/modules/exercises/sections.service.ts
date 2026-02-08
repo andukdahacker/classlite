@@ -68,6 +68,9 @@ export class SectionsService {
         sectionType: input.sectionType,
         instructions: input.instructions ?? null,
         orderIndex: input.orderIndex,
+        ...(input.audioSectionIndex !== undefined && {
+          audioSectionIndex: input.audioSectionIndex,
+        }),
       },
       include: {
         questions: { orderBy: { orderIndex: "asc" } },
@@ -113,6 +116,9 @@ export class SectionsService {
         }),
         ...(input.orderIndex !== undefined && {
           orderIndex: input.orderIndex,
+        }),
+        ...(input.audioSectionIndex !== undefined && {
+          audioSectionIndex: input.audioSectionIndex,
         }),
       },
       include: {

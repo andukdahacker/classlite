@@ -4,9 +4,10 @@ import { Label } from "@workspace/ui/components/label";
 interface PassageEditorProps {
   value: string;
   onChange: (value: string) => void;
+  label?: string;
 }
 
-export function PassageEditor({ value, onChange }: PassageEditorProps) {
+export function PassageEditor({ value, onChange, label = "Reading Passage" }: PassageEditorProps) {
   // Split into paragraphs for lettering display
   const paragraphs = value
     .split(/\n\n+/)
@@ -15,7 +16,7 @@ export function PassageEditor({ value, onChange }: PassageEditorProps) {
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="passage-editor">Reading Passage</Label>
+        <Label htmlFor="passage-editor">{label}</Label>
         <p className="text-sm text-muted-foreground">
           Separate paragraphs with blank lines. Paragraph labels (A, B, C...)
           will be shown automatically.

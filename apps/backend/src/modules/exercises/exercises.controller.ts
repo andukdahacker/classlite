@@ -123,6 +123,40 @@ export class ExercisesController {
     };
   }
 
+  async uploadAudio(
+    exerciseId: string,
+    fileBuffer: Buffer,
+    contentType: string,
+    user: JwtPayload,
+  ): Promise<{ data: { audioUrl: string }; message: string }> {
+    const centerId = user.centerId;
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
+
+    const result = await this.exercisesService.uploadAudio(
+      centerId,
+      exerciseId,
+      fileBuffer,
+      contentType,
+    );
+    return {
+      data: result,
+      message: "Audio uploaded successfully",
+    };
+  }
+
+  async deleteAudio(
+    exerciseId: string,
+    user: JwtPayload,
+  ): Promise<{ message: string }> {
+    const centerId = user.centerId;
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
+
+    await this.exercisesService.deleteAudio(centerId, exerciseId);
+    return {
+      message: "Audio removed successfully",
+    };
+  }
+
   async archiveExercise(
     id: string,
     user: JwtPayload,

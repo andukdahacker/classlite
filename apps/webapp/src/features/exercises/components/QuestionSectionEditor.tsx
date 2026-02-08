@@ -5,6 +5,7 @@ import type {
   Question,
   CreateQuestionInput,
   UpdateQuestionInput,
+  AudioSection,
 } from "@workspace/types";
 import type { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import { Button } from "@workspace/ui/components/button";
@@ -66,7 +67,8 @@ interface QuestionSectionEditorProps {
   skill: ExerciseSkill;
   index: number;
   exerciseId?: string;
-  onUpdateSection: (sectionId: string, data: { sectionType?: IeltsQuestionType; instructions?: string | null }) => void;
+  audioSections?: AudioSection[];
+  onUpdateSection: (sectionId: string, data: { sectionType?: IeltsQuestionType; instructions?: string | null; audioSectionIndex?: number | null }) => void;
   onDeleteSection: (sectionId: string) => void;
   onCreateQuestion: (sectionId: string, input: CreateQuestionInput) => void;
   onUpdateQuestion: (sectionId: string, questionId: string, input: UpdateQuestionInput) => void;
@@ -79,6 +81,7 @@ export function QuestionSectionEditor({
   skill,
   index,
   exerciseId,
+  audioSections,
   onUpdateSection,
   onDeleteSection,
   onCreateQuestion,
@@ -188,6 +191,31 @@ export function QuestionSectionEditor({
             placeholder="e.g., Choose the correct letter A, B, C or D"
           />
         </div>
+        {audioSections && audioSections.length > 0 && (
+          <div className="space-y-2">
+            <Label>Audio Section</Label>
+            <Select
+              value={section.audioSectionIndex != null ? String(section.audioSectionIndex) : "none"}
+              onValueChange={(v) =>
+                onUpdateSection(section.id, {
+                  audioSectionIndex: v === "none" ? null : parseInt(v, 10),
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Link to audio section..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No audio section</SelectItem>
+                {audioSections.map((as_, i) => (
+                  <SelectItem key={i} value={String(i)}>
+                    {as_.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {/* Questions list */}

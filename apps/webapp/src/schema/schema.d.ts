@@ -4694,6 +4694,16 @@ export interface paths {
                                 status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
                                 passageContent?: string | null;
                                 passageFormat?: string | null;
+                                /** @default false */
+                                caseSensitive: boolean;
+                                /** @default false */
+                                partialCredit: boolean;
+                                audioUrl?: string | null;
+                                audioDuration?: number | null;
+                                playbackMode?: string | null;
+                                audioSections?: unknown;
+                                /** @default false */
+                                showTranscriptAfterSubmit: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -4705,6 +4715,7 @@ export interface paths {
                                     sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                                     instructions?: string | null;
                                     orderIndex: number;
+                                    audioSectionIndex?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -4773,6 +4784,11 @@ export interface paths {
                         skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
                         passageContent?: string | null;
                         passageFormat?: string | null;
+                        caseSensitive?: boolean;
+                        partialCredit?: boolean;
+                        /** @enum {string} */
+                        playbackMode?: "TEST_MODE" | "PRACTICE_MODE";
+                        showTranscriptAfterSubmit?: boolean;
                     };
                 };
             };
@@ -4795,6 +4811,16 @@ export interface paths {
                                 status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
                                 passageContent?: string | null;
                                 passageFormat?: string | null;
+                                /** @default false */
+                                caseSensitive: boolean;
+                                /** @default false */
+                                partialCredit: boolean;
+                                audioUrl?: string | null;
+                                audioDuration?: number | null;
+                                playbackMode?: string | null;
+                                audioSections?: unknown;
+                                /** @default false */
+                                showTranscriptAfterSubmit: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -4806,6 +4832,7 @@ export interface paths {
                                     sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                                     instructions?: string | null;
                                     orderIndex: number;
+                                    audioSectionIndex?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -4923,6 +4950,16 @@ export interface paths {
                                 status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
                                 passageContent?: string | null;
                                 passageFormat?: string | null;
+                                /** @default false */
+                                caseSensitive: boolean;
+                                /** @default false */
+                                partialCredit: boolean;
+                                audioUrl?: string | null;
+                                audioDuration?: number | null;
+                                playbackMode?: string | null;
+                                audioSections?: unknown;
+                                /** @default false */
+                                showTranscriptAfterSubmit: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -4934,6 +4971,7 @@ export interface paths {
                                     sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                                     instructions?: string | null;
                                     orderIndex: number;
+                                    audioSectionIndex?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -5101,6 +5139,17 @@ export interface paths {
                         instructions?: string | null;
                         passageContent?: string | null;
                         passageFormat?: string | null;
+                        caseSensitive?: boolean;
+                        partialCredit?: boolean;
+                        audioDuration?: number | null;
+                        /** @enum {string} */
+                        playbackMode?: "TEST_MODE" | "PRACTICE_MODE";
+                        audioSections?: {
+                            label: string;
+                            startTime: number;
+                            endTime: number;
+                        }[] | null;
+                        showTranscriptAfterSubmit?: boolean;
                     };
                 };
             };
@@ -5123,6 +5172,16 @@ export interface paths {
                                 status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
                                 passageContent?: string | null;
                                 passageFormat?: string | null;
+                                /** @default false */
+                                caseSensitive: boolean;
+                                /** @default false */
+                                partialCredit: boolean;
+                                audioUrl?: string | null;
+                                audioDuration?: number | null;
+                                playbackMode?: string | null;
+                                audioSections?: unknown;
+                                /** @default false */
+                                showTranscriptAfterSubmit: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5134,6 +5193,7 @@ export interface paths {
                                     sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                                     instructions?: string | null;
                                     orderIndex: number;
+                                    audioSectionIndex?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -5252,6 +5312,14 @@ export interface paths {
                         instructions?: string | null;
                         passageContent?: string | null;
                         passageFormat?: string | null;
+                        /** @enum {string} */
+                        playbackMode?: "TEST_MODE" | "PRACTICE_MODE";
+                        audioSections?: {
+                            label: string;
+                            startTime: number;
+                            endTime: number;
+                        }[] | null;
+                        showTranscriptAfterSubmit?: boolean;
                     };
                 };
             };
@@ -5274,6 +5342,16 @@ export interface paths {
                                 status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
                                 passageContent?: string | null;
                                 passageFormat?: string | null;
+                                /** @default false */
+                                caseSensitive: boolean;
+                                /** @default false */
+                                partialCredit: boolean;
+                                audioUrl?: string | null;
+                                audioDuration?: number | null;
+                                playbackMode?: string | null;
+                                audioSections?: unknown;
+                                /** @default false */
+                                showTranscriptAfterSubmit: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5285,6 +5363,7 @@ export interface paths {
                                     sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                                     instructions?: string | null;
                                     orderIndex: number;
+                                    audioSectionIndex?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -5400,6 +5479,16 @@ export interface paths {
                                 status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
                                 passageContent?: string | null;
                                 passageFormat?: string | null;
+                                /** @default false */
+                                caseSensitive: boolean;
+                                /** @default false */
+                                partialCredit: boolean;
+                                audioUrl?: string | null;
+                                audioDuration?: number | null;
+                                playbackMode?: string | null;
+                                audioSections?: unknown;
+                                /** @default false */
+                                showTranscriptAfterSubmit: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5411,6 +5500,7 @@ export interface paths {
                                     sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                                     instructions?: string | null;
                                     orderIndex: number;
+                                    audioSectionIndex?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -5530,6 +5620,16 @@ export interface paths {
                                 status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
                                 passageContent?: string | null;
                                 passageFormat?: string | null;
+                                /** @default false */
+                                caseSensitive: boolean;
+                                /** @default false */
+                                partialCredit: boolean;
+                                audioUrl?: string | null;
+                                audioDuration?: number | null;
+                                playbackMode?: string | null;
+                                audioSections?: unknown;
+                                /** @default false */
+                                showTranscriptAfterSubmit: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5541,6 +5641,7 @@ export interface paths {
                                     sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                                     instructions?: string | null;
                                     orderIndex: number;
+                                    audioSectionIndex?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -5712,6 +5813,191 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exercises/{exerciseId}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                audioUrl: string;
+                            };
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/exercises/{exerciseId}/sections": {
         parameters: {
             query?: never;
@@ -5745,6 +6031,7 @@ export interface paths {
                                 sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                                 instructions?: string | null;
                                 orderIndex: number;
+                                audioSectionIndex?: number | null;
                                 createdAt: string;
                                 updatedAt: string;
                                 questions?: {
@@ -5820,6 +6107,7 @@ export interface paths {
                         sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                         instructions?: string | null;
                         orderIndex: number;
+                        audioSectionIndex?: number | null;
                     };
                 };
             };
@@ -5839,6 +6127,7 @@ export interface paths {
                                 sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                                 instructions?: string | null;
                                 orderIndex: number;
+                                audioSectionIndex?: number | null;
                                 createdAt: string;
                                 updatedAt: string;
                                 questions?: {
@@ -5925,6 +6214,136 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exercises/{exerciseId}/sections/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        sectionIds: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                exerciseId: string;
+                                centerId: string;
+                                /** @enum {string} */
+                                sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                instructions?: string | null;
+                                orderIndex: number;
+                                audioSectionIndex?: number | null;
+                                createdAt: string;
+                                updatedAt: string;
+                                questions?: {
+                                    id: string;
+                                    sectionId: string;
+                                    centerId: string;
+                                    questionText: string;
+                                    questionType: string;
+                                    options?: unknown;
+                                    correctAnswer?: unknown;
+                                    orderIndex: number;
+                                    wordLimit?: number | null;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                }[];
+                            }[] | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/v1/exercises/{exerciseId}/sections/{sectionId}": {
@@ -6029,6 +6448,7 @@ export interface paths {
                         sectionType?: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                         instructions?: string | null;
                         orderIndex?: number;
+                        audioSectionIndex?: number | null;
                     };
                 };
             };
@@ -6048,6 +6468,7 @@ export interface paths {
                                 sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
                                 instructions?: string | null;
                                 orderIndex: number;
+                                audioSectionIndex?: number | null;
                                 createdAt: string;
                                 updatedAt: string;
                                 questions?: {
