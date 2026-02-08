@@ -105,6 +105,6 @@ test.describe("Classes - Roster Manager", () => {
 
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText("Roster:")).toBeVisible();
+    await expect(dialog.getByText("Class Roster")).toBeVisible();
   });
 });
