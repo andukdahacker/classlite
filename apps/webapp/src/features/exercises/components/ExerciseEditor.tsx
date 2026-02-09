@@ -56,6 +56,7 @@ import { AudioSectionMarkers } from "./AudioSectionMarkers";
 import { PlaybackModeSettings } from "./PlaybackModeSettings";
 import { WritingTaskEditor } from "./WritingTaskEditor";
 import { WritingRubricDisplay } from "./WritingRubricDisplay";
+import { SpeakingTaskEditor } from "./SpeakingTaskEditor";
 import type { Exercise } from "@workspace/types";
 
 // Default first question type per skill
@@ -83,6 +84,10 @@ interface ExercisePreviewProps {
   stimulusImageUrl?: string | null;
   letterTone?: string;
   wordCountMin?: number | null;
+  speakingPrepTime?: number | null;
+  speakingTime?: number | null;
+  maxRecordingDuration?: number | null;
+  enableTranscription?: boolean;
   onBack: () => void;
 }
 
@@ -107,10 +112,15 @@ function ExercisePreview({
   stimulusImageUrl,
   letterTone,
   wordCountMin,
+  speakingPrepTime,
+  speakingTime,
+  maxRecordingDuration,
+  enableTranscription,
   onBack,
 }: ExercisePreviewProps) {
   const isListening = skill === "LISTENING";
   const isWriting = skill === "WRITING";
+  const isSpeaking = skill === "SPEAKING";
 
   return (
     <div className="container py-10">
@@ -189,6 +199,35 @@ function ExercisePreview({
           </div>
         )}
 
+        {/* Speaking Preview */}
+        {isSpeaking && (
+          <div className="space-y-2">
+            {speakingPrepTime != null && (
+              <p className="text-sm text-muted-foreground">
+                Preparation time: {speakingPrepTime}s
+              </p>
+            )}
+            {speakingTime != null && (
+              <p className="text-sm text-muted-foreground">
+                Speaking time: {speakingTime}s
+              </p>
+            )}
+            {maxRecordingDuration != null && (
+              <p className="text-sm text-muted-foreground">
+                Max recording: {maxRecordingDuration}s per question
+              </p>
+            )}
+            {enableTranscription && (
+              <p className="text-sm text-muted-foreground">
+                AI Transcription: Enabled
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground italic">
+              This task is graded using IELTS band descriptors
+            </p>
+          </div>
+        )}
+
         {/* Passage / Transcript */}
         {showPassage && passageContent && (
           <div className="space-y-3">
@@ -234,6 +273,8 @@ function ExercisePreview({
                 sectionType={section.sectionType}
                 question={q}
                 questionIndex={qIdx}
+                speakingPrepTime={isSpeaking ? speakingPrepTime : undefined}
+                speakingTime={isSpeaking ? speakingTime : undefined}
               />
             ))}
           </div>
@@ -267,6 +308,10 @@ export function ExerciseEditor() {
   const [wordCountMode, setWordCountMode] = useState("soft");
   const [sampleResponse, setSampleResponse] = useState("");
   const [showSampleAfterGrading, setShowSampleAfterGrading] = useState(false);
+  const [speakingPrepTime, setSpeakingPrepTime] = useState<number | null>(null);
+  const [speakingTime, setSpeakingTime] = useState<number | null>(null);
+  const [maxRecordingDuration, setMaxRecordingDuration] = useState<number | null>(null);
+  const [enableTranscription, setEnableTranscription] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [showPreview, setShowPreview] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
@@ -313,6 +358,10 @@ export function ExerciseEditor() {
       setWordCountMode(exercise.wordCountMode ?? "soft");
       setSampleResponse(exercise.sampleResponse ?? "");
       setShowSampleAfterGrading(exercise.showSampleAfterGrading ?? false);
+      setSpeakingPrepTime(exercise.speakingPrepTime ?? null);
+      setSpeakingTime(exercise.speakingTime ?? null);
+      setMaxRecordingDuration(exercise.maxRecordingDuration ?? null);
+      setEnableTranscription(exercise.enableTranscription ?? false);
       // Reset edit tracking — data was just loaded, not user-edited
       userHasEdited.current = false;
     }
@@ -350,13 +399,17 @@ export function ExerciseEditor() {
           wordCountMode: (wordCountMode as "soft" | "hard") || null,
           sampleResponse: sampleResponse || null,
           showSampleAfterGrading,
+          speakingPrepTime,
+          speakingTime,
+          maxRecordingDuration,
+          enableTranscription,
         });
         setSaveStatus("saved");
       } catch {
         setSaveStatus("unsaved");
       }
     }, 30000);
-  }, [id, title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, autosave, exercise]);
+  }, [id, title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, speakingPrepTime, speakingTime, maxRecordingDuration, enableTranscription, autosave, exercise]);
 
   useEffect(() => {
     if (isEditing && exercise && userHasEdited.current) {
@@ -365,7 +418,7 @@ export function ExerciseEditor() {
     return () => {
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     };
-  }, [title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, isEditing, exercise, scheduleAutosave]);
+  }, [title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, speakingPrepTime, speakingTime, maxRecordingDuration, enableTranscription, isEditing, exercise, scheduleAutosave]);
 
   // Handlers
   const handleSkillSelect = async (skill: ExerciseSkill) => {
@@ -383,18 +436,18 @@ export function ExerciseEditor() {
     }
   };
 
-  // Auto-create section for WRITING exercises (exactly 1 section per exercise)
+  // Auto-create section for WRITING/SPEAKING exercises (exactly 1 section per exercise)
   useEffect(() => {
     if (
       isEditing &&
       exercise &&
-      exercise.skill === "WRITING" &&
+      (exercise.skill === "WRITING" || exercise.skill === "SPEAKING") &&
       exercise.status === "DRAFT" &&
       exercise.sections &&
       exercise.sections.length === 0
     ) {
       createSection({
-        sectionType: DEFAULT_SECTION_TYPE.WRITING,
+        sectionType: DEFAULT_SECTION_TYPE[exercise.skill],
         orderIndex: 0,
       }).catch(() => {
         // Silently fail — user can add manually
@@ -422,6 +475,10 @@ export function ExerciseEditor() {
         wordCountMode: (wordCountMode as "soft" | "hard") || null,
         sampleResponse: sampleResponse || null,
         showSampleAfterGrading,
+        speakingPrepTime,
+        speakingTime,
+        maxRecordingDuration,
+        enableTranscription,
       });
       setSaveStatus("saved");
       toast.success("Draft saved");
@@ -610,6 +667,7 @@ export function ExerciseEditor() {
 
   const showPassage = selectedSkill === "READING" || selectedSkill === "LISTENING";
   const isWriting = selectedSkill === "WRITING";
+  const isSpeaking = selectedSkill === "SPEAKING";
 
   if (showPreview) {
     return (
@@ -628,6 +686,10 @@ export function ExerciseEditor() {
         stimulusImageUrl={exercise?.stimulusImageUrl}
         letterTone={letterTone}
         wordCountMin={wordCountMin}
+        speakingPrepTime={speakingPrepTime}
+        speakingTime={speakingTime}
+        maxRecordingDuration={maxRecordingDuration}
+        enableTranscription={enableTranscription}
         onBack={() => setShowPreview(false)}
       />
     );
@@ -755,6 +817,23 @@ export function ExerciseEditor() {
         </div>
       )}
 
+      {/* Speaking Task Settings (SPEAKING only) */}
+      {isSpeaking && isEditing && id && (
+        <div className="max-w-3xl">
+          <SpeakingTaskEditor
+            sectionType={exercise?.sections?.[0]?.sectionType ?? null}
+            speakingPrepTime={speakingPrepTime}
+            speakingTime={speakingTime}
+            maxRecordingDuration={maxRecordingDuration}
+            enableTranscription={enableTranscription}
+            onSpeakingPrepTimeChange={(v) => { setSpeakingPrepTime(v); userHasEdited.current = true; }}
+            onSpeakingTimeChange={(v) => { setSpeakingTime(v); userHasEdited.current = true; }}
+            onMaxRecordingDurationChange={(v) => { setMaxRecordingDuration(v); userHasEdited.current = true; }}
+            onEnableTranscriptionChange={(v) => { setEnableTranscription(v); userHasEdited.current = true; }}
+          />
+        </div>
+      )}
+
       {/* Passage Editor */}
       {showPassage && (
         <div className="max-w-3xl">
@@ -767,8 +846,8 @@ export function ExerciseEditor() {
         </div>
       )}
 
-      {/* Answer Key Settings */}
-      {isEditing && exercise && (
+      {/* Answer Key Settings (hidden for WRITING/SPEAKING — rubric-graded) */}
+      {isEditing && exercise && !isWriting && !isSpeaking && (
         <div className="max-w-3xl">
           <Collapsible>
             <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors">
@@ -823,7 +902,7 @@ export function ExerciseEditor() {
       <div className="space-y-4 max-w-3xl">
         <div className="flex items-center justify-between">
           <Label>Question Sections</Label>
-          {!isWriting && (
+          {!isWriting && !isSpeaking && (
             <Button variant="outline" size="sm" onClick={handleAddSection}>
               <Plus className="mr-1 size-4" />
               Add Section

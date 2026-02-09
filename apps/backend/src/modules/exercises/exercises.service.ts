@@ -119,6 +119,10 @@ export class ExercisesService {
         wordCountMode: input.wordCountMode ?? null,
         sampleResponse: input.sampleResponse ?? null,
         showSampleAfterGrading: input.showSampleAfterGrading ?? false,
+        speakingPrepTime: input.speakingPrepTime ?? null,
+        speakingTime: input.speakingTime ?? null,
+        maxRecordingDuration: input.maxRecordingDuration ?? null,
+        enableTranscription: input.enableTranscription ?? false,
         createdById: authAccount.userId,
       },
       include: EXERCISE_INCLUDE,
@@ -219,6 +223,22 @@ export class ExercisesService {
         ...("showSampleAfterGrading" in input &&
           input.showSampleAfterGrading !== undefined && {
             showSampleAfterGrading: input.showSampleAfterGrading,
+          }),
+        ...("speakingPrepTime" in input &&
+          input.speakingPrepTime !== undefined && {
+            speakingPrepTime: input.speakingPrepTime,
+          }),
+        ...("speakingTime" in input &&
+          input.speakingTime !== undefined && {
+            speakingTime: input.speakingTime,
+          }),
+        ...("maxRecordingDuration" in input &&
+          input.maxRecordingDuration !== undefined && {
+            maxRecordingDuration: input.maxRecordingDuration,
+          }),
+        ...("enableTranscription" in input &&
+          input.enableTranscription !== undefined && {
+            enableTranscription: input.enableTranscription,
           }),
       },
       include: EXERCISE_INCLUDE,

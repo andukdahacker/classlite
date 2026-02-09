@@ -7,6 +7,7 @@ import { WordBankEditor } from "./WordBankEditor";
 import { MatchingEditor } from "./MatchingEditor";
 import { NoteTableFlowchartEditor } from "./NoteTableFlowchartEditor";
 import { DiagramLabellingEditor } from "./DiagramLabellingEditor";
+import { SpeakingCueCardEditor } from "./SpeakingCueCardEditor";
 
 interface QuestionEditorFactoryProps {
   sectionType: IeltsQuestionType;
@@ -75,6 +76,10 @@ const LenientDiagramLabellingStructuredLabel = z.object({
 });
 const LenientDiagramLabellingAnswer = z.object({
   labels: z.record(z.string(), z.union([z.string(), LenientDiagramLabellingStructuredLabel])),
+});
+const LenientSpeakingCueCard = z.object({
+  topic: z.string(),
+  bulletPoints: z.array(z.string()),
 });
 
 /** Migrate NTF blanks from flat string to structured format */
@@ -214,6 +219,28 @@ export function QuestionEditorFactory({
       return (
         <p className="text-xs text-muted-foreground italic rounded-md border border-dashed p-3">
           Writing task prompt is configured above in the Writing Task Settings section.
+        </p>
+      );
+
+    case "S1_PART1_QA":
+      return (
+        <p className="text-xs text-muted-foreground italic rounded-md border border-dashed p-3">
+          Part 1 questions are individual items. Add questions below using the question text field.
+        </p>
+      );
+
+    case "S2_PART2_CUE_CARD":
+      return (
+        <SpeakingCueCardEditor
+          options={safeParse(LenientSpeakingCueCard, options)}
+          onChange={(opts, ans) => onChange(opts, ans)}
+        />
+      );
+
+    case "S3_PART3_DISCUSSION":
+      return (
+        <p className="text-xs text-muted-foreground italic rounded-md border border-dashed p-3">
+          Discussion questions are individual items. Add questions below using the question text field.
         </p>
       );
 

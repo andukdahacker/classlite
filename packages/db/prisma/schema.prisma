@@ -441,6 +441,10 @@ model Exercise {
   wordCountMode             String?        @map("word_count_mode")
   sampleResponse            String?        @map("sample_response") @db.Text
   showSampleAfterGrading    Boolean        @default(false) @map("show_sample_after_grading")
+  speakingPrepTime          Int?           @map("speaking_prep_time")
+  speakingTime              Int?           @map("speaking_time")
+  maxRecordingDuration      Int?           @map("max_recording_duration")
+  enableTranscription       Boolean        @default(false) @map("enable_transcription")
   createdById               String         @map("created_by_id")
   createdAt                 DateTime       @default(now()) @map("created_at")
   updatedAt                 DateTime       @updatedAt @map("updated_at")

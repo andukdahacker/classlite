@@ -365,6 +365,140 @@ describe("ExercisesService", () => {
     });
   });
 
+  describe("createExercise — speaking fields", () => {
+    it("should pass speaking fields through to Prisma create", async () => {
+      mockPrisma.authAccount.findUnique.mockResolvedValue({
+        userId,
+        provider: "FIREBASE",
+        providerUserId: firebaseUid,
+      });
+      mockDb.exercise.create.mockResolvedValue(mockExercise);
+
+      await service.createExercise(centerId, {
+        title: "Speaking Test",
+        skill: "SPEAKING",
+        speakingPrepTime: 60,
+        speakingTime: 120,
+        maxRecordingDuration: 60,
+        enableTranscription: true,
+      }, firebaseUid);
+
+      expect(mockDb.exercise.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            speakingPrepTime: 60,
+            speakingTime: 120,
+            maxRecordingDuration: 60,
+            enableTranscription: true,
+          }),
+        }),
+      );
+    });
+
+    it("should default speaking fields to null/false when not provided", async () => {
+      mockPrisma.authAccount.findUnique.mockResolvedValue({
+        userId,
+        provider: "FIREBASE",
+        providerUserId: firebaseUid,
+      });
+      mockDb.exercise.create.mockResolvedValue(mockExercise);
+
+      await service.createExercise(centerId, {
+        title: "Speaking Test",
+        skill: "SPEAKING",
+      }, firebaseUid);
+
+      expect(mockDb.exercise.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            speakingPrepTime: null,
+            speakingTime: null,
+            maxRecordingDuration: null,
+            enableTranscription: false,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe("updateExercise — speaking fields", () => {
+    it("should update speaking fields via conditional spread", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockExercise);
+      mockDb.exercise.update.mockResolvedValue({
+        ...mockExercise,
+        speakingPrepTime: 90,
+        speakingTime: 150,
+      });
+
+      const result = await service.updateExercise(centerId, "ex-1", {
+        speakingPrepTime: 90,
+        speakingTime: 150,
+      });
+
+      expect(mockDb.exercise.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            speakingPrepTime: 90,
+            speakingTime: 150,
+          }),
+        }),
+      );
+      expect(result.speakingPrepTime).toBe(90);
+    });
+
+    it("should only include provided speaking fields in update", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockExercise);
+      mockDb.exercise.update.mockResolvedValue({
+        ...mockExercise,
+        enableTranscription: true,
+      });
+
+      await service.updateExercise(centerId, "ex-1", {
+        enableTranscription: true,
+      });
+
+      const updateCall = mockDb.exercise.update.mock.calls[0][0];
+      expect(updateCall.data.enableTranscription).toBe(true);
+      // Other speaking fields should not be present since they weren't in input
+      expect("speakingPrepTime" in updateCall.data).toBe(false);
+      expect("speakingTime" in updateCall.data).toBe(false);
+      expect("maxRecordingDuration" in updateCall.data).toBe(false);
+    });
+  });
+
+  describe("autosaveExercise — speaking fields", () => {
+    it("should autosave speaking fields through updateDraftExercise", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockExercise);
+      mockDb.exercise.update.mockResolvedValue({
+        ...mockExercise,
+        speakingPrepTime: 60,
+        speakingTime: 120,
+        maxRecordingDuration: 90,
+        enableTranscription: true,
+      });
+
+      const result = await service.autosaveExercise(centerId, "ex-1", {
+        speakingPrepTime: 60,
+        speakingTime: 120,
+        maxRecordingDuration: 90,
+        enableTranscription: true,
+      });
+
+      expect(mockDb.exercise.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            speakingPrepTime: 60,
+            speakingTime: 120,
+            maxRecordingDuration: 90,
+            enableTranscription: true,
+          }),
+        }),
+      );
+      expect(result.speakingPrepTime).toBe(60);
+      expect(result.enableTranscription).toBe(true);
+    });
+  });
+
   describe("uploadAudio", () => {
     const fileBuffer = Buffer.from("fake-audio-data");
 

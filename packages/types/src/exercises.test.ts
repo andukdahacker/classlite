@@ -30,6 +30,7 @@ import {
   WordCountModeSchema,
   WritingRubricCriterionSchema,
   WritingRubricSchema,
+  SpeakingCueCardSchema,
 } from "./exercises.js";
 
 describe("Exercise Type-Helper Schemas", () => {
@@ -1839,6 +1840,259 @@ describe("Exercise Type-Helper Schemas", () => {
         wordCountMode: "hard",
         sampleResponse: "Model answer...",
         showSampleAfterGrading: true,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  // --- Story 3.9: Speaking schemas ---
+  describe("SpeakingCueCardSchema", () => {
+    it("should validate valid topic and bullet points", () => {
+      const result = SpeakingCueCardSchema.safeParse({
+        topic: "Describe a time when you helped someone",
+        bulletPoints: ["who you helped", "what you did", "how you felt"],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept 1 bullet point (minimum)", () => {
+      const result = SpeakingCueCardSchema.safeParse({
+        topic: "A topic",
+        bulletPoints: ["single point"],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept 6 bullet points (maximum)", () => {
+      const result = SpeakingCueCardSchema.safeParse({
+        topic: "A topic",
+        bulletPoints: ["1", "2", "3", "4", "5", "6"],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject empty topic", () => {
+      const result = SpeakingCueCardSchema.safeParse({
+        topic: "",
+        bulletPoints: ["point"],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject empty bullet points array", () => {
+      const result = SpeakingCueCardSchema.safeParse({
+        topic: "A topic",
+        bulletPoints: [],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject more than 6 bullet points", () => {
+      const result = SpeakingCueCardSchema.safeParse({
+        topic: "A topic",
+        bulletPoints: ["1", "2", "3", "4", "5", "6", "7"],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject empty string in bullet points", () => {
+      const result = SpeakingCueCardSchema.safeParse({
+        topic: "A topic",
+        bulletPoints: ["valid", ""],
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("QuestionOptionsSchema — Speaking types (S1, S2, S3)", () => {
+    it("should validate S1_PART1_QA with null options and null correctAnswer", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "S1_PART1_QA",
+        options: null,
+        correctAnswer: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate S2_PART2_CUE_CARD with cue card options and null correctAnswer", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "S2_PART2_CUE_CARD",
+        options: {
+          topic: "Describe a memorable trip",
+          bulletPoints: ["where you went", "who you went with", "what you did"],
+        },
+        correctAnswer: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate S3_PART3_DISCUSSION with null options and null correctAnswer", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "S3_PART3_DISCUSSION",
+        options: null,
+        correctAnswer: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject S1 with non-null options", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "S1_PART1_QA",
+        options: { someField: "value" },
+        correctAnswer: null,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject S2 with null options (requires cue card)", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "S2_PART2_CUE_CARD",
+        options: null,
+        correctAnswer: null,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject S2 with invalid cue card options (empty topic)", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "S2_PART2_CUE_CARD",
+        options: { topic: "", bulletPoints: ["point"] },
+        correctAnswer: null,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject S3 with non-null correctAnswer", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "S3_PART3_DISCUSSION",
+        options: null,
+        correctAnswer: { answer: "some answer" },
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("ExerciseSchema — speaking fields", () => {
+    const baseExercise = {
+      id: "ex1",
+      centerId: "c1",
+      title: "Speaking Test",
+      skill: "SPEAKING",
+      status: "DRAFT",
+      createdById: "u1",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    it("should accept all speaking fields", () => {
+      const result = ExerciseSchema.safeParse({
+        ...baseExercise,
+        speakingPrepTime: 60,
+        speakingTime: 120,
+        maxRecordingDuration: 60,
+        enableTranscription: true,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null speaking time fields", () => {
+      const result = ExerciseSchema.safeParse({
+        ...baseExercise,
+        speakingPrepTime: null,
+        speakingTime: null,
+        maxRecordingDuration: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should default enableTranscription to false", () => {
+      const result = ExerciseSchema.safeParse(baseExercise);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.enableTranscription).toBe(false);
+      }
+    });
+  });
+
+  describe("CreateExerciseSchema — speaking fields", () => {
+    it("should accept speaking fields on create", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Speaking Test",
+        skill: "SPEAKING",
+        speakingPrepTime: 60,
+        speakingTime: 120,
+        maxRecordingDuration: 60,
+        enableTranscription: false,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept without speaking fields (optional)", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Speaking Test",
+        skill: "SPEAKING",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null speaking time fields", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Speaking Test",
+        skill: "SPEAKING",
+        speakingPrepTime: null,
+        speakingTime: null,
+        maxRecordingDuration: null,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("UpdateExerciseSchema — speaking fields", () => {
+    it("should accept speaking field updates", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        speakingPrepTime: 90,
+        speakingTime: 150,
+        maxRecordingDuration: 120,
+        enableTranscription: true,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept partial speaking update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        speakingPrepTime: 60,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null speaking time fields on update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        speakingPrepTime: null,
+        speakingTime: null,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("AutosaveExerciseSchema — speaking fields", () => {
+    it("should accept speaking fields in autosave", () => {
+      const result = AutosaveExerciseSchema.safeParse({
+        speakingPrepTime: 60,
+        speakingTime: 120,
+        maxRecordingDuration: 60,
+        enableTranscription: true,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept all fields together including speaking", () => {
+      const result = AutosaveExerciseSchema.safeParse({
+        title: "Updated Title",
+        instructions: "Some instructions",
+        speakingPrepTime: 60,
+        speakingTime: 120,
+        maxRecordingDuration: 60,
+        enableTranscription: false,
       });
       expect(result.success).toBe(true);
     });

@@ -230,6 +230,13 @@ export const WRITING_RUBRIC_CRITERIA = {
   ],
 } as const;
 
+// S2: Speaking Cue Card structured data (topic + bullet points)
+export const SpeakingCueCardSchema = z.object({
+  topic: z.string().min(1),
+  bulletPoints: z.array(z.string().min(1)).min(1).max(6),
+});
+export type SpeakingCueCard = z.infer<typeof SpeakingCueCardSchema>;
+
 // Task 1.5: Discriminated union — validates options/correctAnswer per question type
 export const QuestionOptionsSchema = z.discriminatedUnion("questionType", [
   // R1: MCQ Single
@@ -370,6 +377,24 @@ export const QuestionOptionsSchema = z.discriminatedUnion("questionType", [
     options: z.null(),
     correctAnswer: z.null(),
   }),
+  // S1: Part 1 Q&A (speaking — no options or correct answer, rubric-graded)
+  z.object({
+    questionType: z.literal("S1_PART1_QA"),
+    options: z.null(),
+    correctAnswer: z.null(),
+  }),
+  // S2: Part 2 Cue Card (speaking — cue card options, rubric-graded)
+  z.object({
+    questionType: z.literal("S2_PART2_CUE_CARD"),
+    options: SpeakingCueCardSchema,
+    correctAnswer: z.null(),
+  }),
+  // S3: Part 3 Discussion (speaking — no options or correct answer, rubric-graded)
+  z.object({
+    questionType: z.literal("S3_PART3_DISCUSSION"),
+    options: z.null(),
+    correctAnswer: z.null(),
+  }),
 ]);
 export type QuestionOptions = z.infer<typeof QuestionOptionsSchema>;
 
@@ -466,6 +491,10 @@ export const ExerciseSchema = z.object({
   wordCountMode: z.string().nullable().optional(),
   sampleResponse: z.string().nullable().optional(),
   showSampleAfterGrading: z.boolean().optional().default(false),
+  speakingPrepTime: z.number().nullable().optional(),
+  speakingTime: z.number().nullable().optional(),
+  maxRecordingDuration: z.number().nullable().optional(),
+  enableTranscription: z.boolean().optional().default(false),
   createdById: z.string(),
   createdAt: z.union([z.date(), z.string()]),
   updatedAt: z.union([z.date(), z.string()]),
@@ -496,6 +525,10 @@ export const CreateExerciseSchema = z.object({
   wordCountMode: WordCountModeSchema.nullable().optional(),
   sampleResponse: z.string().nullable().optional(),
   showSampleAfterGrading: z.boolean().optional(),
+  speakingPrepTime: z.number().int().positive().nullable().optional(),
+  speakingTime: z.number().int().positive().nullable().optional(),
+  maxRecordingDuration: z.number().int().positive().nullable().optional(),
+  enableTranscription: z.boolean().optional(),
 }).refine(
   (data) => {
     if (data.wordCountMin != null && data.wordCountMax != null) {
@@ -525,6 +558,10 @@ export const UpdateExerciseSchema = z.object({
   wordCountMode: WordCountModeSchema.nullable().optional(),
   sampleResponse: z.string().nullable().optional(),
   showSampleAfterGrading: z.boolean().optional(),
+  speakingPrepTime: z.number().int().positive().nullable().optional(),
+  speakingTime: z.number().int().positive().nullable().optional(),
+  maxRecordingDuration: z.number().int().positive().nullable().optional(),
+  enableTranscription: z.boolean().optional(),
 }).refine(
   (data) => {
     if (data.wordCountMin != null && data.wordCountMax != null) {
@@ -551,6 +588,10 @@ export const AutosaveExerciseSchema = z.object({
   wordCountMode: WordCountModeSchema.nullable().optional(),
   sampleResponse: z.string().nullable().optional(),
   showSampleAfterGrading: z.boolean().optional(),
+  speakingPrepTime: z.number().int().positive().nullable().optional(),
+  speakingTime: z.number().int().positive().nullable().optional(),
+  maxRecordingDuration: z.number().int().positive().nullable().optional(),
+  enableTranscription: z.boolean().optional(),
 });
 export type AutosaveExerciseInput = z.infer<typeof AutosaveExerciseSchema>;
 

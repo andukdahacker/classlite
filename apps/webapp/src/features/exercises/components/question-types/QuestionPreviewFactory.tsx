@@ -11,12 +11,16 @@ interface QuestionPreviewFactoryProps {
   sectionType: IeltsQuestionType;
   question: Question;
   questionIndex: number;
+  speakingPrepTime?: number | null;
+  speakingTime?: number | null;
 }
 
 export function QuestionPreviewFactory({
   sectionType,
   question,
   questionIndex,
+  speakingPrepTime,
+  speakingTime,
 }: QuestionPreviewFactoryProps) {
   switch (sectionType) {
     case "R1_MCQ_SINGLE":
@@ -119,6 +123,64 @@ export function QuestionPreviewFactory({
           <p className="text-xs text-muted-foreground italic">
             This task is graded using IELTS band descriptors
           </p>
+        </div>
+      );
+
+    case "S1_PART1_QA":
+      return (
+        <div className="flex gap-3 pl-4">
+          <span className="text-sm font-medium min-w-[2rem]">
+            {questionIndex + 1}.
+          </span>
+          <div className="space-y-1">
+            <span className="text-sm">{question.questionText}</span>
+            <p className="text-xs text-muted-foreground italic">
+              Record your answer (~1 minute)
+            </p>
+          </div>
+        </div>
+      );
+
+    case "S2_PART2_CUE_CARD": {
+      const cueCard = question.options as { topic: string; bulletPoints: string[] } | null;
+      return (
+        <div className="rounded-md border border-dashed p-4 space-y-3">
+          {cueCard?.topic && (
+            <p className="text-sm font-semibold">{cueCard.topic}</p>
+          )}
+          {cueCard?.bulletPoints && cueCard.bulletPoints.length > 0 && (
+            <ul className="list-disc pl-6 space-y-1">
+              {cueCard.bulletPoints.map((point, i) => (
+                <li key={i} className="text-sm">{point}</li>
+              ))}
+            </ul>
+          )}
+          {(speakingPrepTime != null || speakingTime != null) && (
+            <p className="text-xs text-muted-foreground">
+              {speakingPrepTime != null && `Preparation: ${speakingPrepTime}s`}
+              {speakingPrepTime != null && speakingTime != null && " | "}
+              {speakingTime != null && `Speaking: ${speakingTime}s`}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground italic">
+            This task is graded using IELTS band descriptors
+          </p>
+        </div>
+      );
+    }
+
+    case "S3_PART3_DISCUSSION":
+      return (
+        <div className="flex gap-3 pl-4">
+          <span className="text-sm font-medium min-w-[2rem]">
+            {questionIndex + 1}.
+          </span>
+          <div className="space-y-1">
+            <span className="text-sm">{question.questionText}</span>
+            <p className="text-xs text-muted-foreground italic">
+              Record your answer
+            </p>
+          </div>
         </div>
       );
 

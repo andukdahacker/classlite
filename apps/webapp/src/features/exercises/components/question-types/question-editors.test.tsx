@@ -17,6 +17,7 @@ import { TFNGPreview } from "./TFNGPreview";
 import { TextInputPreview } from "./TextInputPreview";
 import { WordBankPreview } from "./WordBankPreview";
 import { QuestionPreviewFactory } from "./QuestionPreviewFactory";
+import { SpeakingCueCardEditor } from "./SpeakingCueCardEditor";
 
 // Mock useDiagramUpload for DiagramLabellingEditor tests
 vi.mock("../../hooks/use-diagram-upload", () => ({
@@ -830,6 +831,62 @@ describe("QuestionEditorFactory", () => {
     expect(screen.getByText(/writing task prompt is configured above/i)).toBeInTheDocument();
   });
 
+  // --- S1/S2/S3 Speaking question type editor wiring ---
+
+  it("renders read-only notice for S1_PART1_QA", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="S1_PART1_QA"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText(/Part 1 questions are individual items/i)).toBeInTheDocument();
+  });
+
+  it("renders SpeakingCueCardEditor for S2_PART2_CUE_CARD", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="S2_PART2_CUE_CARD"
+        options={{ topic: "Describe a place", bulletPoints: ["Where is it?"] }}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByDisplayValue("Describe a place")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Where is it?")).toBeInTheDocument();
+  });
+
+  it("renders SpeakingCueCardEditor with null options for S2_PART2_CUE_CARD", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="S2_PART2_CUE_CARD"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText("Cue Card Topic")).toBeInTheDocument();
+    expect(screen.getByText("Add Bullet Point")).toBeInTheDocument();
+  });
+
+  it("renders read-only notice for S3_PART3_DISCUSSION", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="S3_PART3_DISCUSSION"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText(/Discussion questions are individual items/i)).toBeInTheDocument();
+  });
+
   it("renders fallback for truly unimplemented types", () => {
     const onChange = vi.fn();
     render(
@@ -1372,6 +1429,62 @@ describe("QuestionPreviewFactory", () => {
       />,
     );
     expect(screen.getByText("Test question")).toBeInTheDocument();
+  });
+
+  // --- S1/S2/S3 Speaking question type preview wiring ---
+
+  it("renders S1_PART1_QA preview with question text and record prompt", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="S1_PART1_QA"
+        question={baseQuestion}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByText("Test question")).toBeInTheDocument();
+    expect(screen.getByText(/Record your answer/)).toBeInTheDocument();
+  });
+
+  it("renders S2_PART2_CUE_CARD preview with cue card layout", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="S2_PART2_CUE_CARD"
+        question={{
+          ...baseQuestion,
+          options: {
+            topic: "Describe a memorable trip",
+            bulletPoints: ["Where did you go?", "Who were you with?"],
+          },
+        }}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByText("Describe a memorable trip")).toBeInTheDocument();
+    expect(screen.getByText("Where did you go?")).toBeInTheDocument();
+    expect(screen.getByText("Who were you with?")).toBeInTheDocument();
+  });
+
+  it("renders S2_PART2_CUE_CARD preview with null options gracefully", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="S2_PART2_CUE_CARD"
+        question={baseQuestion}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByText(/graded using IELTS band descriptors/)).toBeInTheDocument();
+  });
+
+  it("renders S3_PART3_DISCUSSION preview with question text and record prompt", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="S3_PART3_DISCUSSION"
+        question={baseQuestion}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByText("Test question")).toBeInTheDocument();
+    expect(screen.getByText(/Record your answer/)).toBeInTheDocument();
   });
 
   // --- L1-L6 Listening question type preview wiring ---
@@ -2033,5 +2146,134 @@ describe("AnswerVariantManager", () => {
     );
     fireEvent.click(screen.getByText("Paste variants"));
     expect(screen.getByPlaceholderText("e.g. 19, nineteen, Nineteen")).toBeInTheDocument();
+  });
+});
+
+// --- M2: SpeakingCueCardEditor direct behavior tests ---
+describe("SpeakingCueCardEditor", () => {
+  it("renders topic and bullet points", () => {
+    const onChange = vi.fn();
+    render(
+      <SpeakingCueCardEditor
+        options={{ topic: "My Topic", bulletPoints: ["Point 1", "Point 2"] }}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByDisplayValue("My Topic")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Point 1")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Point 2")).toBeInTheDocument();
+  });
+
+  it("calls onChange when topic changes", () => {
+    const onChange = vi.fn();
+    render(
+      <SpeakingCueCardEditor
+        options={{ topic: "Old Topic", bulletPoints: ["Point 1"] }}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.change(screen.getByDisplayValue("Old Topic"), {
+      target: { value: "New Topic" },
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      { topic: "New Topic", bulletPoints: ["Point 1"] },
+      null,
+    );
+  });
+
+  it("adds a bullet point", () => {
+    const onChange = vi.fn();
+    render(
+      <SpeakingCueCardEditor
+        options={{ topic: "Topic", bulletPoints: ["Existing"] }}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByText("Add Bullet Point"));
+    expect(onChange).toHaveBeenCalled();
+    const [options] = onChange.mock.calls[0];
+    expect(options.bulletPoints).toEqual(["Existing", ""]);
+  });
+
+  it("removes a bullet point", () => {
+    const onChange = vi.fn();
+    render(
+      <SpeakingCueCardEditor
+        options={{ topic: "Topic", bulletPoints: ["A", "B", "C"] }}
+        onChange={onChange}
+      />,
+    );
+    // Each bullet row has: 2 move buttons + 1 input + 1 trash button
+    // The trash buttons are the last button in each row, and they are icon-only ghost buttons
+    // Find all buttons, filter out the chevron (move) buttons and the "Add Bullet Point" button
+    const allButtons = screen.getAllByRole("button");
+    // Trash buttons: buttons that are NOT move buttons and NOT "Add Bullet Point"
+    const trashButtons = allButtons.filter((btn) => {
+      const hasChevron = btn.querySelector("svg.lucide-chevron-up") || btn.querySelector("svg.lucide-chevron-down");
+      const isAdd = btn.textContent?.includes("Add Bullet Point");
+      return !hasChevron && !isAdd;
+    });
+    fireEvent.click(trashButtons[0]);
+    expect(onChange).toHaveBeenCalled();
+    const [options] = onChange.mock.calls[0];
+    expect(options.bulletPoints).toEqual(["B", "C"]);
+  });
+
+  it("moves a bullet point down", () => {
+    const onChange = vi.fn();
+    render(
+      <SpeakingCueCardEditor
+        options={{ topic: "Topic", bulletPoints: ["First", "Second", "Third"] }}
+        onChange={onChange}
+      />,
+    );
+    // Find move-down buttons (ChevronDown icons)
+    const moveDownButtons = screen.getAllByRole("button").filter((btn) =>
+      btn.querySelector("svg.lucide-chevron-down"),
+    );
+    // Click move-down on the first bullet
+    fireEvent.click(moveDownButtons[0]);
+    expect(onChange).toHaveBeenCalled();
+    const [options] = onChange.mock.calls[0];
+    expect(options.bulletPoints).toEqual(["Second", "First", "Third"]);
+  });
+
+  it("moves a bullet point up", () => {
+    const onChange = vi.fn();
+    render(
+      <SpeakingCueCardEditor
+        options={{ topic: "Topic", bulletPoints: ["First", "Second", "Third"] }}
+        onChange={onChange}
+      />,
+    );
+    // Find move-up buttons (ChevronUp icons)
+    const moveUpButtons = screen.getAllByRole("button").filter((btn) =>
+      btn.querySelector("svg.lucide-chevron-up"),
+    );
+    // Click move-up on the second bullet (index 1)
+    fireEvent.click(moveUpButtons[1]);
+    expect(onChange).toHaveBeenCalled();
+    const [options] = onChange.mock.calls[0];
+    expect(options.bulletPoints).toEqual(["Second", "First", "Third"]);
+  });
+
+  it("does not add beyond 6 bullet points", () => {
+    const onChange = vi.fn();
+    render(
+      <SpeakingCueCardEditor
+        options={{ topic: "Topic", bulletPoints: ["1", "2", "3", "4", "5", "6"] }}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByText("Add Bullet Point")).not.toBeInTheDocument();
+  });
+
+  it("handles null options gracefully", () => {
+    const onChange = vi.fn();
+    render(
+      <SpeakingCueCardEditor options={null} onChange={onChange} />,
+    );
+    expect(screen.getByText("Cue Card Topic")).toBeInTheDocument();
+    expect(screen.getByText("Add Bullet Point")).toBeInTheDocument();
   });
 });
