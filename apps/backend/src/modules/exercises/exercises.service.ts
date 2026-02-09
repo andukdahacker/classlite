@@ -123,6 +123,12 @@ export class ExercisesService {
         speakingTime: input.speakingTime ?? null,
         maxRecordingDuration: input.maxRecordingDuration ?? null,
         enableTranscription: input.enableTranscription ?? false,
+        timeLimit: input.timeLimit ?? null,
+        timerPosition: input.timerPosition ?? null,
+        warningAlerts: input.warningAlerts ?? Prisma.DbNull,
+        autoSubmitOnExpiry: input.autoSubmitOnExpiry ?? true,
+        gracePeriodSeconds: input.gracePeriodSeconds ?? null,
+        enablePause: input.enablePause ?? false,
         createdById: authAccount.userId,
       },
       include: EXERCISE_INCLUDE,
@@ -239,6 +245,33 @@ export class ExercisesService {
         ...("enableTranscription" in input &&
           input.enableTranscription !== undefined && {
             enableTranscription: input.enableTranscription,
+          }),
+        ...("timeLimit" in input &&
+          input.timeLimit !== undefined && {
+            timeLimit: input.timeLimit,
+          }),
+        ...("timerPosition" in input &&
+          input.timerPosition !== undefined && {
+            timerPosition: input.timerPosition,
+          }),
+        ...("warningAlerts" in input &&
+          input.warningAlerts !== undefined && {
+            warningAlerts:
+              input.warningAlerts === null
+                ? Prisma.DbNull
+                : (input.warningAlerts as Prisma.InputJsonValue),
+          }),
+        ...("autoSubmitOnExpiry" in input &&
+          input.autoSubmitOnExpiry !== undefined && {
+            autoSubmitOnExpiry: input.autoSubmitOnExpiry,
+          }),
+        ...("gracePeriodSeconds" in input &&
+          input.gracePeriodSeconds !== undefined && {
+            gracePeriodSeconds: input.gracePeriodSeconds,
+          }),
+        ...("enablePause" in input &&
+          input.enablePause !== undefined && {
+            enablePause: input.enablePause,
           }),
       },
       include: EXERCISE_INCLUDE,

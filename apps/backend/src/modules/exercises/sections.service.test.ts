@@ -361,4 +361,78 @@ describe("SectionsService", () => {
       ).rejects.toThrow("Question not found");
     });
   });
+
+  // --- Timer & Test Conditions (Story 3.10) ---
+
+  describe("createSection — sectionTimeLimit", () => {
+    it("should pass sectionTimeLimit through to Prisma create", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockDraftExercise);
+      mockDb.questionSection.create.mockResolvedValue(mockSection);
+
+      await service.createSection(centerId, exerciseId, {
+        sectionType: "R1_MCQ_SINGLE",
+        orderIndex: 0,
+        sectionTimeLimit: 1200,
+      });
+
+      expect(mockDb.questionSection.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            sectionTimeLimit: 1200,
+          }),
+        }),
+      );
+    });
+
+    it("should not include sectionTimeLimit when not provided", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockDraftExercise);
+      mockDb.questionSection.create.mockResolvedValue(mockSection);
+
+      await service.createSection(centerId, exerciseId, {
+        sectionType: "R1_MCQ_SINGLE",
+        orderIndex: 0,
+      });
+
+      const callArgs = mockDb.questionSection.create.mock.calls[0][0];
+      expect(callArgs.data).not.toHaveProperty("sectionTimeLimit");
+    });
+  });
+
+  describe("updateSection — sectionTimeLimit", () => {
+    it("should update sectionTimeLimit", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockDraftExercise);
+      mockDb.questionSection.findUnique.mockResolvedValue(mockSection);
+      mockDb.questionSection.update.mockResolvedValue(mockSection);
+
+      await service.updateSection(centerId, exerciseId, sectionId, {
+        sectionTimeLimit: 900,
+      });
+
+      expect(mockDb.questionSection.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            sectionTimeLimit: 900,
+          }),
+        }),
+      );
+    });
+
+    it("should clear sectionTimeLimit when set to null", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockDraftExercise);
+      mockDb.questionSection.findUnique.mockResolvedValue(mockSection);
+      mockDb.questionSection.update.mockResolvedValue(mockSection);
+
+      await service.updateSection(centerId, exerciseId, sectionId, {
+        sectionTimeLimit: null,
+      });
+
+      expect(mockDb.questionSection.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            sectionTimeLimit: null,
+          }),
+        }),
+      );
+    });
+  });
 });

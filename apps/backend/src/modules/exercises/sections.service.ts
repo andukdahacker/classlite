@@ -71,6 +71,9 @@ export class SectionsService {
         ...(input.audioSectionIndex !== undefined && {
           audioSectionIndex: input.audioSectionIndex,
         }),
+        ...(input.sectionTimeLimit !== undefined && {
+          sectionTimeLimit: input.sectionTimeLimit,
+        }),
       },
       include: {
         questions: { orderBy: { orderIndex: "asc" } },
@@ -119,6 +122,9 @@ export class SectionsService {
         }),
         ...(input.audioSectionIndex !== undefined && {
           audioSectionIndex: input.audioSectionIndex,
+        }),
+        ...(input.sectionTimeLimit !== undefined && {
+          sectionTimeLimit: input.sectionTimeLimit,
         }),
       },
       include: {

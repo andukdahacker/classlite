@@ -68,7 +68,8 @@ interface QuestionSectionEditorProps {
   index: number;
   exerciseId?: string;
   audioSections?: AudioSection[];
-  onUpdateSection: (sectionId: string, data: { sectionType?: IeltsQuestionType; instructions?: string | null; audioSectionIndex?: number | null }) => void;
+  exerciseHasTimeLimit?: boolean;
+  onUpdateSection: (sectionId: string, data: { sectionType?: IeltsQuestionType; instructions?: string | null; audioSectionIndex?: number | null; sectionTimeLimit?: number | null }) => void;
   onDeleteSection: (sectionId: string) => void;
   onCreateQuestion: (sectionId: string, input: CreateQuestionInput) => void;
   onUpdateQuestion: (sectionId: string, questionId: string, input: UpdateQuestionInput) => void;
@@ -82,6 +83,7 @@ export function QuestionSectionEditor({
   index,
   exerciseId,
   audioSections,
+  exerciseHasTimeLimit,
   onUpdateSection,
   onDeleteSection,
   onCreateQuestion,
@@ -214,6 +216,35 @@ export function QuestionSectionEditor({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        )}
+        {exerciseHasTimeLimit && (
+          <div className="space-y-2">
+            <Label>Section Time Limit (optional)</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={1}
+                value={section.sectionTimeLimit != null ? Math.round(section.sectionTimeLimit / 60) : ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "") {
+                    onUpdateSection(section.id, { sectionTimeLimit: null });
+                    return;
+                  }
+                  const minutes = parseInt(val, 10);
+                  if (!isNaN(minutes) && minutes >= 1) {
+                    onUpdateSection(section.id, { sectionTimeLimit: minutes * 60 });
+                  }
+                }}
+                placeholder="minutes"
+                className="w-24"
+              />
+              <span className="text-sm text-muted-foreground">minutes</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Override exercise time limit for this section. Leave empty to use exercise total.
+            </p>
           </div>
         )}
       </div>

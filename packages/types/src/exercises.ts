@@ -438,6 +438,7 @@ export const QuestionSectionSchema = z.object({
   instructions: z.string().nullable().optional(),
   orderIndex: z.number(),
   audioSectionIndex: z.number().int().min(0).nullable().optional(),
+  sectionTimeLimit: z.number().int().positive().nullable().optional(),
   createdAt: z.union([z.date(), z.string()]),
   updatedAt: z.union([z.date(), z.string()]),
   questions: z.array(QuestionSchema).optional(),
@@ -449,6 +450,7 @@ export const CreateQuestionSectionSchema = z.object({
   instructions: z.string().nullable().optional(),
   orderIndex: z.number().int().min(0),
   audioSectionIndex: z.number().int().min(0).nullable().optional(),
+  sectionTimeLimit: z.number().int().positive().nullable().optional(),
 });
 export type CreateQuestionSectionInput = z.infer<
   typeof CreateQuestionSectionSchema
@@ -463,6 +465,13 @@ export const ReorderSectionsSchema = z.object({
   sectionIds: z.array(z.string()).min(1),
 });
 export type ReorderSectionsInput = z.infer<typeof ReorderSectionsSchema>;
+
+// --- Timer ---
+
+export const TimerPositionSchema = z.enum(["top-bar", "floating"]);
+export type TimerPosition = z.infer<typeof TimerPositionSchema>;
+
+export const WarningAlertsSchema = z.array(z.number().int().positive()).nullable().optional();
 
 // --- Exercise ---
 
@@ -495,6 +504,12 @@ export const ExerciseSchema = z.object({
   speakingTime: z.number().nullable().optional(),
   maxRecordingDuration: z.number().nullable().optional(),
   enableTranscription: z.boolean().optional().default(false),
+  timeLimit: z.number().int().positive().nullable().optional(),
+  timerPosition: z.string().nullable().optional(),
+  warningAlerts: z.unknown().nullable().optional(),
+  autoSubmitOnExpiry: z.boolean().optional().default(true),
+  gracePeriodSeconds: z.number().int().positive().nullable().optional(),
+  enablePause: z.boolean().optional().default(false),
   createdById: z.string(),
   createdAt: z.union([z.date(), z.string()]),
   updatedAt: z.union([z.date(), z.string()]),
@@ -529,6 +544,12 @@ export const CreateExerciseSchema = z.object({
   speakingTime: z.number().int().positive().nullable().optional(),
   maxRecordingDuration: z.number().int().positive().nullable().optional(),
   enableTranscription: z.boolean().optional(),
+  timeLimit: z.number().int().positive().nullable().optional(),
+  timerPosition: TimerPositionSchema.nullable().optional(),
+  warningAlerts: WarningAlertsSchema,
+  autoSubmitOnExpiry: z.boolean().optional(),
+  gracePeriodSeconds: z.number().int().positive().nullable().optional(),
+  enablePause: z.boolean().optional(),
 }).refine(
   (data) => {
     if (data.wordCountMin != null && data.wordCountMax != null) {
@@ -562,6 +583,12 @@ export const UpdateExerciseSchema = z.object({
   speakingTime: z.number().int().positive().nullable().optional(),
   maxRecordingDuration: z.number().int().positive().nullable().optional(),
   enableTranscription: z.boolean().optional(),
+  timeLimit: z.number().int().positive().nullable().optional(),
+  timerPosition: TimerPositionSchema.nullable().optional(),
+  warningAlerts: WarningAlertsSchema,
+  autoSubmitOnExpiry: z.boolean().optional(),
+  gracePeriodSeconds: z.number().int().positive().nullable().optional(),
+  enablePause: z.boolean().optional(),
 }).refine(
   (data) => {
     if (data.wordCountMin != null && data.wordCountMax != null) {
@@ -578,6 +605,8 @@ export const AutosaveExerciseSchema = z.object({
   instructions: z.string().nullable().optional(),
   passageContent: z.string().nullable().optional(),
   passageFormat: z.string().nullable().optional(),
+  caseSensitive: z.boolean().optional(),
+  partialCredit: z.boolean().optional(),
   playbackMode: PlaybackModeSchema.optional(),
   audioSections: z.array(AudioSectionSchema).nullable().optional(),
   showTranscriptAfterSubmit: z.boolean().optional(),
@@ -592,6 +621,12 @@ export const AutosaveExerciseSchema = z.object({
   speakingTime: z.number().int().positive().nullable().optional(),
   maxRecordingDuration: z.number().int().positive().nullable().optional(),
   enableTranscription: z.boolean().optional(),
+  timeLimit: z.number().int().positive().nullable().optional(),
+  timerPosition: TimerPositionSchema.nullable().optional(),
+  warningAlerts: z.array(z.number().int().positive()).nullable().optional(),
+  autoSubmitOnExpiry: z.boolean().optional(),
+  gracePeriodSeconds: z.number().int().positive().nullable().optional(),
+  enablePause: z.boolean().optional(),
 });
 export type AutosaveExerciseInput = z.infer<typeof AutosaveExerciseSchema>;
 

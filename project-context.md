@@ -147,6 +147,14 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 ## Development Workflow
 
+### Database (packages/db)
+
+- **Generate Prisma Client:** `pnpm --filter=db db:generate`
+- **Push Schema to DB:** `pnpm --filter=db db:push`
+- **Prisma Studio:** `pnpm --filter=db db:studio`
+- **Build:** `pnpm --filter=db build` (generate + tsc + copy generated)
+- **Rule:** After modifying `schema.prisma`, run `db:generate` to update the TypeScript client, then `db:push` to sync the database. Always use `pnpm --filter=db` prefix, NOT bare `npx prisma`.
+
 ### Schema Sync (Frontend)
 
 - **Rule:** ALWAYS run `pnpm --filter=webapp sync-schema-dev` after adding new backend routes.

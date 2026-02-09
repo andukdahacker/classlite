@@ -31,6 +31,9 @@ import {
   WritingRubricCriterionSchema,
   WritingRubricSchema,
   SpeakingCueCardSchema,
+  TimerPositionSchema,
+  WarningAlertsSchema,
+  CreateQuestionSectionSchema,
 } from "./exercises.js";
 
 describe("Exercise Type-Helper Schemas", () => {
@@ -2093,6 +2096,226 @@ describe("Exercise Type-Helper Schemas", () => {
         speakingTime: 120,
         maxRecordingDuration: 60,
         enableTranscription: false,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  // --- Timer & Test Conditions (Story 3.10) ---
+
+  describe("TimerPositionSchema", () => {
+    it("should accept 'top-bar'", () => {
+      expect(TimerPositionSchema.safeParse("top-bar").success).toBe(true);
+    });
+
+    it("should accept 'floating'", () => {
+      expect(TimerPositionSchema.safeParse("floating").success).toBe(true);
+    });
+
+    it("should reject invalid values", () => {
+      expect(TimerPositionSchema.safeParse("sidebar").success).toBe(false);
+      expect(TimerPositionSchema.safeParse("").success).toBe(false);
+      expect(TimerPositionSchema.safeParse(123).success).toBe(false);
+    });
+  });
+
+  describe("WarningAlertsSchema", () => {
+    it("should accept array of positive integers", () => {
+      expect(WarningAlertsSchema.safeParse([600, 300]).success).toBe(true);
+    });
+
+    it("should accept null", () => {
+      expect(WarningAlertsSchema.safeParse(null).success).toBe(true);
+    });
+
+    it("should accept undefined (optional)", () => {
+      expect(WarningAlertsSchema.safeParse(undefined).success).toBe(true);
+    });
+
+    it("should reject non-positive integers", () => {
+      expect(WarningAlertsSchema.safeParse([0]).success).toBe(false);
+      expect(WarningAlertsSchema.safeParse([-1]).success).toBe(false);
+    });
+
+    it("should reject non-integer values", () => {
+      expect(WarningAlertsSchema.safeParse([1.5]).success).toBe(false);
+    });
+  });
+
+  describe("ExerciseSchema — timer fields", () => {
+    const baseExercise = {
+      id: "ex-1",
+      centerId: "center-1",
+      title: "Test Exercise",
+      skill: "READING",
+      status: "DRAFT",
+      caseSensitive: false,
+      partialCredit: false,
+      createdById: "user-1",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    it("should accept all 6 timer fields", () => {
+      const result = ExerciseSchema.safeParse({
+        ...baseExercise,
+        timeLimit: 3600,
+        timerPosition: "top-bar",
+        warningAlerts: [600, 300],
+        autoSubmitOnExpiry: true,
+        gracePeriodSeconds: 60,
+        enablePause: false,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null/optional timer fields", () => {
+      const result = ExerciseSchema.safeParse({
+        ...baseExercise,
+        timeLimit: null,
+        timerPosition: null,
+        warningAlerts: null,
+        gracePeriodSeconds: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should default autoSubmitOnExpiry to true", () => {
+      const result = ExerciseSchema.safeParse(baseExercise);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.autoSubmitOnExpiry).toBe(true);
+      }
+    });
+
+    it("should default enablePause to false", () => {
+      const result = ExerciseSchema.safeParse(baseExercise);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.enablePause).toBe(false);
+      }
+    });
+  });
+
+  describe("CreateExerciseSchema — timer fields", () => {
+    it("should accept timer fields in create", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "New Exercise",
+        skill: "READING",
+        timeLimit: 3600,
+        timerPosition: "floating",
+        warningAlerts: [600, 300],
+        autoSubmitOnExpiry: true,
+        gracePeriodSeconds: 60,
+        enablePause: true,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject invalid timerPosition in create", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "New Exercise",
+        skill: "READING",
+        timerPosition: "invalid",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should accept null warningAlerts in create", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "New Exercise",
+        skill: "READING",
+        warningAlerts: null,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("UpdateExerciseSchema — timer fields", () => {
+    it("should accept timer fields in update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        timeLimit: 1800,
+        timerPosition: "top-bar",
+        warningAlerts: [300],
+        autoSubmitOnExpiry: false,
+        gracePeriodSeconds: null,
+        enablePause: false,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("AutosaveExerciseSchema — timer fields", () => {
+    it("should accept timer fields in autosave", () => {
+      const result = AutosaveExerciseSchema.safeParse({
+        timeLimit: 3600,
+        timerPosition: "floating",
+        warningAlerts: [600, 300],
+        autoSubmitOnExpiry: true,
+        gracePeriodSeconds: 60,
+        enablePause: false,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null timer values in autosave", () => {
+      const result = AutosaveExerciseSchema.safeParse({
+        timeLimit: null,
+        warningAlerts: null,
+        gracePeriodSeconds: null,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("CreateQuestionSectionSchema — sectionTimeLimit", () => {
+    it("should accept sectionTimeLimit", () => {
+      const result = CreateQuestionSectionSchema.safeParse({
+        sectionType: "R1_MCQ_SINGLE",
+        orderIndex: 0,
+        sectionTimeLimit: 1200,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null sectionTimeLimit", () => {
+      const result = CreateQuestionSectionSchema.safeParse({
+        sectionType: "R1_MCQ_SINGLE",
+        orderIndex: 0,
+        sectionTimeLimit: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept without sectionTimeLimit", () => {
+      const result = CreateQuestionSectionSchema.safeParse({
+        sectionType: "R1_MCQ_SINGLE",
+        orderIndex: 0,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject non-positive sectionTimeLimit", () => {
+      const result = CreateQuestionSectionSchema.safeParse({
+        sectionType: "R1_MCQ_SINGLE",
+        orderIndex: 0,
+        sectionTimeLimit: 0,
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("QuestionSectionSchema — sectionTimeLimit", () => {
+    it("should accept sectionTimeLimit in response", () => {
+      const result = QuestionSectionSchema.safeParse({
+        id: "sec-1",
+        exerciseId: "ex-1",
+        centerId: "center-1",
+        sectionType: "R1_MCQ_SINGLE",
+        orderIndex: 0,
+        sectionTimeLimit: 1200,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
       expect(result.success).toBe(true);
     });

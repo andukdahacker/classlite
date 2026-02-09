@@ -8,6 +8,7 @@ import type {
   UpdateQuestionInput,
   AudioSection,
   PlaybackMode,
+  TimerPosition,
 } from "@workspace/types";
 import {
   DragDropContext,
@@ -57,6 +58,7 @@ import { PlaybackModeSettings } from "./PlaybackModeSettings";
 import { WritingTaskEditor } from "./WritingTaskEditor";
 import { WritingRubricDisplay } from "./WritingRubricDisplay";
 import { SpeakingTaskEditor } from "./SpeakingTaskEditor";
+import { TimerSettingsEditor } from "./TimerSettingsEditor";
 import type { Exercise } from "@workspace/types";
 
 // Default first question type per skill
@@ -88,6 +90,12 @@ interface ExercisePreviewProps {
   speakingTime?: number | null;
   maxRecordingDuration?: number | null;
   enableTranscription?: boolean;
+  timeLimit?: number | null;
+  timerPosition?: string | null;
+  warningAlerts?: number[] | null;
+  autoSubmitOnExpiry?: boolean;
+  gracePeriodSeconds?: number | null;
+  enablePause?: boolean;
   onBack: () => void;
 }
 
@@ -116,6 +124,12 @@ function ExercisePreview({
   speakingTime,
   maxRecordingDuration,
   enableTranscription,
+  timeLimit,
+  timerPosition,
+  warningAlerts,
+  autoSubmitOnExpiry,
+  gracePeriodSeconds,
+  enablePause,
   onBack,
 }: ExercisePreviewProps) {
   const isListening = skill === "LISTENING";
@@ -133,6 +147,32 @@ function ExercisePreview({
       </div>
       <div className="max-w-3xl mx-auto space-y-8">
         <h1 className="text-2xl font-bold">{title}</h1>
+
+        {/* Timer Info */}
+        {timeLimit != null && timeLimit > 0 && (
+          <div className="rounded-md border p-4 space-y-1">
+            <p className="text-sm font-medium">Time Limit: {Math.round(timeLimit / 60)} minutes</p>
+            <p className="text-sm text-muted-foreground">
+              Timer position: {timerPosition === "floating" ? "Floating Widget" : "Top Bar"}
+            </p>
+            {warningAlerts && warningAlerts.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Warnings at: {warningAlerts.map((s) => `${Math.round(s / 60)} min`).join(", ")}
+              </p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              Auto-submit: {autoSubmitOnExpiry ? "Yes" : "No"}
+            </p>
+            {gracePeriodSeconds != null && (
+              <p className="text-sm text-muted-foreground">
+                Grace period: {Math.round(gracePeriodSeconds / 60)} min
+              </p>
+            )}
+            {enablePause && (
+              <p className="text-sm text-muted-foreground">Pause allowed: Yes</p>
+            )}
+          </div>
+        )}
         {instructions && (
           <p className="text-muted-foreground italic">{instructions}</p>
         )}
@@ -312,6 +352,12 @@ export function ExerciseEditor() {
   const [speakingTime, setSpeakingTime] = useState<number | null>(null);
   const [maxRecordingDuration, setMaxRecordingDuration] = useState<number | null>(null);
   const [enableTranscription, setEnableTranscription] = useState(false);
+  const [timeLimit, setTimeLimit] = useState<number | null>(null);
+  const [timerPosition, setTimerPosition] = useState<TimerPosition | null>(null);
+  const [warningAlerts, setWarningAlerts] = useState<number[] | null>(null);
+  const [autoSubmitOnExpiry, setAutoSubmitOnExpiry] = useState(true);
+  const [gracePeriodSeconds, setGracePeriodSeconds] = useState<number | null>(null);
+  const [enablePause, setEnablePause] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [showPreview, setShowPreview] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
@@ -362,6 +408,16 @@ export function ExerciseEditor() {
       setSpeakingTime(exercise.speakingTime ?? null);
       setMaxRecordingDuration(exercise.maxRecordingDuration ?? null);
       setEnableTranscription(exercise.enableTranscription ?? false);
+      setTimeLimit(exercise.timeLimit ?? null);
+      setTimerPosition((exercise.timerPosition as TimerPosition) ?? null);
+      setWarningAlerts(
+        Array.isArray(exercise.warningAlerts)
+          ? (exercise.warningAlerts as number[])
+          : null,
+      );
+      setAutoSubmitOnExpiry(exercise.autoSubmitOnExpiry ?? true);
+      setGracePeriodSeconds(exercise.gracePeriodSeconds ?? null);
+      setEnablePause(exercise.enablePause ?? false);
       // Reset edit tracking — data was just loaded, not user-edited
       userHasEdited.current = false;
     }
@@ -403,13 +459,19 @@ export function ExerciseEditor() {
           speakingTime,
           maxRecordingDuration,
           enableTranscription,
+          timeLimit,
+          timerPosition,
+          warningAlerts,
+          autoSubmitOnExpiry,
+          gracePeriodSeconds,
+          enablePause,
         });
         setSaveStatus("saved");
       } catch {
         setSaveStatus("unsaved");
       }
     }, 30000);
-  }, [id, title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, speakingPrepTime, speakingTime, maxRecordingDuration, enableTranscription, autosave, exercise]);
+  }, [id, title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, speakingPrepTime, speakingTime, maxRecordingDuration, enableTranscription, timeLimit, timerPosition, warningAlerts, autoSubmitOnExpiry, gracePeriodSeconds, enablePause, autosave, exercise]);
 
   useEffect(() => {
     if (isEditing && exercise && userHasEdited.current) {
@@ -479,6 +541,12 @@ export function ExerciseEditor() {
         speakingTime,
         maxRecordingDuration,
         enableTranscription,
+        timeLimit,
+        timerPosition,
+        warningAlerts,
+        autoSubmitOnExpiry,
+        gracePeriodSeconds,
+        enablePause,
       });
       setSaveStatus("saved");
       toast.success("Draft saved");
@@ -516,7 +584,7 @@ export function ExerciseEditor() {
 
   const handleUpdateSection = async (
     sectionId: string,
-    data: { sectionType?: IeltsQuestionType; instructions?: string | null; audioSectionIndex?: number | null },
+    data: { sectionType?: IeltsQuestionType; instructions?: string | null; audioSectionIndex?: number | null; sectionTimeLimit?: number | null },
   ) => {
     try {
       await updateSection({ sectionId, input: data });
@@ -690,6 +758,12 @@ export function ExerciseEditor() {
         speakingTime={speakingTime}
         maxRecordingDuration={maxRecordingDuration}
         enableTranscription={enableTranscription}
+        timeLimit={timeLimit}
+        timerPosition={timerPosition}
+        warningAlerts={warningAlerts}
+        autoSubmitOnExpiry={autoSubmitOnExpiry}
+        gracePeriodSeconds={gracePeriodSeconds}
+        enablePause={enablePause}
         onBack={() => setShowPreview(false)}
       />
     );
@@ -898,6 +972,26 @@ export function ExerciseEditor() {
         </div>
       )}
 
+      {/* Timer Settings (all skills) */}
+      {isEditing && id && (
+        <div className="max-w-3xl">
+          <TimerSettingsEditor
+            timeLimit={timeLimit}
+            timerPosition={timerPosition}
+            warningAlerts={warningAlerts}
+            autoSubmitOnExpiry={autoSubmitOnExpiry}
+            gracePeriodSeconds={gracePeriodSeconds}
+            enablePause={enablePause}
+            onTimeLimitChange={(v) => { setTimeLimit(v); userHasEdited.current = true; }}
+            onTimerPositionChange={(v) => { setTimerPosition(v); userHasEdited.current = true; }}
+            onWarningAlertsChange={(v) => { setWarningAlerts(v); userHasEdited.current = true; }}
+            onAutoSubmitOnExpiryChange={(v) => { setAutoSubmitOnExpiry(v); userHasEdited.current = true; }}
+            onGracePeriodSecondsChange={(v) => { setGracePeriodSeconds(v); userHasEdited.current = true; }}
+            onEnablePauseChange={(v) => { setEnablePause(v); userHasEdited.current = true; }}
+          />
+        </div>
+      )}
+
       {/* Question Sections */}
       <div className="space-y-4 max-w-3xl">
         <div className="flex items-center justify-between">
@@ -935,6 +1029,7 @@ export function ExerciseEditor() {
                           index={idx}
                           exerciseId={exercise?.id}
                           audioSections={selectedSkill === "LISTENING" ? audioSections : undefined}
+                          exerciseHasTimeLimit={timeLimit !== null && timeLimit > 0}
                           onUpdateSection={handleUpdateSection}
                           onDeleteSection={setDeleteSectionId}
                           onCreateQuestion={handleCreateQuestion}

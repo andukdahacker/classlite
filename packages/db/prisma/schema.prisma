@@ -445,6 +445,12 @@ model Exercise {
   speakingTime              Int?           @map("speaking_time")
   maxRecordingDuration      Int?           @map("max_recording_duration")
   enableTranscription       Boolean        @default(false) @map("enable_transcription")
+  timeLimit                 Int?           @map("time_limit")
+  timerPosition             String?        @map("timer_position")
+  warningAlerts             Json?          @map("warning_alerts")
+  autoSubmitOnExpiry        Boolean        @default(true) @map("auto_submit_on_expiry")
+  gracePeriodSeconds        Int?           @map("grace_period_seconds")
+  enablePause               Boolean        @default(false) @map("enable_pause")
   createdById               String         @map("created_by_id")
   createdAt                 DateTime       @default(now()) @map("created_at")
   updatedAt                 DateTime       @updatedAt @map("updated_at")
@@ -467,6 +473,7 @@ model QuestionSection {
   instructions      String?
   orderIndex        Int               @map("order_index")
   audioSectionIndex Int?              @map("audio_section_index")
+  sectionTimeLimit  Int?              @map("section_time_limit")
   createdAt         DateTime          @default(now()) @map("created_at")
   updatedAt    DateTime          @updatedAt @map("updated_at")
 
