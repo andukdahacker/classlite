@@ -451,18 +451,52 @@ model Exercise {
   autoSubmitOnExpiry        Boolean        @default(true) @map("auto_submit_on_expiry")
   gracePeriodSeconds        Int?           @map("grace_period_seconds")
   enablePause               Boolean        @default(false) @map("enable_pause")
+  bandLevel                 String?        @map("band_level")
   createdById               String         @map("created_by_id")
   createdAt                 DateTime       @default(now()) @map("created_at")
   updatedAt                 DateTime       @updatedAt @map("updated_at")
 
-  createdBy User              @relation("ExerciseCreator", fields: [createdById], references: [id])
-  sections  QuestionSection[]
+  createdBy      User                    @relation("ExerciseCreator", fields: [createdById], references: [id])
+  sections       QuestionSection[]
+  tagAssignments ExerciseTagAssignment[]
 
   @@unique([id, centerId])
   @@index([centerId])
   @@index([centerId, skill])
   @@index([centerId, status])
+  @@index([centerId, bandLevel])
   @@map("exercise")
+}
+
+model ExerciseTag {
+  id        String   @id @default(cuid())
+  centerId  String   @map("center_id")
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tagAssignments ExerciseTagAssignment[]
+
+  @@unique([centerId, name])
+  @@index([centerId])
+  @@map("exercise_tag")
+}
+
+model ExerciseTagAssignment {
+  id         String   @id @default(cuid())
+  exerciseId String   @map("exercise_id")
+  tagId      String   @map("tag_id")
+  centerId   String   @map("center_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  exercise Exercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  tag      ExerciseTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, tagId])
+  @@index([exerciseId])
+  @@index([tagId])
+  @@index([centerId])
+  @@map("exercise_tag_assignment")
 }
 
 model QuestionSection {

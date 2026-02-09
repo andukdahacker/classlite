@@ -34,6 +34,11 @@ import {
   TimerPositionSchema,
   WarningAlertsSchema,
   CreateQuestionSectionSchema,
+  BandLevelSchema,
+  ExerciseTagSchema,
+  CreateExerciseTagSchema,
+  MergeExerciseTagsSchema,
+  SetExerciseTagsSchema,
 } from "./exercises.js";
 
 describe("Exercise Type-Helper Schemas", () => {
@@ -2317,6 +2322,148 @@ describe("Exercise Type-Helper Schemas", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("BandLevelSchema", () => {
+    it.each(["4-5", "5-6", "6-7", "7-8", "8-9"])("should accept %s", (v) => {
+      expect(BandLevelSchema.safeParse(v).success).toBe(true);
+    });
+
+    it.each(["3-4", "9-10", "", "high", "4-6"])("should reject %s", (v) => {
+      expect(BandLevelSchema.safeParse(v).success).toBe(false);
+    });
+  });
+
+  describe("ExerciseTagSchema", () => {
+    it("should accept a valid tag", () => {
+      const result = ExerciseTagSchema.safeParse({
+        id: "tag-1",
+        centerId: "center-1",
+        name: "Environment",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept tag with _count", () => {
+      const result = ExerciseTagSchema.safeParse({
+        id: "tag-1",
+        centerId: "center-1",
+        name: "Environment",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        _count: { tagAssignments: 5 },
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("CreateExerciseTagSchema", () => {
+    it("should accept valid name", () => {
+      expect(CreateExerciseTagSchema.safeParse({ name: "Tech" }).success).toBe(true);
+    });
+
+    it("should trim whitespace", () => {
+      const result = CreateExerciseTagSchema.parse({ name: "  Health  " });
+      expect(result.name).toBe("Health");
+    });
+
+    it("should reject empty name", () => {
+      expect(CreateExerciseTagSchema.safeParse({ name: "" }).success).toBe(false);
+    });
+
+    it("should reject name over 50 chars", () => {
+      expect(CreateExerciseTagSchema.safeParse({ name: "a".repeat(51) }).success).toBe(false);
+    });
+  });
+
+  describe("MergeExerciseTagsSchema", () => {
+    it("should accept valid merge input", () => {
+      const result = MergeExerciseTagsSchema.safeParse({
+        sourceTagId: "tag-1",
+        targetTagId: "tag-2",
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("SetExerciseTagsSchema", () => {
+    it("should accept empty array", () => {
+      expect(SetExerciseTagsSchema.safeParse({ tagIds: [] }).success).toBe(true);
+    });
+
+    it("should accept array of strings", () => {
+      expect(SetExerciseTagsSchema.safeParse({ tagIds: ["a", "b"] }).success).toBe(true);
+    });
+  });
+
+  describe("ExerciseSchema — bandLevel and tags", () => {
+    const baseExercise = {
+      id: "ex-1",
+      centerId: "center-1",
+      title: "Test",
+      skill: "READING" as const,
+      status: "DRAFT" as const,
+      createdById: "user-1",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    it("should accept bandLevel as string", () => {
+      const result = ExerciseSchema.safeParse({ ...baseExercise, bandLevel: "6-7" });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept bandLevel as null", () => {
+      const result = ExerciseSchema.safeParse({ ...baseExercise, bandLevel: null });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept tags array", () => {
+      const result = ExerciseSchema.safeParse({
+        ...baseExercise,
+        tags: [{ id: "t1", name: "Environment" }],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept empty tags array", () => {
+      const result = ExerciseSchema.safeParse({ ...baseExercise, tags: [] });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("CreateExerciseSchema — bandLevel", () => {
+    it("should accept bandLevel", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Test",
+        skill: "READING",
+        bandLevel: "7-8",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null bandLevel", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Test",
+        skill: "READING",
+        bandLevel: null,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("AutosaveExerciseSchema — bandLevel", () => {
+    it("should accept bandLevel in autosave", () => {
+      const result = AutosaveExerciseSchema.safeParse({ bandLevel: "5-6" });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null bandLevel in autosave", () => {
+      const result = AutosaveExerciseSchema.safeParse({ bandLevel: null });
       expect(result.success).toBe(true);
     });
   });

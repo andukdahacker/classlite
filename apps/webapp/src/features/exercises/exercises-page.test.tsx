@@ -24,6 +24,19 @@ vi.mock("./hooks/use-exercises", () => ({
   },
 }));
 
+// Mock tags hook
+vi.mock("./hooks/use-tags", () => ({
+  useTags: () => ({
+    tags: [],
+    isLoading: false,
+    createTag: vi.fn(),
+    isCreating: false,
+    updateTag: vi.fn(),
+    deleteTag: vi.fn(),
+    mergeTags: vi.fn(),
+  }),
+}));
+
 // Mock ResizeObserver
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),

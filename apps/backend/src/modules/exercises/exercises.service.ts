@@ -16,6 +16,9 @@ const EXERCISE_INCLUDE = {
       questions: { orderBy: { orderIndex: "asc" as const } },
     },
   },
+  tagAssignments: {
+    select: { tag: { select: { id: true, name: true } } },
+  },
 };
 
 export class ExercisesService {
@@ -42,13 +45,22 @@ export class ExercisesService {
 
   async listExercises(
     centerId: string,
-    filters?: { skill?: string; status?: string },
+    filters?: {
+      skill?: string;
+      status?: string;
+      bandLevel?: string;
+      tagIds?: string[];
+    },
   ): Promise<Exercise[]> {
     const db = getTenantedClient(this.prisma, centerId);
 
     const where: Record<string, unknown> = {};
     if (filters?.skill) where.skill = filters.skill;
     if (filters?.status) where.status = filters.status;
+    if (filters?.bandLevel) where.bandLevel = filters.bandLevel;
+    if (filters?.tagIds?.length) {
+      where.tagAssignments = { some: { tagId: { in: filters.tagIds } } };
+    }
 
     return await db.exercise.findMany({
       where,
@@ -59,6 +71,9 @@ export class ExercisesService {
           include: {
             _count: { select: { questions: true } },
           },
+        },
+        tagAssignments: {
+          select: { tag: { select: { id: true, name: true } } },
         },
       },
       orderBy: { updatedAt: "desc" },
@@ -129,6 +144,7 @@ export class ExercisesService {
         autoSubmitOnExpiry: input.autoSubmitOnExpiry ?? true,
         gracePeriodSeconds: input.gracePeriodSeconds ?? null,
         enablePause: input.enablePause ?? false,
+        bandLevel: input.bandLevel ?? null,
         createdById: authAccount.userId,
       },
       include: EXERCISE_INCLUDE,
@@ -272,6 +288,10 @@ export class ExercisesService {
         ...("enablePause" in input &&
           input.enablePause !== undefined && {
             enablePause: input.enablePause,
+          }),
+        ...("bandLevel" in input &&
+          input.bandLevel !== undefined && {
+            bandLevel: input.bandLevel,
           }),
       },
       include: EXERCISE_INCLUDE,

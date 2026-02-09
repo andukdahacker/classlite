@@ -9,12 +9,29 @@ import { JwtPayload } from "jsonwebtoken";
 import { AppError } from "../../errors/app-error.js";
 import { ExercisesService } from "./exercises.service.js";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function flattenTags(exercise: any) {
+  const { tagAssignments, ...rest } = exercise;
+  return {
+    ...rest,
+    tags:
+      tagAssignments?.map(
+        (a: { tag: { id: string; name: string } }) => a.tag,
+      ) ?? [],
+  };
+}
+
 export class ExercisesController {
   constructor(private readonly exercisesService: ExercisesService) {}
 
   async listExercises(
     user: JwtPayload,
-    filters?: { skill?: string; status?: string },
+    filters?: {
+      skill?: string;
+      status?: string;
+      bandLevel?: string;
+      tagIds?: string[];
+    },
   ): Promise<ExerciseListResponse> {
     const centerId = user.centerId;
     if (!centerId) throw AppError.unauthorized("Center ID missing from token");
@@ -24,7 +41,7 @@ export class ExercisesController {
       filters,
     );
     return {
-      data: exercises,
+      data: exercises.map(flattenTags),
       message: "Exercises retrieved successfully",
     };
   }
@@ -35,7 +52,7 @@ export class ExercisesController {
 
     const exercise = await this.exercisesService.getExercise(centerId, id);
     return {
-      data: exercise,
+      data: flattenTags(exercise),
       message: "Exercise retrieved successfully",
     };
   }
@@ -53,7 +70,7 @@ export class ExercisesController {
       user.uid,
     );
     return {
-      data: exercise,
+      data: flattenTags(exercise),
       message: "Exercise created successfully",
     };
   }
@@ -72,7 +89,7 @@ export class ExercisesController {
       input,
     );
     return {
-      data: exercise,
+      data: flattenTags(exercise),
       message: "Exercise updated successfully",
     };
   }
@@ -91,7 +108,7 @@ export class ExercisesController {
       input,
     );
     return {
-      data: exercise,
+      data: flattenTags(exercise),
       message: "Exercise auto-saved successfully",
     };
   }
@@ -118,7 +135,7 @@ export class ExercisesController {
 
     const exercise = await this.exercisesService.publishExercise(centerId, id);
     return {
-      data: exercise,
+      data: flattenTags(exercise),
       message: "Exercise published successfully",
     };
   }
@@ -200,7 +217,7 @@ export class ExercisesController {
 
     const exercise = await this.exercisesService.archiveExercise(centerId, id);
     return {
-      data: exercise,
+      data: flattenTags(exercise),
       message: "Exercise archived successfully",
     };
   }

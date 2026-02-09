@@ -1,5 +1,5 @@
 import { useAuth } from "@/features/auth/auth-context";
-import type { Exercise, ExerciseSkill, ExerciseStatus } from "@workspace/types";
+import type { Exercise, ExerciseSkill, ExerciseStatus, BandLevel } from "@workspace/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +21,18 @@ import {
 } from "@workspace/ui/components/dropdown-menu";
 import { Input } from "@workspace/ui/components/input";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@workspace/ui/components/command";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -37,6 +49,8 @@ import {
 } from "@workspace/ui/components/table";
 import {
   Book,
+  Check,
+  ChevronsUpDown,
   Headphones,
   Loader2,
   Mic,
@@ -45,10 +59,12 @@ import {
   Plus,
   Search,
 } from "lucide-react";
+import { cn } from "@workspace/ui/lib/utils";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useExercises } from "./hooks/use-exercises";
+import { useTags } from "./hooks/use-tags";
 
 const SKILL_ICONS: Record<ExerciseSkill, React.ReactNode> = {
   READING: <Book className="size-4" />,
@@ -89,15 +105,27 @@ export function ExercisesPage() {
   const [statusFilter, setStatusFilter] = useState<ExerciseStatus | "ALL">(
     "ALL",
   );
+  const [bandLevelFilter, setBandLevelFilter] = useState<BandLevel | "ALL">("ALL");
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Exercise | null>(null);
 
+  const { tags: centerTags } = useTags(centerId);
+
   const filters = useMemo(() => {
-    const f: { skill?: ExerciseSkill; status?: ExerciseStatus } = {};
+    const f: {
+      skill?: ExerciseSkill;
+      status?: ExerciseStatus;
+      bandLevel?: BandLevel;
+      tagIds?: string;
+    } = {};
     if (skillFilter !== "ALL") f.skill = skillFilter;
     if (statusFilter !== "ALL") f.status = statusFilter;
+    if (bandLevelFilter !== "ALL") f.bandLevel = bandLevelFilter;
+    if (tagFilter.length > 0) f.tagIds = tagFilter.join(",");
     return f;
-  }, [skillFilter, statusFilter]);
+  }, [skillFilter, statusFilter, bandLevelFilter, tagFilter]);
 
   const {
     exercises,
@@ -232,6 +260,68 @@ export function ExercisesPage() {
             <SelectItem value="ARCHIVED">Archived</SelectItem>
           </SelectContent>
         </Select>
+        <Select
+          value={bandLevelFilter}
+          onValueChange={(v) => setBandLevelFilter(v as BandLevel | "ALL")}
+        >
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="All Bands" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Bands</SelectItem>
+            <SelectItem value="4-5">Band 4-5</SelectItem>
+            <SelectItem value="5-6">Band 5-6</SelectItem>
+            <SelectItem value="6-7">Band 6-7</SelectItem>
+            <SelectItem value="7-8">Band 7-8</SelectItem>
+            <SelectItem value="8-9">Band 8-9</SelectItem>
+          </SelectContent>
+        </Select>
+        <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={tagPopoverOpen}
+              className="w-[180px] justify-between"
+            >
+              {tagFilter.length > 0
+                ? `${tagFilter.length} tag${tagFilter.length > 1 ? "s" : ""}`
+                : "All Tags"}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[200px] p-0">
+            <Command>
+              <CommandInput placeholder="Search tags..." />
+              <CommandList>
+                <CommandEmpty>No tags found.</CommandEmpty>
+                {centerTags.map((tag) => (
+                  <CommandItem
+                    key={tag.id}
+                    value={tag.name}
+                    onSelect={() => {
+                      setTagFilter((prev) =>
+                        prev.includes(tag.id)
+                          ? prev.filter((id) => id !== tag.id)
+                          : [...prev, tag.id],
+                      );
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        tagFilter.includes(tag.id)
+                          ? "opacity-100"
+                          : "opacity-0",
+                      )}
+                    />
+                    {tag.name}
+                  </CommandItem>
+                ))}
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Table */}
@@ -241,6 +331,8 @@ export function ExercisesPage() {
             <TableRow>
               <TableHead>Title</TableHead>
               <TableHead>Skill</TableHead>
+              <TableHead>Band</TableHead>
+              <TableHead>Tags</TableHead>
               <TableHead>Sections</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Last Modified</TableHead>
@@ -251,7 +343,7 @@ export function ExercisesPage() {
             {filteredExercises.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={8}
                   className="h-24 text-center text-muted-foreground"
                 >
                   {exercises.length === 0
@@ -269,6 +361,22 @@ export function ExercisesPage() {
                     <div className="flex items-center gap-2">
                       {SKILL_ICONS[exercise.skill]}
                       <span>{SKILL_LABELS[exercise.skill]}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {exercise.bandLevel ? (
+                      <Badge variant="outline">{exercise.bandLevel}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {exercise.tags?.map((tag) => (
+                        <Badge key={tag.id} variant="secondary" className="text-xs">
+                          {tag.name}
+                        </Badge>
+                      ))}
                     </div>
                   </TableCell>
                   <TableCell>{exercise.sections?.length ?? 0}</TableCell>

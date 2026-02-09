@@ -1,6 +1,8 @@
 import { useAuth } from "@/features/auth/auth-context";
 import { useExercise, useExercises } from "../hooks/use-exercises";
+import { useExerciseTags } from "../hooks/use-tags";
 import { useSections } from "../hooks/use-sections";
+import { TagSelector } from "./TagSelector";
 import type {
   ExerciseSkill,
   IeltsQuestionType,
@@ -358,6 +360,7 @@ export function ExerciseEditor() {
   const [autoSubmitOnExpiry, setAutoSubmitOnExpiry] = useState(true);
   const [gracePeriodSeconds, setGracePeriodSeconds] = useState<number | null>(null);
   const [enablePause, setEnablePause] = useState(false);
+  const [bandLevel, setBandLevel] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [showPreview, setShowPreview] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
@@ -380,6 +383,7 @@ export function ExerciseEditor() {
     updateQuestion,
     deleteQuestion,
   } = useSections(id);
+  const { exerciseTags, setExerciseTags } = useExerciseTags(centerId, id);
 
   // Load existing exercise data
   useEffect(() => {
@@ -418,6 +422,7 @@ export function ExerciseEditor() {
       setAutoSubmitOnExpiry(exercise.autoSubmitOnExpiry ?? true);
       setGracePeriodSeconds(exercise.gracePeriodSeconds ?? null);
       setEnablePause(exercise.enablePause ?? false);
+      setBandLevel(exercise.bandLevel ?? null);
       // Reset edit tracking — data was just loaded, not user-edited
       userHasEdited.current = false;
     }
@@ -465,13 +470,14 @@ export function ExerciseEditor() {
           autoSubmitOnExpiry,
           gracePeriodSeconds,
           enablePause,
+          bandLevel: bandLevel as "4-5" | "5-6" | "6-7" | "7-8" | "8-9" | null | undefined,
         });
         setSaveStatus("saved");
       } catch {
         setSaveStatus("unsaved");
       }
     }, 30000);
-  }, [id, title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, speakingPrepTime, speakingTime, maxRecordingDuration, enableTranscription, timeLimit, timerPosition, warningAlerts, autoSubmitOnExpiry, gracePeriodSeconds, enablePause, autosave, exercise]);
+  }, [id, title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, speakingPrepTime, speakingTime, maxRecordingDuration, enableTranscription, timeLimit, timerPosition, warningAlerts, autoSubmitOnExpiry, gracePeriodSeconds, enablePause, bandLevel, autosave, exercise]);
 
   useEffect(() => {
     if (isEditing && exercise && userHasEdited.current) {
@@ -480,7 +486,7 @@ export function ExerciseEditor() {
     return () => {
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     };
-  }, [title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, speakingPrepTime, speakingTime, maxRecordingDuration, enableTranscription, isEditing, exercise, scheduleAutosave]);
+  }, [title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, speakingPrepTime, speakingTime, maxRecordingDuration, enableTranscription, bandLevel, isEditing, exercise, scheduleAutosave]);
 
   // Handlers
   const handleSkillSelect = async (skill: ExerciseSkill) => {
@@ -547,6 +553,7 @@ export function ExerciseEditor() {
         autoSubmitOnExpiry,
         gracePeriodSeconds,
         enablePause,
+        bandLevel: bandLevel as "4-5" | "5-6" | "6-7" | "7-8" | "8-9" | null | undefined,
       });
       setSaveStatus("saved");
       toast.success("Draft saved");
@@ -988,6 +995,20 @@ export function ExerciseEditor() {
             onAutoSubmitOnExpiryChange={(v) => { setAutoSubmitOnExpiry(v); userHasEdited.current = true; }}
             onGracePeriodSecondsChange={(v) => { setGracePeriodSeconds(v); userHasEdited.current = true; }}
             onEnablePauseChange={(v) => { setEnablePause(v); userHasEdited.current = true; }}
+          />
+        </div>
+      )}
+
+      {/* Tags & Organization */}
+      {isEditing && id && centerId && (
+        <div className="max-w-3xl">
+          <TagSelector
+            centerId={centerId}
+            bandLevel={bandLevel}
+            selectedTagIds={exerciseTags?.map((t) => t.id) ?? []}
+            questionTypes={exercise?.sections?.map((s) => s.sectionType).filter(Boolean) ?? []}
+            onBandLevelChange={(v) => { setBandLevel(v); userHasEdited.current = true; }}
+            onTagsChange={(tagIds) => setExerciseTags({ tagIds })}
           />
         </div>
       )}

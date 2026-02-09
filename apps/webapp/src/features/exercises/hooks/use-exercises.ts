@@ -4,6 +4,7 @@ import type {
   Exercise,
   ExerciseSkill,
   ExerciseStatus,
+  BandLevel,
   CreateExerciseInput,
   UpdateExerciseInput,
   AutosaveExerciseInput,
@@ -12,6 +13,8 @@ import type {
 type ExerciseFilters = {
   skill?: ExerciseSkill;
   status?: ExerciseStatus;
+  bandLevel?: BandLevel;
+  tagIds?: string;
 };
 
 export const exercisesKeys = {

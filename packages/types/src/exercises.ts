@@ -27,6 +27,9 @@ export type LetterTone = z.infer<typeof LetterToneSchema>;
 export const WordCountModeSchema = z.enum(["soft", "hard"]);
 export type WordCountMode = z.infer<typeof WordCountModeSchema>;
 
+export const BandLevelSchema = z.enum(["4-5", "5-6", "6-7", "7-8", "8-9"]);
+export type BandLevel = z.infer<typeof BandLevelSchema>;
+
 export const AudioSectionSchema = z
   .object({
     label: z.string().min(1),
@@ -466,6 +469,41 @@ export const ReorderSectionsSchema = z.object({
 });
 export type ReorderSectionsInput = z.infer<typeof ReorderSectionsSchema>;
 
+// --- Exercise Tags ---
+
+export const ExerciseTagSchema = z.object({
+  id: z.string(),
+  centerId: z.string(),
+  name: z.string(),
+  createdAt: z.union([z.date(), z.string()]),
+  updatedAt: z.union([z.date(), z.string()]),
+  _count: z.object({
+    tagAssignments: z.number(),
+  }).optional(),
+});
+export type ExerciseTag = z.infer<typeof ExerciseTagSchema>;
+
+export const CreateExerciseTagSchema = z.object({
+  name: z.string().min(1).max(50).trim(),
+});
+export type CreateExerciseTagInput = z.infer<typeof CreateExerciseTagSchema>;
+
+export const UpdateExerciseTagSchema = z.object({
+  name: z.string().min(1).max(50).trim(),
+});
+export type UpdateExerciseTagInput = z.infer<typeof UpdateExerciseTagSchema>;
+
+export const MergeExerciseTagsSchema = z.object({
+  sourceTagId: z.string(),
+  targetTagId: z.string(),
+});
+export type MergeExerciseTagsInput = z.infer<typeof MergeExerciseTagsSchema>;
+
+export const SetExerciseTagsSchema = z.object({
+  tagIds: z.array(z.string()),
+});
+export type SetExerciseTagsInput = z.infer<typeof SetExerciseTagsSchema>;
+
 // --- Timer ---
 
 export const TimerPositionSchema = z.enum(["top-bar", "floating"]);
@@ -510,6 +548,8 @@ export const ExerciseSchema = z.object({
   autoSubmitOnExpiry: z.boolean().optional().default(true),
   gracePeriodSeconds: z.number().int().positive().nullable().optional(),
   enablePause: z.boolean().optional().default(false),
+  bandLevel: z.string().nullable().optional(),
+  tags: z.array(z.object({ id: z.string(), name: z.string() })).optional(),
   createdById: z.string(),
   createdAt: z.union([z.date(), z.string()]),
   updatedAt: z.union([z.date(), z.string()]),
@@ -550,6 +590,7 @@ export const CreateExerciseSchema = z.object({
   autoSubmitOnExpiry: z.boolean().optional(),
   gracePeriodSeconds: z.number().int().positive().nullable().optional(),
   enablePause: z.boolean().optional(),
+  bandLevel: BandLevelSchema.nullable().optional(),
 }).refine(
   (data) => {
     if (data.wordCountMin != null && data.wordCountMax != null) {
@@ -589,6 +630,7 @@ export const UpdateExerciseSchema = z.object({
   autoSubmitOnExpiry: z.boolean().optional(),
   gracePeriodSeconds: z.number().int().positive().nullable().optional(),
   enablePause: z.boolean().optional(),
+  bandLevel: BandLevelSchema.nullable().optional(),
 }).refine(
   (data) => {
     if (data.wordCountMin != null && data.wordCountMax != null) {
@@ -627,6 +669,7 @@ export const AutosaveExerciseSchema = z.object({
   autoSubmitOnExpiry: z.boolean().optional(),
   gracePeriodSeconds: z.number().int().positive().nullable().optional(),
   enablePause: z.boolean().optional(),
+  bandLevel: BandLevelSchema.nullable().optional(),
 });
 export type AutosaveExerciseInput = z.infer<typeof AutosaveExerciseSchema>;
 
@@ -667,3 +710,9 @@ export const QuestionListResponseSchema = createResponseSchema(
   z.array(QuestionSchema),
 );
 export type QuestionListResponse = z.infer<typeof QuestionListResponseSchema>;
+
+export const ExerciseTagResponseSchema = createResponseSchema(ExerciseTagSchema);
+export type ExerciseTagResponse = z.infer<typeof ExerciseTagResponseSchema>;
+
+export const ExerciseTagListResponseSchema = createResponseSchema(z.array(ExerciseTagSchema));
+export type ExerciseTagListResponse = z.infer<typeof ExerciseTagListResponseSchema>;

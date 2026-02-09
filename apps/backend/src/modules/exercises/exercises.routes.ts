@@ -4,12 +4,16 @@ import {
   AutosaveExerciseSchema,
   ExerciseResponseSchema,
   ExerciseListResponseSchema,
+  ExerciseTagListResponseSchema,
+  SetExerciseTagsSchema,
   ErrorResponseSchema,
   CreateExerciseInput,
   UpdateExerciseInput,
   AutosaveExerciseInput,
   ExerciseSkillSchema,
   ExerciseStatusSchema,
+  BandLevelSchema,
+  SetExerciseTagsInput,
 } from "@workspace/types";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -19,6 +23,8 @@ import { AppError } from "../../errors/app-error.js";
 import { mapPrismaError } from "../../errors/prisma-errors.js";
 import { ExercisesController } from "./exercises.controller.js";
 import { ExercisesService } from "./exercises.service.js";
+import { TagsController } from "./tags.controller.js";
+import { TagsService } from "./tags.service.js";
 import Env from "../../env.js";
 import z from "zod";
 
@@ -32,6 +38,8 @@ export async function exercisesRoutes(fastify: FastifyInstance) {
     env.FIREBASE_STORAGE_BUCKET,
   );
   const exercisesController = new ExercisesController(exercisesService);
+  const tagsService = new TagsService(fastify.prisma);
+  const tagsController = new TagsController(tagsService);
 
   // All exercises routes require authentication
   fastify.addHook("preHandler", authMiddleware);
@@ -42,6 +50,8 @@ export async function exercisesRoutes(fastify: FastifyInstance) {
       querystring: z.object({
         skill: ExerciseSkillSchema.optional(),
         status: ExerciseStatusSchema.optional(),
+        bandLevel: BandLevelSchema.optional(),
+        tagIds: z.string().optional(),
       }),
       response: {
         200: ExerciseListResponseSchema,
@@ -52,13 +62,16 @@ export async function exercisesRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
     handler: async (request, reply) => {
       try {
-        const { skill, status } = request.query as {
+        const { skill, status, bandLevel, tagIds } = request.query as {
           skill?: string;
           status?: string;
+          bandLevel?: string;
+          tagIds?: string;
         };
+        const tagIdsArray = tagIds?.split(",").filter(Boolean);
         const result = await exercisesController.listExercises(
           request.jwtPayload!,
-          { skill, status },
+          { skill, status, bandLevel, tagIds: tagIdsArray },
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -681,6 +694,95 @@ export async function exercisesRoutes(fastify: FastifyInstance) {
         return reply
           .status(500)
           .send({ message: "Failed to upload audio" });
+      }
+    },
+  });
+
+  // PUT /:id/tags - Set exercise tags (replace all)
+  api.put("/:id/tags", {
+    schema: {
+      params: z.object({ id: z.string() }),
+      body: SetExerciseTagsSchema,
+      response: {
+        200: z.object({ data: z.null(), message: z.string() }),
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (
+      request: FastifyRequest<{
+        Params: { id: string };
+        Body: SetExerciseTagsInput;
+      }>,
+      reply,
+    ) => {
+      try {
+        const result = await tagsController.setExerciseTags(
+          request.params.id,
+          request.body.tagIds,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply
+            .status(error.statusCode as 400)
+            .send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply
+            .status(prismaErr.statusCode as 400)
+            .send({ message: prismaErr.message });
+        }
+        return reply
+          .status(500)
+          .send({ message: "Failed to set exercise tags" });
+      }
+    },
+  });
+
+  // GET /:id/tags - Get exercise tags
+  api.get("/:id/tags", {
+    schema: {
+      params: z.object({ id: z.string() }),
+      response: {
+        200: ExerciseTagListResponseSchema,
+        401: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { id: string } }>,
+      reply,
+    ) => {
+      try {
+        const result = await tagsController.getExerciseTags(
+          request.params.id,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply
+            .status(error.statusCode as 500)
+            .send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply
+            .status(prismaErr.statusCode as 500)
+            .send({ message: prismaErr.message });
+        }
+        return reply
+          .status(500)
+          .send({ message: "Failed to get exercise tags" });
       }
     },
   });

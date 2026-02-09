@@ -4669,6 +4669,8 @@ export interface paths {
                 query?: {
                     skill?: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
                     status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                    bandLevel?: "4-5" | "5-6" | "6-7" | "7-8" | "8-9";
+                    tagIds?: string;
                 };
                 header?: never;
                 path?: never;
@@ -4713,6 +4715,24 @@ export interface paths {
                                 sampleResponse?: string | null;
                                 /** @default false */
                                 showSampleAfterGrading: boolean;
+                                speakingPrepTime?: number | null;
+                                speakingTime?: number | null;
+                                maxRecordingDuration?: number | null;
+                                /** @default false */
+                                enableTranscription: boolean;
+                                timeLimit?: number | null;
+                                timerPosition?: string | null;
+                                warningAlerts?: unknown;
+                                /** @default true */
+                                autoSubmitOnExpiry: boolean;
+                                gracePeriodSeconds?: number | null;
+                                /** @default false */
+                                enablePause: boolean;
+                                bandLevel?: string | null;
+                                tags?: {
+                                    id: string;
+                                    name: string;
+                                }[];
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -4725,6 +4745,7 @@ export interface paths {
                                     instructions?: string | null;
                                     orderIndex: number;
                                     audioSectionIndex?: number | null;
+                                    sectionTimeLimit?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -4807,6 +4828,19 @@ export interface paths {
                         wordCountMode?: "soft" | "hard" | null;
                         sampleResponse?: string | null;
                         showSampleAfterGrading?: boolean;
+                        speakingPrepTime?: number | null;
+                        speakingTime?: number | null;
+                        maxRecordingDuration?: number | null;
+                        enableTranscription?: boolean;
+                        timeLimit?: number | null;
+                        /** @enum {string|null} */
+                        timerPosition?: "top-bar" | "floating" | null;
+                        warningAlerts?: number[] | null;
+                        autoSubmitOnExpiry?: boolean;
+                        gracePeriodSeconds?: number | null;
+                        enablePause?: boolean;
+                        /** @enum {string|null} */
+                        bandLevel?: "4-5" | "5-6" | "6-7" | "7-8" | "8-9" | null;
                     };
                 };
             };
@@ -4848,6 +4882,24 @@ export interface paths {
                                 sampleResponse?: string | null;
                                 /** @default false */
                                 showSampleAfterGrading: boolean;
+                                speakingPrepTime?: number | null;
+                                speakingTime?: number | null;
+                                maxRecordingDuration?: number | null;
+                                /** @default false */
+                                enableTranscription: boolean;
+                                timeLimit?: number | null;
+                                timerPosition?: string | null;
+                                warningAlerts?: unknown;
+                                /** @default true */
+                                autoSubmitOnExpiry: boolean;
+                                gracePeriodSeconds?: number | null;
+                                /** @default false */
+                                enablePause: boolean;
+                                bandLevel?: string | null;
+                                tags?: {
+                                    id: string;
+                                    name: string;
+                                }[];
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -4860,6 +4912,7 @@ export interface paths {
                                     instructions?: string | null;
                                     orderIndex: number;
                                     audioSectionIndex?: number | null;
+                                    sectionTimeLimit?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -4996,6 +5049,24 @@ export interface paths {
                                 sampleResponse?: string | null;
                                 /** @default false */
                                 showSampleAfterGrading: boolean;
+                                speakingPrepTime?: number | null;
+                                speakingTime?: number | null;
+                                maxRecordingDuration?: number | null;
+                                /** @default false */
+                                enableTranscription: boolean;
+                                timeLimit?: number | null;
+                                timerPosition?: string | null;
+                                warningAlerts?: unknown;
+                                /** @default true */
+                                autoSubmitOnExpiry: boolean;
+                                gracePeriodSeconds?: number | null;
+                                /** @default false */
+                                enablePause: boolean;
+                                bandLevel?: string | null;
+                                tags?: {
+                                    id: string;
+                                    name: string;
+                                }[];
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5008,6 +5079,7 @@ export interface paths {
                                     instructions?: string | null;
                                     orderIndex: number;
                                     audioSectionIndex?: number | null;
+                                    sectionTimeLimit?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -5195,6 +5267,19 @@ export interface paths {
                         wordCountMode?: "soft" | "hard" | null;
                         sampleResponse?: string | null;
                         showSampleAfterGrading?: boolean;
+                        speakingPrepTime?: number | null;
+                        speakingTime?: number | null;
+                        maxRecordingDuration?: number | null;
+                        enableTranscription?: boolean;
+                        timeLimit?: number | null;
+                        /** @enum {string|null} */
+                        timerPosition?: "top-bar" | "floating" | null;
+                        warningAlerts?: number[] | null;
+                        autoSubmitOnExpiry?: boolean;
+                        gracePeriodSeconds?: number | null;
+                        enablePause?: boolean;
+                        /** @enum {string|null} */
+                        bandLevel?: "4-5" | "5-6" | "6-7" | "7-8" | "8-9" | null;
                     };
                 };
             };
@@ -5236,6 +5321,24 @@ export interface paths {
                                 sampleResponse?: string | null;
                                 /** @default false */
                                 showSampleAfterGrading: boolean;
+                                speakingPrepTime?: number | null;
+                                speakingTime?: number | null;
+                                maxRecordingDuration?: number | null;
+                                /** @default false */
+                                enableTranscription: boolean;
+                                timeLimit?: number | null;
+                                timerPosition?: string | null;
+                                warningAlerts?: unknown;
+                                /** @default true */
+                                autoSubmitOnExpiry: boolean;
+                                gracePeriodSeconds?: number | null;
+                                /** @default false */
+                                enablePause: boolean;
+                                bandLevel?: string | null;
+                                tags?: {
+                                    id: string;
+                                    name: string;
+                                }[];
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5248,6 +5351,7 @@ export interface paths {
                                     instructions?: string | null;
                                     orderIndex: number;
                                     audioSectionIndex?: number | null;
+                                    sectionTimeLimit?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -5366,6 +5470,8 @@ export interface paths {
                         instructions?: string | null;
                         passageContent?: string | null;
                         passageFormat?: string | null;
+                        caseSensitive?: boolean;
+                        partialCredit?: boolean;
                         /** @enum {string} */
                         playbackMode?: "TEST_MODE" | "PRACTICE_MODE";
                         audioSections?: {
@@ -5383,6 +5489,19 @@ export interface paths {
                         wordCountMode?: "soft" | "hard" | null;
                         sampleResponse?: string | null;
                         showSampleAfterGrading?: boolean;
+                        speakingPrepTime?: number | null;
+                        speakingTime?: number | null;
+                        maxRecordingDuration?: number | null;
+                        enableTranscription?: boolean;
+                        timeLimit?: number | null;
+                        /** @enum {string|null} */
+                        timerPosition?: "top-bar" | "floating" | null;
+                        warningAlerts?: number[] | null;
+                        autoSubmitOnExpiry?: boolean;
+                        gracePeriodSeconds?: number | null;
+                        enablePause?: boolean;
+                        /** @enum {string|null} */
+                        bandLevel?: "4-5" | "5-6" | "6-7" | "7-8" | "8-9" | null;
                     };
                 };
             };
@@ -5424,6 +5543,24 @@ export interface paths {
                                 sampleResponse?: string | null;
                                 /** @default false */
                                 showSampleAfterGrading: boolean;
+                                speakingPrepTime?: number | null;
+                                speakingTime?: number | null;
+                                maxRecordingDuration?: number | null;
+                                /** @default false */
+                                enableTranscription: boolean;
+                                timeLimit?: number | null;
+                                timerPosition?: string | null;
+                                warningAlerts?: unknown;
+                                /** @default true */
+                                autoSubmitOnExpiry: boolean;
+                                gracePeriodSeconds?: number | null;
+                                /** @default false */
+                                enablePause: boolean;
+                                bandLevel?: string | null;
+                                tags?: {
+                                    id: string;
+                                    name: string;
+                                }[];
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5436,6 +5573,7 @@ export interface paths {
                                     instructions?: string | null;
                                     orderIndex: number;
                                     audioSectionIndex?: number | null;
+                                    sectionTimeLimit?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -5570,6 +5708,24 @@ export interface paths {
                                 sampleResponse?: string | null;
                                 /** @default false */
                                 showSampleAfterGrading: boolean;
+                                speakingPrepTime?: number | null;
+                                speakingTime?: number | null;
+                                maxRecordingDuration?: number | null;
+                                /** @default false */
+                                enableTranscription: boolean;
+                                timeLimit?: number | null;
+                                timerPosition?: string | null;
+                                warningAlerts?: unknown;
+                                /** @default true */
+                                autoSubmitOnExpiry: boolean;
+                                gracePeriodSeconds?: number | null;
+                                /** @default false */
+                                enablePause: boolean;
+                                bandLevel?: string | null;
+                                tags?: {
+                                    id: string;
+                                    name: string;
+                                }[];
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5582,6 +5738,7 @@ export interface paths {
                                     instructions?: string | null;
                                     orderIndex: number;
                                     audioSectionIndex?: number | null;
+                                    sectionTimeLimit?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -5720,6 +5877,24 @@ export interface paths {
                                 sampleResponse?: string | null;
                                 /** @default false */
                                 showSampleAfterGrading: boolean;
+                                speakingPrepTime?: number | null;
+                                speakingTime?: number | null;
+                                maxRecordingDuration?: number | null;
+                                /** @default false */
+                                enableTranscription: boolean;
+                                timeLimit?: number | null;
+                                timerPosition?: string | null;
+                                warningAlerts?: unknown;
+                                /** @default true */
+                                autoSubmitOnExpiry: boolean;
+                                gracePeriodSeconds?: number | null;
+                                /** @default false */
+                                enablePause: boolean;
+                                bandLevel?: string | null;
+                                tags?: {
+                                    id: string;
+                                    name: string;
+                                }[];
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5732,6 +5907,7 @@ export interface paths {
                                     instructions?: string | null;
                                     orderIndex: number;
                                     audioSectionIndex?: number | null;
+                                    sectionTimeLimit?: number | null;
                                     createdAt: string;
                                     updatedAt: string;
                                     questions?: {
@@ -6273,6 +6449,158 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exercises/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                name: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                _count?: {
+                                    tagAssignments: number;
+                                };
+                            }[] | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        tagIds: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string|null} */
+                            data: null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/exercises/{exerciseId}/sections": {
         parameters: {
             query?: never;
@@ -6307,6 +6635,7 @@ export interface paths {
                                 instructions?: string | null;
                                 orderIndex: number;
                                 audioSectionIndex?: number | null;
+                                sectionTimeLimit?: number | null;
                                 createdAt: string;
                                 updatedAt: string;
                                 questions?: {
@@ -6383,6 +6712,7 @@ export interface paths {
                         instructions?: string | null;
                         orderIndex: number;
                         audioSectionIndex?: number | null;
+                        sectionTimeLimit?: number | null;
                     };
                 };
             };
@@ -6403,6 +6733,7 @@ export interface paths {
                                 instructions?: string | null;
                                 orderIndex: number;
                                 audioSectionIndex?: number | null;
+                                sectionTimeLimit?: number | null;
                                 createdAt: string;
                                 updatedAt: string;
                                 questions?: {
@@ -6537,6 +6868,7 @@ export interface paths {
                                 instructions?: string | null;
                                 orderIndex: number;
                                 audioSectionIndex?: number | null;
+                                sectionTimeLimit?: number | null;
                                 createdAt: string;
                                 updatedAt: string;
                                 questions?: {
@@ -6724,6 +7056,7 @@ export interface paths {
                         instructions?: string | null;
                         orderIndex?: number;
                         audioSectionIndex?: number | null;
+                        sectionTimeLimit?: number | null;
                     };
                 };
             };
@@ -6744,6 +7077,7 @@ export interface paths {
                                 instructions?: string | null;
                                 orderIndex: number;
                                 audioSectionIndex?: number | null;
+                                sectionTimeLimit?: number | null;
                                 createdAt: string;
                                 updatedAt: string;
                                 questions?: {
@@ -7148,6 +7482,448 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/api/v1/tags/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                name: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                _count?: {
+                                    tagAssignments: number;
+                                };
+                            }[] | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                name: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                _count?: {
+                                    tagAssignments: number;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    tagId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                name: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                _count?: {
+                                    tagAssignments: number;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    tagId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                name: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                _count?: {
+                                    tagAssignments: number;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/tags/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        sourceTagId: string;
+                        targetTagId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                name: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                _count?: {
+                                    tagAssignments: number;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/notifications/": {

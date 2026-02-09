@@ -20,6 +20,8 @@ const TENANTED_MODELS = [
   "Exercise",
   "QuestionSection",
   "Question",
+  "ExerciseTag",
+  "ExerciseTagAssignment",
 ];
 
 /**

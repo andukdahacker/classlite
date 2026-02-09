@@ -974,4 +974,94 @@ describe("ExercisesService", () => {
       );
     });
   });
+
+  describe("bandLevel support", () => {
+    it("should include bandLevel in createExercise", async () => {
+      mockPrisma.authAccount.findUnique.mockResolvedValue({
+        userId,
+        provider: "FIREBASE",
+        providerUserId: firebaseUid,
+      });
+      mockDb.exercise.create.mockResolvedValue({
+        ...mockExercise,
+        bandLevel: "6-7",
+        tagAssignments: [],
+      });
+
+      await service.createExercise(
+        centerId,
+        { title: "Test", skill: "READING", bandLevel: "6-7" },
+        firebaseUid,
+      );
+
+      expect(mockDb.exercise.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            bandLevel: "6-7",
+          }),
+        }),
+      );
+    });
+
+    it("should include bandLevel in updateExercise", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockExercise);
+      mockDb.exercise.update.mockResolvedValue({
+        ...mockExercise,
+        bandLevel: "7-8",
+        tagAssignments: [],
+      });
+
+      await service.updateExercise(centerId, "ex-1", { bandLevel: "7-8" });
+
+      expect(mockDb.exercise.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            bandLevel: "7-8",
+          }),
+        }),
+      );
+    });
+
+    it("should filter by bandLevel in listExercises", async () => {
+      mockDb.exercise.findMany.mockResolvedValue([]);
+
+      await service.listExercises(centerId, { bandLevel: "5-6" });
+
+      expect(mockDb.exercise.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            bandLevel: "5-6",
+          }),
+        }),
+      );
+    });
+
+    it("should filter by tagIds in listExercises", async () => {
+      mockDb.exercise.findMany.mockResolvedValue([]);
+
+      await service.listExercises(centerId, { tagIds: ["t1", "t2"] });
+
+      expect(mockDb.exercise.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            tagAssignments: { some: { tagId: { in: ["t1", "t2"] } } },
+          }),
+        }),
+      );
+    });
+
+    it("should include tagAssignments in listExercises include", async () => {
+      mockDb.exercise.findMany.mockResolvedValue([]);
+
+      await service.listExercises(centerId);
+
+      expect(mockDb.exercise.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            tagAssignments: expect.any(Object),
+          }),
+        }),
+      );
+    });
+  });
 });
