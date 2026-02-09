@@ -433,6 +433,14 @@ model Exercise {
   playbackMode              String?        @map("playback_mode")
   audioSections             Json?          @map("audio_sections")
   showTranscriptAfterSubmit Boolean        @default(false) @map("show_transcript_after_submit")
+  stimulusImageUrl          String?        @map("stimulus_image_url")
+  writingPrompt             String?        @map("writing_prompt") @db.Text
+  letterTone                String?        @map("letter_tone")
+  wordCountMin              Int?           @map("word_count_min")
+  wordCountMax              Int?           @map("word_count_max")
+  wordCountMode             String?        @map("word_count_mode")
+  sampleResponse            String?        @map("sample_response") @db.Text
+  showSampleAfterGrading    Boolean        @default(false) @map("show_sample_after_grading")
   createdById               String         @map("created_by_id")
   createdAt                 DateTime       @default(now()) @map("created_at")
   updatedAt                 DateTime       @updatedAt @map("updated_at")

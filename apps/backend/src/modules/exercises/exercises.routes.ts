@@ -485,6 +485,130 @@ export async function exercisesRoutes(fastify: FastifyInstance) {
     },
   });
 
+  // POST /:exerciseId/stimulus-image - Upload stimulus image for Writing W1
+  api.post("/:exerciseId/stimulus-image", {
+    schema: {
+      params: z.object({
+        exerciseId: z.string(),
+      }),
+      response: {
+        200: z.object({
+          data: z.object({ stimulusImageUrl: z.string() }),
+          message: z.string(),
+        }),
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { exerciseId: string } }>,
+      reply: FastifyReply,
+    ) => {
+      const { exerciseId } = request.params;
+      const user = request.jwtPayload;
+
+      if (!user?.centerId) {
+        return reply.status(401).send({ message: "Unauthorized" });
+      }
+
+      // Route-level file size override: 5MB for stimulus images
+      const data = await request.file({
+        limits: { fileSize: 5 * 1024 * 1024 },
+      });
+
+      if (!data) {
+        return reply.status(400).send({ message: "No file uploaded" });
+      }
+
+      const allowedMimetypes = [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/svg+xml",
+      ];
+      if (!allowedMimetypes.includes(data.mimetype)) {
+        return reply.status(400).send({
+          message:
+            "Invalid file type. Only PNG, JPG, and SVG are allowed.",
+        });
+      }
+
+      try {
+        const buffer = await data.toBuffer();
+        const result = await exercisesController.uploadStimulusImage(
+          exerciseId,
+          buffer,
+          data.mimetype,
+          user,
+        );
+
+        return reply.status(200).send(result);
+      } catch (error: unknown) {
+        if (error instanceof AppError) {
+          return reply
+            .status(error.statusCode)
+            .send({ message: error.message });
+        }
+        request.log.error(error);
+        return reply
+          .status(500)
+          .send({ message: "Failed to upload stimulus image" });
+      }
+    },
+  });
+
+  // DELETE /:exerciseId/stimulus-image - Remove stimulus image from exercise
+  api.delete("/:exerciseId/stimulus-image", {
+    schema: {
+      params: z.object({
+        exerciseId: z.string(),
+      }),
+      response: {
+        200: z.object({ message: z.string() }),
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { exerciseId: string } }>,
+      reply: FastifyReply,
+    ) => {
+      const { exerciseId } = request.params;
+      const user = request.jwtPayload;
+
+      if (!user?.centerId) {
+        return reply.status(401).send({ message: "Unauthorized" });
+      }
+
+      try {
+        const result = await exercisesController.deleteStimulusImage(
+          exerciseId,
+          user,
+        );
+
+        return reply.status(200).send(result);
+      } catch (error: unknown) {
+        if (error instanceof AppError) {
+          return reply
+            .status(error.statusCode)
+            .send({ message: error.message });
+        }
+        request.log.error(error);
+        return reply
+          .status(500)
+          .send({ message: "Failed to delete stimulus image" });
+      }
+    },
+  });
+
   // POST /:exerciseId/audio - Upload audio file for Listening exercises
   api.post("/:exerciseId/audio", {
     schema: {

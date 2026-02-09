@@ -223,6 +223,61 @@ describe("ExercisesService", () => {
         service.updateExercise(centerId, "nonexistent", { title: "New" }),
       ).rejects.toThrow("Exercise not found");
     });
+
+    it("should reject wordCountMax < wordCountMin when both in request", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockExercise);
+
+      await expect(
+        service.updateExercise(centerId, "ex-1", {
+          wordCountMin: 250,
+          wordCountMax: 100,
+        }),
+      ).rejects.toThrow("wordCountMax must be >= wordCountMin");
+    });
+
+    it("should reject wordCountMax < existing wordCountMin on partial update", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue({
+        ...mockExercise,
+        wordCountMin: 150,
+      });
+
+      await expect(
+        service.updateExercise(centerId, "ex-1", {
+          wordCountMax: 50,
+        }),
+      ).rejects.toThrow("wordCountMax must be >= wordCountMin");
+    });
+
+    it("should reject wordCountMin > existing wordCountMax on partial update", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue({
+        ...mockExercise,
+        wordCountMax: 200,
+      });
+
+      await expect(
+        service.updateExercise(centerId, "ex-1", {
+          wordCountMin: 300,
+        }),
+      ).rejects.toThrow("wordCountMax must be >= wordCountMin");
+    });
+
+    it("should accept valid wordCount partial update", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue({
+        ...mockExercise,
+        wordCountMin: 150,
+      });
+      mockDb.exercise.update.mockResolvedValue({
+        ...mockExercise,
+        wordCountMin: 150,
+        wordCountMax: 300,
+      });
+
+      const result = await service.updateExercise(centerId, "ex-1", {
+        wordCountMax: 300,
+      });
+
+      expect(result.wordCountMax).toBe(300);
+    });
   });
 
   describe("deleteExercise", () => {
@@ -480,6 +535,153 @@ describe("ExercisesService", () => {
 
       // Should not throw
       await service.deleteAudio(centerId, "ex-1");
+
+      expect(mockDb.exercise.update).toHaveBeenCalled();
+    });
+  });
+
+  describe("uploadStimulusImage", () => {
+    const fileBuffer = Buffer.from("fake-image-data");
+
+    it("should upload image and return URL", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockExercise);
+      mockDb.exercise.update.mockResolvedValue({
+        ...mockExercise,
+        stimulusImageUrl: `https://storage.googleapis.com/${bucketName}/exercises/${centerId}/ex-1/stimulus-image/12345.png`,
+      });
+
+      const result = await service.uploadStimulusImage(centerId, "ex-1", fileBuffer, "image/png");
+
+      expect(result.stimulusImageUrl).toContain(`https://storage.googleapis.com/${bucketName}/`);
+      expect(result.stimulusImageUrl).toContain("/stimulus-image/");
+      expect(result.stimulusImageUrl).toContain(".png");
+      expect(mockFile.save).toHaveBeenCalledWith(
+        fileBuffer,
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            contentType: "image/png",
+          }),
+        }),
+      );
+      expect(mockFile.makePublic).toHaveBeenCalled();
+      expect(mockDb.exercise.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "ex-1" },
+          data: expect.objectContaining({
+            stimulusImageUrl: expect.stringContaining(".png"),
+          }),
+        }),
+      );
+    });
+
+    it("should map image/jpeg to .jpg extension", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockExercise);
+      mockDb.exercise.update.mockResolvedValue(mockExercise);
+
+      await service.uploadStimulusImage(centerId, "ex-1", fileBuffer, "image/jpeg");
+
+      expect(mockBucket.file).toHaveBeenCalledWith(
+        expect.stringContaining(".jpg"),
+      );
+    });
+
+    it("should map image/svg+xml to .svg extension", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockExercise);
+      mockDb.exercise.update.mockResolvedValue(mockExercise);
+
+      await service.uploadStimulusImage(centerId, "ex-1", fileBuffer, "image/svg+xml");
+
+      expect(mockBucket.file).toHaveBeenCalledWith(
+        expect.stringContaining(".svg"),
+      );
+    });
+
+    it("should include centerId and exerciseId in storage path", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(mockExercise);
+      mockDb.exercise.update.mockResolvedValue(mockExercise);
+
+      await service.uploadStimulusImage(centerId, "ex-1", fileBuffer, "image/png");
+
+      expect(mockBucket.file).toHaveBeenCalledWith(
+        expect.stringMatching(new RegExp(`exercises/${centerId}/ex-1/stimulus-image/\\d+\\.png`)),
+      );
+    });
+
+    it("should throw if exercise is not DRAFT", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue({
+        ...mockExercise,
+        status: "PUBLISHED",
+      });
+
+      await expect(
+        service.uploadStimulusImage(centerId, "ex-1", fileBuffer, "image/png"),
+      ).rejects.toThrow("Only draft exercises can have stimulus images uploaded");
+    });
+
+    it("should throw if exercise not found", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.uploadStimulusImage(centerId, "nonexistent", fileBuffer, "image/png"),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe("deleteStimulusImage", () => {
+    const stimulusImageUrl = `https://storage.googleapis.com/${bucketName}/exercises/${centerId}/ex-1/stimulus-image/12345.png`;
+    const exerciseWithStimulus = {
+      ...mockExercise,
+      stimulusImageUrl,
+    };
+
+    it("should delete stimulus image from storage and clear DB field", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue(exerciseWithStimulus);
+      mockDb.exercise.update.mockResolvedValue(mockExercise);
+
+      await service.deleteStimulusImage(centerId, "ex-1");
+
+      expect(mockFile.delete).toHaveBeenCalled();
+      expect(mockDb.exercise.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "ex-1" },
+          data: expect.objectContaining({
+            stimulusImageUrl: null,
+          }),
+        }),
+      );
+    });
+
+    it("should throw if exercise is not DRAFT", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue({
+        ...exerciseWithStimulus,
+        status: "PUBLISHED",
+      });
+
+      await expect(
+        service.deleteStimulusImage(centerId, "ex-1"),
+      ).rejects.toThrow("Only draft exercises can have stimulus images removed");
+    });
+
+    it("should handle exercise with no stimulusImageUrl gracefully", async () => {
+      mockDb.exercise.findUnique.mockResolvedValue({
+        ...mockExercise,
+        stimulusImageUrl: null,
+      });
+      mockDb.exercise.update.mockResolvedValue(mockExercise);
+
+      await service.deleteStimulusImage(centerId, "ex-1");
+
+      expect(mockFile.delete).not.toHaveBeenCalled();
+      expect(mockDb.exercise.update).toHaveBeenCalled();
+    });
+
+    it("should continue if storage file deletion fails", async () => {
+      mockFile.delete.mockRejectedValue(new Error("File not found"));
+      mockDb.exercise.findUnique.mockResolvedValue(exerciseWithStimulus);
+      mockDb.exercise.update.mockResolvedValue(mockExercise);
+
+      // Should not throw
+      await service.deleteStimulusImage(centerId, "ex-1");
 
       expect(mockDb.exercise.update).toHaveBeenCalled();
     });

@@ -26,6 +26,10 @@ import {
   PlaybackModeSchema,
   QuestionSectionSchema,
   AutosaveExerciseSchema,
+  LetterToneSchema,
+  WordCountModeSchema,
+  WritingRubricCriterionSchema,
+  WritingRubricSchema,
 } from "./exercises.js";
 
 describe("Exercise Type-Helper Schemas", () => {
@@ -1454,6 +1458,387 @@ describe("Exercise Type-Helper Schemas", () => {
         playbackMode: "TEST_MODE",
         audioSections: [{ label: "Part 1", startTime: 0, endTime: 180 }],
         showTranscriptAfterSubmit: false,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  // --- Story 3.8: Writing schemas ---
+  describe("LetterToneSchema", () => {
+    it("should accept 'formal'", () => {
+      expect(LetterToneSchema.safeParse("formal").success).toBe(true);
+    });
+
+    it("should accept 'informal'", () => {
+      expect(LetterToneSchema.safeParse("informal").success).toBe(true);
+    });
+
+    it("should accept 'semi-formal'", () => {
+      expect(LetterToneSchema.safeParse("semi-formal").success).toBe(true);
+    });
+
+    it("should reject invalid tone", () => {
+      expect(LetterToneSchema.safeParse("casual").success).toBe(false);
+    });
+
+    it("should reject empty string", () => {
+      expect(LetterToneSchema.safeParse("").success).toBe(false);
+    });
+  });
+
+  describe("WordCountModeSchema", () => {
+    it("should accept 'soft'", () => {
+      expect(WordCountModeSchema.safeParse("soft").success).toBe(true);
+    });
+
+    it("should accept 'hard'", () => {
+      expect(WordCountModeSchema.safeParse("hard").success).toBe(true);
+    });
+
+    it("should reject invalid mode", () => {
+      expect(WordCountModeSchema.safeParse("medium").success).toBe(false);
+    });
+
+    it("should reject empty string", () => {
+      expect(WordCountModeSchema.safeParse("").success).toBe(false);
+    });
+  });
+
+  describe("WritingRubricCriterionSchema", () => {
+    it("should accept valid criterion with band 0-9", () => {
+      const result = WritingRubricCriterionSchema.safeParse({
+        name: "Task Achievement",
+        band: 7,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept 0.5 step bands", () => {
+      const result = WritingRubricCriterionSchema.safeParse({
+        name: "Coherence & Cohesion",
+        band: 6.5,
+        comment: "Good cohesion",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept band 0", () => {
+      expect(WritingRubricCriterionSchema.safeParse({ name: "Test", band: 0 }).success).toBe(true);
+    });
+
+    it("should accept band 9", () => {
+      expect(WritingRubricCriterionSchema.safeParse({ name: "Test", band: 9 }).success).toBe(true);
+    });
+
+    it("should reject band above 9", () => {
+      expect(WritingRubricCriterionSchema.safeParse({ name: "Test", band: 9.5 }).success).toBe(false);
+    });
+
+    it("should reject band below 0", () => {
+      expect(WritingRubricCriterionSchema.safeParse({ name: "Test", band: -0.5 }).success).toBe(false);
+    });
+
+    it("should reject non-0.5 step bands", () => {
+      expect(WritingRubricCriterionSchema.safeParse({ name: "Test", band: 6.3 }).success).toBe(false);
+    });
+  });
+
+  describe("WritingRubricSchema", () => {
+    const validCriteria = [
+      { name: "Task Achievement", band: 7 },
+      { name: "Coherence & Cohesion", band: 6.5 },
+      { name: "Lexical Resource", band: 7 },
+      { name: "Grammatical Range & Accuracy", band: 6.5 },
+    ];
+
+    it("should accept exactly 4 criteria", () => {
+      const result = WritingRubricSchema.safeParse({ criteria: validCriteria });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject fewer than 4 criteria", () => {
+      const result = WritingRubricSchema.safeParse({
+        criteria: validCriteria.slice(0, 3),
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject more than 4 criteria", () => {
+      const result = WritingRubricSchema.safeParse({
+        criteria: [...validCriteria, { name: "Extra", band: 5 }],
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("QuestionOptionsSchema — Writing types (W1, W2, W3)", () => {
+    it("should validate W1_TASK1_ACADEMIC with null options and null correctAnswer", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "W1_TASK1_ACADEMIC",
+        options: null,
+        correctAnswer: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate W2_TASK1_GENERAL with null options and null correctAnswer", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "W2_TASK1_GENERAL",
+        options: null,
+        correctAnswer: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate W3_TASK2_ESSAY with null options and null correctAnswer", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "W3_TASK2_ESSAY",
+        options: null,
+        correctAnswer: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject W1 with non-null options (guards against dual-storage)", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "W1_TASK1_ACADEMIC",
+        options: { someField: "value" },
+        correctAnswer: null,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject W2 with non-null correctAnswer", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "W2_TASK1_GENERAL",
+        options: null,
+        correctAnswer: { answer: "some answer" },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject W3 with non-null options", () => {
+      const result = QuestionOptionsSchema.safeParse({
+        questionType: "W3_TASK2_ESSAY",
+        options: { items: [] },
+        correctAnswer: null,
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("ExerciseSchema — writing fields", () => {
+    const baseExercise = {
+      id: "ex1",
+      centerId: "c1",
+      title: "Writing Task 1",
+      skill: "WRITING",
+      status: "DRAFT",
+      createdById: "u1",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    it("should accept all writing fields", () => {
+      const result = ExerciseSchema.safeParse({
+        ...baseExercise,
+        stimulusImageUrl: "https://storage.example.com/chart.png",
+        writingPrompt: "Summarise the information...",
+        letterTone: "formal",
+        wordCountMin: 150,
+        wordCountMax: 200,
+        wordCountMode: "soft",
+        sampleResponse: "The chart shows...",
+        showSampleAfterGrading: true,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept null writing fields", () => {
+      const result = ExerciseSchema.safeParse({
+        ...baseExercise,
+        stimulusImageUrl: null,
+        writingPrompt: null,
+        letterTone: null,
+        wordCountMin: null,
+        wordCountMax: null,
+        wordCountMode: null,
+        sampleResponse: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should default showSampleAfterGrading to false", () => {
+      const result = ExerciseSchema.safeParse(baseExercise);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.showSampleAfterGrading).toBe(false);
+      }
+    });
+  });
+
+  describe("CreateExerciseSchema — writing fields", () => {
+    it("should accept writing fields on create", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Writing Task",
+        skill: "WRITING",
+        writingPrompt: "Write about...",
+        letterTone: "semi-formal",
+        wordCountMin: 150,
+        wordCountMode: "soft",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject invalid letterTone on create", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Writing Task",
+        skill: "WRITING",
+        letterTone: "casual",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject invalid wordCountMode on create", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Writing Task",
+        skill: "WRITING",
+        wordCountMode: "medium",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject wordCountMax < wordCountMin", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Writing Task",
+        skill: "WRITING",
+        wordCountMin: 250,
+        wordCountMax: 100,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should accept wordCountMax >= wordCountMin", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Writing Task",
+        skill: "WRITING",
+        wordCountMin: 150,
+        wordCountMax: 300,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept wordCountMax equal to wordCountMin", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Writing Task",
+        skill: "WRITING",
+        wordCountMin: 150,
+        wordCountMax: 150,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept when only wordCountMin is set (no max)", () => {
+      const result = CreateExerciseSchema.safeParse({
+        title: "Writing Task",
+        skill: "WRITING",
+        wordCountMin: 150,
+        wordCountMax: null,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("UpdateExerciseSchema — writing fields", () => {
+    it("should accept writing field updates", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        writingPrompt: "Describe the chart...",
+        letterTone: "formal",
+        wordCountMin: 150,
+        wordCountMode: "soft",
+        sampleResponse: "Model answer...",
+        showSampleAfterGrading: true,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject invalid letterTone on update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        letterTone: "casual",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject invalid wordCountMode on update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        wordCountMode: "medium",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject wordCountMax < wordCountMin on update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        wordCountMin: 250,
+        wordCountMax: 100,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should accept wordCountMax >= wordCountMin on update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        wordCountMin: 150,
+        wordCountMax: 300,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept wordCountMax equal to wordCountMin on update", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        wordCountMin: 150,
+        wordCountMax: 150,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept when only wordCountMin is set on update (no max)", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        wordCountMin: 150,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept when only wordCountMax is set on update (no min)", () => {
+      const result = UpdateExerciseSchema.safeParse({
+        wordCountMax: 300,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("AutosaveExerciseSchema — writing fields", () => {
+    it("should accept writing fields in autosave", () => {
+      const result = AutosaveExerciseSchema.safeParse({
+        writingPrompt: "Write a letter...",
+        letterTone: "informal",
+        wordCountMin: 150,
+        wordCountMax: null,
+        wordCountMode: "soft",
+        sampleResponse: "Dear Sir...",
+        showSampleAfterGrading: false,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should accept all fields together including writing", () => {
+      const result = AutosaveExerciseSchema.safeParse({
+        title: "Updated Title",
+        instructions: "Some instructions",
+        writingPrompt: "Describe the chart...",
+        letterTone: "formal",
+        wordCountMin: 150,
+        wordCountMode: "hard",
+        sampleResponse: "Model answer...",
+        showSampleAfterGrading: true,
       });
       expect(result.success).toBe(true);
     });

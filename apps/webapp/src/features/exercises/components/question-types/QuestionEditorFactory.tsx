@@ -208,6 +208,15 @@ export function QuestionEditorFactory({
         />
       );
 
+    case "W1_TASK1_ACADEMIC":
+    case "W2_TASK1_GENERAL":
+    case "W3_TASK2_ESSAY":
+      return (
+        <p className="text-xs text-muted-foreground italic rounded-md border border-dashed p-3">
+          Writing task prompt is configured above in the Writing Task Settings section.
+        </p>
+      );
+
     default:
       return (
         <p className="text-xs text-muted-foreground italic">

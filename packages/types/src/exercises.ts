@@ -21,6 +21,12 @@ export type ExerciseStatus = z.infer<typeof ExerciseStatusSchema>;
 export const PlaybackModeSchema = z.enum(["TEST_MODE", "PRACTICE_MODE"]);
 export type PlaybackMode = z.infer<typeof PlaybackModeSchema>;
 
+export const LetterToneSchema = z.enum(["formal", "informal", "semi-formal"]);
+export type LetterTone = z.infer<typeof LetterToneSchema>;
+
+export const WordCountModeSchema = z.enum(["soft", "hard"]);
+export type WordCountMode = z.infer<typeof WordCountModeSchema>;
+
 export const AudioSectionSchema = z
   .object({
     label: z.string().min(1),
@@ -192,6 +198,38 @@ export const DiagramLabellingAnswerSchema = z.object({
 });
 export type DiagramLabellingAnswer = z.infer<typeof DiagramLabellingAnswerSchema>;
 
+// Writing rubric schemas (informational — actual scoring is Epic 5)
+export const WritingRubricCriterionSchema = z.object({
+  name: z.string().min(1),
+  band: z.number().min(0).max(9).multipleOf(0.5),
+  comment: z.string().optional(),
+});
+export type WritingRubricCriterion = z.infer<typeof WritingRubricCriterionSchema>;
+
+export const WritingRubricSchema = z.object({
+  criteria: z.array(WritingRubricCriterionSchema).length(4),
+});
+export type WritingRubric = z.infer<typeof WritingRubricSchema>;
+
+// Writing tasks have no auto-gradable correct answer — grading is rubric-based (Epic 5)
+export const WritingAnswerSchema = z.null();
+
+// IELTS Writing rubric criteria names by task type
+export const WRITING_RUBRIC_CRITERIA = {
+  TASK1: [
+    "Task Achievement",
+    "Coherence & Cohesion",
+    "Lexical Resource",
+    "Grammatical Range & Accuracy",
+  ],
+  TASK2: [
+    "Task Response",
+    "Coherence & Cohesion",
+    "Lexical Resource",
+    "Grammatical Range & Accuracy",
+  ],
+} as const;
+
 // Task 1.5: Discriminated union — validates options/correctAnswer per question type
 export const QuestionOptionsSchema = z.discriminatedUnion("questionType", [
   // R1: MCQ Single
@@ -314,6 +352,24 @@ export const QuestionOptionsSchema = z.discriminatedUnion("questionType", [
     options: z.null(),
     correctAnswer: TextAnswerSchema,
   }),
+  // W1: Task 1 Academic (writing — no options or correct answer, rubric-graded)
+  z.object({
+    questionType: z.literal("W1_TASK1_ACADEMIC"),
+    options: z.null(),
+    correctAnswer: z.null(),
+  }),
+  // W2: Task 1 General (writing — no options or correct answer, rubric-graded)
+  z.object({
+    questionType: z.literal("W2_TASK1_GENERAL"),
+    options: z.null(),
+    correctAnswer: z.null(),
+  }),
+  // W3: Task 2 Essay (writing — no options or correct answer, rubric-graded)
+  z.object({
+    questionType: z.literal("W3_TASK2_ESSAY"),
+    options: z.null(),
+    correctAnswer: z.null(),
+  }),
 ]);
 export type QuestionOptions = z.infer<typeof QuestionOptionsSchema>;
 
@@ -402,6 +458,14 @@ export const ExerciseSchema = z.object({
   playbackMode: z.string().nullable().optional(),
   audioSections: z.unknown().nullable().optional(),
   showTranscriptAfterSubmit: z.boolean().optional().default(false),
+  stimulusImageUrl: z.string().nullable().optional(),
+  writingPrompt: z.string().nullable().optional(),
+  letterTone: z.string().nullable().optional(),
+  wordCountMin: z.number().nullable().optional(),
+  wordCountMax: z.number().nullable().optional(),
+  wordCountMode: z.string().nullable().optional(),
+  sampleResponse: z.string().nullable().optional(),
+  showSampleAfterGrading: z.boolean().optional().default(false),
   createdById: z.string(),
   createdAt: z.union([z.date(), z.string()]),
   updatedAt: z.union([z.date(), z.string()]),
@@ -425,7 +489,22 @@ export const CreateExerciseSchema = z.object({
   partialCredit: z.boolean().optional(),
   playbackMode: PlaybackModeSchema.optional(),
   showTranscriptAfterSubmit: z.boolean().optional(),
-});
+  writingPrompt: z.string().nullable().optional(),
+  letterTone: LetterToneSchema.nullable().optional(),
+  wordCountMin: z.number().int().positive().nullable().optional(),
+  wordCountMax: z.number().int().positive().nullable().optional(),
+  wordCountMode: WordCountModeSchema.nullable().optional(),
+  sampleResponse: z.string().nullable().optional(),
+  showSampleAfterGrading: z.boolean().optional(),
+}).refine(
+  (data) => {
+    if (data.wordCountMin != null && data.wordCountMax != null) {
+      return data.wordCountMax >= data.wordCountMin;
+    }
+    return true;
+  },
+  { message: "wordCountMax must be >= wordCountMin", path: ["wordCountMax"] },
+);
 export type CreateExerciseInput = z.infer<typeof CreateExerciseSchema>;
 
 export const UpdateExerciseSchema = z.object({
@@ -439,7 +518,22 @@ export const UpdateExerciseSchema = z.object({
   playbackMode: PlaybackModeSchema.optional(),
   audioSections: z.array(AudioSectionSchema).nullable().optional(),
   showTranscriptAfterSubmit: z.boolean().optional(),
-});
+  writingPrompt: z.string().nullable().optional(),
+  letterTone: LetterToneSchema.nullable().optional(),
+  wordCountMin: z.number().int().positive().nullable().optional(),
+  wordCountMax: z.number().int().positive().nullable().optional(),
+  wordCountMode: WordCountModeSchema.nullable().optional(),
+  sampleResponse: z.string().nullable().optional(),
+  showSampleAfterGrading: z.boolean().optional(),
+}).refine(
+  (data) => {
+    if (data.wordCountMin != null && data.wordCountMax != null) {
+      return data.wordCountMax >= data.wordCountMin;
+    }
+    return true;
+  },
+  { message: "wordCountMax must be >= wordCountMin", path: ["wordCountMax"] },
+);
 export type UpdateExerciseInput = z.infer<typeof UpdateExerciseSchema>;
 
 export const AutosaveExerciseSchema = z.object({
@@ -450,6 +544,13 @@ export const AutosaveExerciseSchema = z.object({
   playbackMode: PlaybackModeSchema.optional(),
   audioSections: z.array(AudioSectionSchema).nullable().optional(),
   showTranscriptAfterSubmit: z.boolean().optional(),
+  writingPrompt: z.string().nullable().optional(),
+  letterTone: LetterToneSchema.nullable().optional(),
+  wordCountMin: z.number().int().positive().nullable().optional(),
+  wordCountMax: z.number().int().positive().nullable().optional(),
+  wordCountMode: WordCountModeSchema.nullable().optional(),
+  sampleResponse: z.string().nullable().optional(),
+  showSampleAfterGrading: z.boolean().optional(),
 });
 export type AutosaveExerciseInput = z.infer<typeof AutosaveExerciseSchema>;
 

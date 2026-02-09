@@ -791,11 +791,50 @@ describe("QuestionEditorFactory", () => {
     expect(screen.getByText("Diagram Image")).toBeInTheDocument();
   });
 
-  it("renders fallback for truly unimplemented types", () => {
+  it("renders read-only notice for W1_TASK1_ACADEMIC", () => {
     const onChange = vi.fn();
     render(
       <QuestionEditorFactory
         sectionType="W1_TASK1_ACADEMIC"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText(/writing task prompt is configured above/i)).toBeInTheDocument();
+  });
+
+  it("renders read-only notice for W2_TASK1_GENERAL", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="W2_TASK1_GENERAL"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText(/writing task prompt is configured above/i)).toBeInTheDocument();
+  });
+
+  it("renders read-only notice for W3_TASK2_ESSAY", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType="W3_TASK2_ESSAY"
+        options={null}
+        correctAnswer={null}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText(/writing task prompt is configured above/i)).toBeInTheDocument();
+  });
+
+  it("renders fallback for truly unimplemented types", () => {
+    const onChange = vi.fn();
+    render(
+      <QuestionEditorFactory
+        sectionType={"UNKNOWN_TYPE" as never}
         options={null}
         correctAnswer={null}
         onChange={onChange}
@@ -1302,10 +1341,32 @@ describe("QuestionPreviewFactory", () => {
     expect(screen.getByText(/No diagram configured/i)).toBeInTheDocument();
   });
 
-  it("renders plain text fallback for unsupported types", () => {
+  it("renders writing preview with question text and rubric note for W1", () => {
     render(
       <QuestionPreviewFactory
         sectionType="W1_TASK1_ACADEMIC"
+        question={baseQuestion}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByText("Test question")).toBeInTheDocument();
+  });
+
+  it("renders writing preview for W2_TASK1_GENERAL", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="W2_TASK1_GENERAL"
+        question={baseQuestion}
+        questionIndex={0}
+      />,
+    );
+    expect(screen.getByText("Test question")).toBeInTheDocument();
+  });
+
+  it("renders writing preview for W3_TASK2_ESSAY", () => {
+    render(
+      <QuestionPreviewFactory
+        sectionType="W3_TASK2_ESSAY"
         question={baseQuestion}
         questionIndex={0}
       />,

@@ -54,6 +54,8 @@ import { SkillSelector } from "./SkillSelector";
 import { AudioUploadEditor } from "./AudioUploadEditor";
 import { AudioSectionMarkers } from "./AudioSectionMarkers";
 import { PlaybackModeSettings } from "./PlaybackModeSettings";
+import { WritingTaskEditor } from "./WritingTaskEditor";
+import { WritingRubricDisplay } from "./WritingRubricDisplay";
 import type { Exercise } from "@workspace/types";
 
 // Default first question type per skill
@@ -77,6 +79,10 @@ interface ExercisePreviewProps {
   audioDuration?: number | null;
   audioSections?: AudioSection[];
   showTranscriptAfterSubmit?: boolean;
+  writingPrompt?: string;
+  stimulusImageUrl?: string | null;
+  letterTone?: string;
+  wordCountMin?: number | null;
   onBack: () => void;
 }
 
@@ -97,9 +103,14 @@ function ExercisePreview({
   audioDuration,
   audioSections,
   showTranscriptAfterSubmit,
+  writingPrompt,
+  stimulusImageUrl,
+  letterTone,
+  wordCountMin,
   onBack,
 }: ExercisePreviewProps) {
   const isListening = skill === "LISTENING";
+  const isWriting = skill === "WRITING";
 
   return (
     <div className="container py-10">
@@ -141,6 +152,40 @@ function ExercisePreview({
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Writing Task Preview */}
+        {isWriting && (
+          <div className="space-y-4">
+            {stimulusImageUrl && (
+              <div className="rounded-md border p-2">
+                <img src={stimulusImageUrl} alt="Stimulus" className="max-h-64 w-auto mx-auto" />
+              </div>
+            )}
+            {letterTone && (
+              <p className="text-sm text-muted-foreground">
+                Tone: <span className="capitalize font-medium">{letterTone}</span>
+              </p>
+            )}
+            {writingPrompt && (
+              <div className="rounded-md border p-4">
+                <p className="text-sm whitespace-pre-wrap">{writingPrompt}</p>
+              </div>
+            )}
+            {wordCountMin != null && (
+              <p className="text-sm text-muted-foreground">
+                Write at least {wordCountMin} words.
+              </p>
+            )}
+            {/* Determine task type from first section */}
+            {(() => {
+              const firstSectionType = sections?.[0]?.sectionType;
+              const taskType = firstSectionType === "W3_TASK2_ESSAY" ? "W3" as const
+                : firstSectionType === "W2_TASK1_GENERAL" ? "W2" as const
+                : "W1" as const;
+              return <WritingRubricDisplay taskType={taskType} />;
+            })()}
           </div>
         )}
 
@@ -215,6 +260,13 @@ export function ExerciseEditor() {
   const [playbackMode, setPlaybackMode] = useState<PlaybackMode | undefined>(undefined);
   const [audioSections, setAudioSections] = useState<AudioSection[]>([]);
   const [showTranscriptAfterSubmit, setShowTranscriptAfterSubmit] = useState(false);
+  const [writingPrompt, setWritingPrompt] = useState("");
+  const [letterTone, setLetterTone] = useState("formal");
+  const [wordCountMin, setWordCountMin] = useState<number | null>(null);
+  const [wordCountMax, setWordCountMax] = useState<number | null>(null);
+  const [wordCountMode, setWordCountMode] = useState("soft");
+  const [sampleResponse, setSampleResponse] = useState("");
+  const [showSampleAfterGrading, setShowSampleAfterGrading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [showPreview, setShowPreview] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
@@ -254,6 +306,13 @@ export function ExerciseEditor() {
       setShowTranscriptAfterSubmit(
         exercise.showTranscriptAfterSubmit ?? false,
       );
+      setWritingPrompt(exercise.writingPrompt ?? "");
+      setLetterTone(exercise.letterTone ?? "formal");
+      setWordCountMin(exercise.wordCountMin ?? null);
+      setWordCountMax(exercise.wordCountMax ?? null);
+      setWordCountMode(exercise.wordCountMode ?? "soft");
+      setSampleResponse(exercise.sampleResponse ?? "");
+      setShowSampleAfterGrading(exercise.showSampleAfterGrading ?? false);
       // Reset edit tracking — data was just loaded, not user-edited
       userHasEdited.current = false;
     }
@@ -276,6 +335,7 @@ export function ExerciseEditor() {
     autosaveTimer.current = setTimeout(async () => {
       try {
         setSaveStatus("saving");
+        const isW2 = exercise?.sections?.[0]?.sectionType === "W2_TASK1_GENERAL";
         await autosave({
           title: title || undefined,
           instructions: instructions || null,
@@ -283,13 +343,20 @@ export function ExerciseEditor() {
           playbackMode: playbackMode || undefined,
           audioSections: audioSections.length > 0 ? audioSections : null,
           showTranscriptAfterSubmit,
+          writingPrompt: writingPrompt || null,
+          letterTone: isW2 ? (letterTone as "formal" | "informal" | "semi-formal") || null : null,
+          wordCountMin: wordCountMin,
+          wordCountMax: wordCountMax,
+          wordCountMode: (wordCountMode as "soft" | "hard") || null,
+          sampleResponse: sampleResponse || null,
+          showSampleAfterGrading,
         });
         setSaveStatus("saved");
       } catch {
         setSaveStatus("unsaved");
       }
     }, 30000);
-  }, [id, title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, autosave]);
+  }, [id, title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, autosave, exercise]);
 
   useEffect(() => {
     if (isEditing && exercise && userHasEdited.current) {
@@ -298,7 +365,7 @@ export function ExerciseEditor() {
     return () => {
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     };
-  }, [title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, isEditing, exercise, scheduleAutosave]);
+  }, [title, instructions, passageContent, playbackMode, audioSections, showTranscriptAfterSubmit, writingPrompt, letterTone, wordCountMin, wordCountMax, wordCountMode, sampleResponse, showSampleAfterGrading, isEditing, exercise, scheduleAutosave]);
 
   // Handlers
   const handleSkillSelect = async (skill: ExerciseSkill) => {
@@ -316,11 +383,31 @@ export function ExerciseEditor() {
     }
   };
 
+  // Auto-create section for WRITING exercises (exactly 1 section per exercise)
+  useEffect(() => {
+    if (
+      isEditing &&
+      exercise &&
+      exercise.skill === "WRITING" &&
+      exercise.status === "DRAFT" &&
+      exercise.sections &&
+      exercise.sections.length === 0
+    ) {
+      createSection({
+        sectionType: DEFAULT_SECTION_TYPE.WRITING,
+        orderIndex: 0,
+      }).catch(() => {
+        // Silently fail — user can add manually
+      });
+    }
+  }, [isEditing, exercise, createSection]);
+
   const handleSaveDraft = async () => {
     if (!id) return;
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     try {
       setSaveStatus("saving");
+      const isW2 = exercise?.sections?.[0]?.sectionType === "W2_TASK1_GENERAL";
       await autosave({
         title: title || undefined,
         instructions: instructions || null,
@@ -328,6 +415,13 @@ export function ExerciseEditor() {
         playbackMode: playbackMode || undefined,
         audioSections: audioSections.length > 0 ? audioSections : null,
         showTranscriptAfterSubmit,
+        writingPrompt: writingPrompt || null,
+        letterTone: isW2 ? (letterTone as "formal" | "informal" | "semi-formal") || null : null,
+        wordCountMin: wordCountMin,
+        wordCountMax: wordCountMax,
+        wordCountMode: (wordCountMode as "soft" | "hard") || null,
+        sampleResponse: sampleResponse || null,
+        showSampleAfterGrading,
       });
       setSaveStatus("saved");
       toast.success("Draft saved");
@@ -515,6 +609,7 @@ export function ExerciseEditor() {
   }
 
   const showPassage = selectedSkill === "READING" || selectedSkill === "LISTENING";
+  const isWriting = selectedSkill === "WRITING";
 
   if (showPreview) {
     return (
@@ -529,6 +624,10 @@ export function ExerciseEditor() {
         audioDuration={exercise?.audioDuration}
         audioSections={audioSections}
         showTranscriptAfterSubmit={showTranscriptAfterSubmit}
+        writingPrompt={writingPrompt}
+        stimulusImageUrl={exercise?.stimulusImageUrl}
+        letterTone={letterTone}
+        wordCountMin={wordCountMin}
         onBack={() => setShowPreview(false)}
       />
     );
@@ -631,6 +730,31 @@ export function ExerciseEditor() {
         </div>
       )}
 
+      {/* Writing Task Settings (WRITING only) */}
+      {isWriting && isEditing && id && (
+        <div className="max-w-3xl">
+          <WritingTaskEditor
+            exerciseId={id}
+            sectionType={exercise?.sections?.[0]?.sectionType ?? null}
+            stimulusImageUrl={exercise?.stimulusImageUrl ?? null}
+            writingPrompt={writingPrompt}
+            letterTone={letterTone}
+            wordCountMin={wordCountMin}
+            wordCountMax={wordCountMax}
+            wordCountMode={wordCountMode}
+            sampleResponse={sampleResponse}
+            showSampleAfterGrading={showSampleAfterGrading}
+            onWritingPromptChange={(v) => { setWritingPrompt(v); userHasEdited.current = true; }}
+            onLetterToneChange={(v) => { setLetterTone(v); userHasEdited.current = true; }}
+            onWordCountMinChange={(v) => { setWordCountMin(v); userHasEdited.current = true; }}
+            onWordCountMaxChange={(v) => { setWordCountMax(v); userHasEdited.current = true; }}
+            onWordCountModeChange={(v) => { setWordCountMode(v); userHasEdited.current = true; }}
+            onSampleResponseChange={(v) => { setSampleResponse(v); userHasEdited.current = true; }}
+            onShowSampleAfterGradingChange={(v) => { setShowSampleAfterGrading(v); userHasEdited.current = true; }}
+          />
+        </div>
+      )}
+
       {/* Passage Editor */}
       {showPassage && (
         <div className="max-w-3xl">
@@ -699,10 +823,12 @@ export function ExerciseEditor() {
       <div className="space-y-4 max-w-3xl">
         <div className="flex items-center justify-between">
           <Label>Question Sections</Label>
-          <Button variant="outline" size="sm" onClick={handleAddSection}>
-            <Plus className="mr-1 size-4" />
-            Add Section
-          </Button>
+          {!isWriting && (
+            <Button variant="outline" size="sm" onClick={handleAddSection}>
+              <Plus className="mr-1 size-4" />
+              Add Section
+            </Button>
+          )}
         </div>
 
         <DragDropContext onDragEnd={handleDragEnd}>

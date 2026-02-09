@@ -112,6 +112,13 @@ export class ExercisesService {
         partialCredit: input.partialCredit,
         playbackMode: input.playbackMode ?? null,
         showTranscriptAfterSubmit: input.showTranscriptAfterSubmit ?? false,
+        writingPrompt: input.writingPrompt ?? null,
+        letterTone: input.letterTone ?? null,
+        wordCountMin: input.wordCountMin ?? null,
+        wordCountMax: input.wordCountMax ?? null,
+        wordCountMode: input.wordCountMode ?? null,
+        sampleResponse: input.sampleResponse ?? null,
+        showSampleAfterGrading: input.showSampleAfterGrading ?? false,
         createdById: authAccount.userId,
       },
       include: EXERCISE_INCLUDE,
@@ -126,7 +133,24 @@ export class ExercisesService {
   ): Promise<Exercise> {
     const db = getTenantedClient(this.prisma, centerId);
 
-    await this.verifyDraftExercise(db, id, errorMessage);
+    const exercise = await this.verifyDraftExercise(db, id, errorMessage);
+
+    // Cross-field validation: wordCountMax >= wordCountMin after merging with DB state
+    const effectiveMin =
+      "wordCountMin" in input && input.wordCountMin !== undefined
+        ? input.wordCountMin
+        : exercise.wordCountMin;
+    const effectiveMax =
+      "wordCountMax" in input && input.wordCountMax !== undefined
+        ? input.wordCountMax
+        : exercise.wordCountMax;
+    if (
+      effectiveMin != null &&
+      effectiveMax != null &&
+      effectiveMax < effectiveMin
+    ) {
+      throw AppError.badRequest("wordCountMax must be >= wordCountMin");
+    }
 
     return await db.exercise.update({
       where: { id },
@@ -167,6 +191,34 @@ export class ExercisesService {
         ...("showTranscriptAfterSubmit" in input &&
           input.showTranscriptAfterSubmit !== undefined && {
             showTranscriptAfterSubmit: input.showTranscriptAfterSubmit,
+          }),
+        ...("writingPrompt" in input &&
+          input.writingPrompt !== undefined && {
+            writingPrompt: input.writingPrompt,
+          }),
+        ...("letterTone" in input &&
+          input.letterTone !== undefined && {
+            letterTone: input.letterTone,
+          }),
+        ...("wordCountMin" in input &&
+          input.wordCountMin !== undefined && {
+            wordCountMin: input.wordCountMin,
+          }),
+        ...("wordCountMax" in input &&
+          input.wordCountMax !== undefined && {
+            wordCountMax: input.wordCountMax,
+          }),
+        ...("wordCountMode" in input &&
+          input.wordCountMode !== undefined && {
+            wordCountMode: input.wordCountMode,
+          }),
+        ...("sampleResponse" in input &&
+          input.sampleResponse !== undefined && {
+            sampleResponse: input.sampleResponse,
+          }),
+        ...("showSampleAfterGrading" in input &&
+          input.showSampleAfterGrading !== undefined && {
+            showSampleAfterGrading: input.showSampleAfterGrading,
           }),
       },
       include: EXERCISE_INCLUDE,
@@ -330,6 +382,87 @@ export class ExercisesService {
     await db.questionSection.updateMany({
       where: { exerciseId },
       data: { audioSectionIndex: null },
+    });
+  }
+
+  async uploadStimulusImage(
+    centerId: string,
+    exerciseId: string,
+    fileBuffer: Buffer,
+    contentType: string,
+  ): Promise<{ stimulusImageUrl: string }> {
+    if (!this.firebaseStorage || !this.bucketName) {
+      throw new Error("Storage not configured");
+    }
+
+    const db = getTenantedClient(this.prisma, centerId);
+    await this.verifyDraftExercise(
+      db,
+      exerciseId,
+      "Only draft exercises can have stimulus images uploaded",
+    );
+
+    const mimeToExt: Record<string, string> = {
+      "image/png": "png",
+      "image/jpeg": "jpg",
+      "image/jpg": "jpg",
+      "image/svg+xml": "svg",
+    };
+    const ext = mimeToExt[contentType] ?? "png";
+    const bucket = this.firebaseStorage.bucket(this.bucketName);
+    const filePath = `exercises/${centerId}/${exerciseId}/stimulus-image/${Date.now()}.${ext}`;
+    const file = bucket.file(filePath);
+
+    await file.save(fileBuffer, {
+      metadata: {
+        contentType,
+        cacheControl: "public, max-age=31536000",
+      },
+    });
+
+    await file.makePublic();
+
+    const stimulusImageUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+
+    await db.exercise.update({
+      where: { id: exerciseId },
+      data: { stimulusImageUrl },
+    });
+
+    return { stimulusImageUrl };
+  }
+
+  async deleteStimulusImage(
+    centerId: string,
+    exerciseId: string,
+  ): Promise<void> {
+    if (!this.firebaseStorage || !this.bucketName) {
+      throw new Error("Storage not configured");
+    }
+
+    const db = getTenantedClient(this.prisma, centerId);
+    const exercise = await this.verifyDraftExercise(
+      db,
+      exerciseId,
+      "Only draft exercises can have stimulus images removed",
+    );
+
+    if (exercise.stimulusImageUrl) {
+      const bucket = this.firebaseStorage.bucket(this.bucketName);
+      const prefix = `https://storage.googleapis.com/${bucket.name}/`;
+      if (exercise.stimulusImageUrl.startsWith(prefix)) {
+        const storagePath = exercise.stimulusImageUrl.slice(prefix.length);
+        try {
+          await bucket.file(storagePath).delete();
+        } catch {
+          // File may already be deleted — continue
+        }
+      }
+    }
+
+    await db.exercise.update({
+      where: { id: exerciseId },
+      data: { stimulusImageUrl: null },
     });
   }
 

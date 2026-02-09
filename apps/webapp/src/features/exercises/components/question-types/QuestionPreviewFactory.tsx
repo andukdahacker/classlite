@@ -110,6 +110,18 @@ export function QuestionPreviewFactory({
         />
       );
 
+    case "W1_TASK1_ACADEMIC":
+    case "W2_TASK1_GENERAL":
+    case "W3_TASK2_ESSAY":
+      return (
+        <div className="rounded-md border border-dashed p-4 space-y-2">
+          <p className="text-sm">{question.questionText}</p>
+          <p className="text-xs text-muted-foreground italic">
+            This task is graded using IELTS band descriptors
+          </p>
+        </div>
+      );
+
     default:
       return (
         <div className="flex gap-3 pl-4">

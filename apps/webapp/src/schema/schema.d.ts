@@ -4704,6 +4704,15 @@ export interface paths {
                                 audioSections?: unknown;
                                 /** @default false */
                                 showTranscriptAfterSubmit: boolean;
+                                stimulusImageUrl?: string | null;
+                                writingPrompt?: string | null;
+                                letterTone?: string | null;
+                                wordCountMin?: number | null;
+                                wordCountMax?: number | null;
+                                wordCountMode?: string | null;
+                                sampleResponse?: string | null;
+                                /** @default false */
+                                showSampleAfterGrading: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -4789,6 +4798,15 @@ export interface paths {
                         /** @enum {string} */
                         playbackMode?: "TEST_MODE" | "PRACTICE_MODE";
                         showTranscriptAfterSubmit?: boolean;
+                        writingPrompt?: string | null;
+                        /** @enum {string|null} */
+                        letterTone?: "formal" | "informal" | "semi-formal" | null;
+                        wordCountMin?: number | null;
+                        wordCountMax?: number | null;
+                        /** @enum {string|null} */
+                        wordCountMode?: "soft" | "hard" | null;
+                        sampleResponse?: string | null;
+                        showSampleAfterGrading?: boolean;
                     };
                 };
             };
@@ -4821,6 +4839,15 @@ export interface paths {
                                 audioSections?: unknown;
                                 /** @default false */
                                 showTranscriptAfterSubmit: boolean;
+                                stimulusImageUrl?: string | null;
+                                writingPrompt?: string | null;
+                                letterTone?: string | null;
+                                wordCountMin?: number | null;
+                                wordCountMax?: number | null;
+                                wordCountMode?: string | null;
+                                sampleResponse?: string | null;
+                                /** @default false */
+                                showSampleAfterGrading: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -4960,6 +4987,15 @@ export interface paths {
                                 audioSections?: unknown;
                                 /** @default false */
                                 showTranscriptAfterSubmit: boolean;
+                                stimulusImageUrl?: string | null;
+                                writingPrompt?: string | null;
+                                letterTone?: string | null;
+                                wordCountMin?: number | null;
+                                wordCountMax?: number | null;
+                                wordCountMode?: string | null;
+                                sampleResponse?: string | null;
+                                /** @default false */
+                                showSampleAfterGrading: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5150,6 +5186,15 @@ export interface paths {
                             endTime: number;
                         }[] | null;
                         showTranscriptAfterSubmit?: boolean;
+                        writingPrompt?: string | null;
+                        /** @enum {string|null} */
+                        letterTone?: "formal" | "informal" | "semi-formal" | null;
+                        wordCountMin?: number | null;
+                        wordCountMax?: number | null;
+                        /** @enum {string|null} */
+                        wordCountMode?: "soft" | "hard" | null;
+                        sampleResponse?: string | null;
+                        showSampleAfterGrading?: boolean;
                     };
                 };
             };
@@ -5182,6 +5227,15 @@ export interface paths {
                                 audioSections?: unknown;
                                 /** @default false */
                                 showTranscriptAfterSubmit: boolean;
+                                stimulusImageUrl?: string | null;
+                                writingPrompt?: string | null;
+                                letterTone?: string | null;
+                                wordCountMin?: number | null;
+                                wordCountMax?: number | null;
+                                wordCountMode?: string | null;
+                                sampleResponse?: string | null;
+                                /** @default false */
+                                showSampleAfterGrading: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5320,6 +5374,15 @@ export interface paths {
                             endTime: number;
                         }[] | null;
                         showTranscriptAfterSubmit?: boolean;
+                        writingPrompt?: string | null;
+                        /** @enum {string|null} */
+                        letterTone?: "formal" | "informal" | "semi-formal" | null;
+                        wordCountMin?: number | null;
+                        wordCountMax?: number | null;
+                        /** @enum {string|null} */
+                        wordCountMode?: "soft" | "hard" | null;
+                        sampleResponse?: string | null;
+                        showSampleAfterGrading?: boolean;
                     };
                 };
             };
@@ -5352,6 +5415,15 @@ export interface paths {
                                 audioSections?: unknown;
                                 /** @default false */
                                 showTranscriptAfterSubmit: boolean;
+                                stimulusImageUrl?: string | null;
+                                writingPrompt?: string | null;
+                                letterTone?: string | null;
+                                wordCountMin?: number | null;
+                                wordCountMax?: number | null;
+                                wordCountMode?: string | null;
+                                sampleResponse?: string | null;
+                                /** @default false */
+                                showSampleAfterGrading: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5489,6 +5561,15 @@ export interface paths {
                                 audioSections?: unknown;
                                 /** @default false */
                                 showTranscriptAfterSubmit: boolean;
+                                stimulusImageUrl?: string | null;
+                                writingPrompt?: string | null;
+                                letterTone?: string | null;
+                                wordCountMin?: number | null;
+                                wordCountMax?: number | null;
+                                wordCountMode?: string | null;
+                                sampleResponse?: string | null;
+                                /** @default false */
+                                showSampleAfterGrading: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5630,6 +5711,15 @@ export interface paths {
                                 audioSections?: unknown;
                                 /** @default false */
                                 showTranscriptAfterSubmit: boolean;
+                                stimulusImageUrl?: string | null;
+                                writingPrompt?: string | null;
+                                letterTone?: string | null;
+                                wordCountMin?: number | null;
+                                wordCountMax?: number | null;
+                                wordCountMode?: string | null;
+                                sampleResponse?: string | null;
+                                /** @default false */
+                                showSampleAfterGrading: boolean;
                                 createdById: string;
                                 createdAt: string;
                                 updatedAt: string;
@@ -5808,6 +5898,191 @@ export interface paths {
             };
         };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exercises/{exerciseId}/stimulus-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                stimulusImageUrl: string;
+                            };
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    exerciseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;

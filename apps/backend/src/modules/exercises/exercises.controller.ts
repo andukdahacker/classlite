@@ -157,6 +157,40 @@ export class ExercisesController {
     };
   }
 
+  async uploadStimulusImage(
+    exerciseId: string,
+    fileBuffer: Buffer,
+    contentType: string,
+    user: JwtPayload,
+  ): Promise<{ data: { stimulusImageUrl: string }; message: string }> {
+    const centerId = user.centerId;
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
+
+    const result = await this.exercisesService.uploadStimulusImage(
+      centerId,
+      exerciseId,
+      fileBuffer,
+      contentType,
+    );
+    return {
+      data: result,
+      message: "Stimulus image uploaded successfully",
+    };
+  }
+
+  async deleteStimulusImage(
+    exerciseId: string,
+    user: JwtPayload,
+  ): Promise<{ message: string }> {
+    const centerId = user.centerId;
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
+
+    await this.exercisesService.deleteStimulusImage(centerId, exerciseId);
+    return {
+      message: "Stimulus image removed successfully",
+    };
+  }
+
   async archiveExercise(
     id: string,
     user: JwtPayload,
