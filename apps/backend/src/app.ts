@@ -22,6 +22,7 @@ import { exercisesRoutes } from "./modules/exercises/exercises.routes.js";
 import { sectionsRoutes } from "./modules/exercises/sections.routes.js";
 import { tagsRoutes } from "./modules/exercises/tags.routes.js";
 import { aiGenerationRoutes } from "./modules/exercises/ai-generation.routes.js";
+import { mockTestRoutes } from "./modules/mock-tests/mock-tests.routes.js";
 import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
 import { usersRoutes } from "./modules/users/users.routes.js";
 import { inngestRoutes } from "./modules/inngest/inngest.routes.js";
@@ -215,6 +216,7 @@ export const buildApp = async () => {
   await app.register(sectionsRoutes, { prefix: "/api/v1/exercises" });
   await app.register(aiGenerationRoutes, { prefix: "/api/v1/exercises" });
   await app.register(tagsRoutes, { prefix: "/api/v1/tags" });
+  await app.register(mockTestRoutes, { prefix: "/api/v1/mock-tests" });
   await app.register(notificationsRoutes, { prefix: "/api/v1/notifications" });
   await app.register(usersRoutes, { prefix: "/api/v1/users" });
 

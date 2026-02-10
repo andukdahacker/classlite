@@ -10,7 +10,7 @@ describe("navigation config", () => {
     it("returns all nav items with correct structure", () => {
       const config = getNavigationConfig("test-center");
 
-      expect(config).toHaveLength(8);
+      expect(config).toHaveLength(9);
       expect(config[0]).toMatchObject({
         title: "Dashboard",
         url: "/test-center/dashboard",
@@ -27,6 +27,7 @@ describe("navigation config", () => {
       expect(titles).toContain("Schedule");
       expect(titles).toContain("Classes");
       expect(titles).toContain("Exercises");
+      expect(titles).toContain("Mock Tests");
       expect(titles).toContain("Grading");
       expect(titles).toContain("Students");
       expect(titles).toContain("Settings");
@@ -49,14 +50,14 @@ describe("navigation config", () => {
       const ownerItems = config.filter((item) =>
         item.allowedRoles.includes("OWNER")
       );
-      expect(ownerItems).toHaveLength(8);
+      expect(ownerItems).toHaveLength(9);
     });
 
     it("ADMIN sees all nav items", () => {
       const adminItems = config.filter((item) =>
         item.allowedRoles.includes("ADMIN")
       );
-      expect(adminItems).toHaveLength(8);
+      expect(adminItems).toHaveLength(9);
     });
 
     it("TEACHER sees correct nav items (no Settings)", () => {
@@ -69,11 +70,12 @@ describe("navigation config", () => {
       expect(titles).toContain("Schedule");
       expect(titles).toContain("Classes");
       expect(titles).toContain("Exercises");
+      expect(titles).toContain("Mock Tests");
       expect(titles).toContain("Grading");
       expect(titles).toContain("Students");
       expect(titles).toContain("My Profile");
       expect(titles).not.toContain("Settings");
-      expect(teacherItems).toHaveLength(7);
+      expect(teacherItems).toHaveLength(8);
     });
 
     it("STUDENT sees only Dashboard, Schedule, and My Profile", () => {
@@ -139,7 +141,7 @@ describe("navigation config", () => {
       const overflowItems = getOverflowNavItems(config);
       const titles = overflowItems.map((item) => item.title);
 
-      expect(titles).toEqual(["Grading", "Students", "Settings", "My Profile"]);
+      expect(titles).toEqual(["Mock Tests", "Grading", "Students", "Settings", "My Profile"]);
     });
 
     it("returns items sorted by order", () => {

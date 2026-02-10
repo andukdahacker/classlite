@@ -3,6 +3,7 @@ import {
   Calendar,
   School,
   Library,
+  ClipboardList,
   GraduationCap,
   Users,
   Settings,
@@ -57,11 +58,19 @@ export const getNavigationConfig = (centerId: string): NavItemConfig[] => {
       mobileVisible: true,
     },
     {
+      title: "Mock Tests",
+      url: `${dashboardPath}/mock-tests`,
+      icon: ClipboardList,
+      allowedRoles: ["OWNER", "ADMIN", "TEACHER"],
+      order: 5,
+      mobileVisible: false,
+    },
+    {
       title: "Grading",
       url: `${dashboardPath}/grading`,
       icon: GraduationCap,
       allowedRoles: ["OWNER", "ADMIN", "TEACHER"],
-      order: 5,
+      order: 6,
       mobileVisible: false,
     },
     {
@@ -69,7 +78,7 @@ export const getNavigationConfig = (centerId: string): NavItemConfig[] => {
       url: `${dashboardPath}/students`,
       icon: Users,
       allowedRoles: ["OWNER", "ADMIN", "TEACHER"],
-      order: 6,
+      order: 7,
       mobileVisible: false,
     },
     {
@@ -77,7 +86,7 @@ export const getNavigationConfig = (centerId: string): NavItemConfig[] => {
       url: `${dashboardPath}/settings`,
       icon: Settings,
       allowedRoles: ["OWNER", "ADMIN"],
-      order: 7,
+      order: 8,
       mobileVisible: false,
     },
     {
@@ -85,7 +94,7 @@ export const getNavigationConfig = (centerId: string): NavItemConfig[] => {
       url: `${dashboardPath}/profile`,
       icon: UserCircle,
       allowedRoles: ["OWNER", "ADMIN", "TEACHER", "STUDENT"],
-      order: 8,
+      order: 9,
       mobileVisible: false,
     },
   ];

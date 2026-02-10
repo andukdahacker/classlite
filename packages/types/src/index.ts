@@ -8,3 +8,4 @@ export * from "./user.js";
 export * from "./csv-import.js";
 export * from "./exercises.js";
 export * from "./ai-generation.js";
+export * from "./mock-tests.js";

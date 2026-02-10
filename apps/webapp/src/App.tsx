@@ -23,6 +23,8 @@ import { UsersPage } from "./features/users/users-page";
 import { ExercisesPage } from "./features/exercises/exercises-page";
 import { ExerciseEditor } from "./features/exercises/components/ExerciseEditor";
 import { GradingQueuePage } from "./features/grading/GradingQueuePage";
+import { MockTestsPage } from "./features/mock-tests/mock-tests-page";
+import { MockTestEditor } from "./features/mock-tests/components/MockTestEditor";
 import { StudentsPage } from "./features/students/StudentsPage";
 import { SettingsLayout } from "./features/settings/components/SettingsLayout";
 import { GeneralSettingsPage } from "./features/settings/pages/GeneralSettingsPage";
@@ -170,6 +172,36 @@ function App() {
                         allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
                       >
                         <ExerciseEditor />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="mock-tests"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                      >
+                        <MockTestsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="mock-tests/new"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                      >
+                        <MockTestEditor />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="mock-tests/:id/edit"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                      >
+                        <MockTestEditor />
                       </ProtectedRoute>
                     }
                   />

@@ -23,6 +23,9 @@ const TENANTED_MODELS = [
   "ExerciseTag",
   "ExerciseTagAssignment",
   "AIGenerationJob",
+  "MockTest",
+  "MockTestSection",
+  "MockTestSectionExercise",
 ];
 
 /**

@@ -31,6 +31,7 @@ model User {
   attendanceMarked  Attendance[]       @relation("AttendanceMarker")
   emailLogs         EmailLog[]
   exercises         Exercise[]         @relation("ExerciseCreator")
+  createdMockTests  MockTest[]         @relation("MockTestCreatedBy")
 
   @@map("user")
 }
@@ -460,8 +461,9 @@ model Exercise {
 
   createdBy         User                    @relation("ExerciseCreator", fields: [createdById], references: [id])
   sections          QuestionSection[]
-  tagAssignments    ExerciseTagAssignment[]
-  aiGenerationJobs  AIGenerationJob[]
+  tagAssignments             ExerciseTagAssignment[]
+  aiGenerationJobs           AIGenerationJob[]
+  mockTestSectionExercises   MockTestSectionExercise[]
 
   @@unique([id, centerId])
   @@index([centerId])
@@ -561,6 +563,63 @@ model AIGenerationJob {
   @@index([centerId])
   @@index([exerciseId])
   @@map("ai_generation_job")
+}
+
+// ─── Mock Test Assembly (Story 3.13) ────────────────────────────────
+
+model MockTest {
+  id          String   @id @default(cuid())
+  centerId    String   @map("center_id")
+  title       String
+  description String?
+  testType    String   @default("ACADEMIC") @map("test_type")
+  status      String   @default("DRAFT")
+
+  createdById String   @map("created_by_id")
+  createdBy   User     @relation("MockTestCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  sections MockTestSection[]
+
+  @@unique([id, centerId])
+  @@index([centerId])
+  @@index([centerId, status])
+  @@map("mock_test")
+}
+
+model MockTestSection {
+  id         String @id @default(cuid())
+  mockTestId String @map("mock_test_id")
+  centerId   String @map("center_id")
+  skill      String
+  orderIndex Int    @map("order_index")
+  timeLimit  Int?   @map("time_limit")
+
+  mockTest  MockTest                  @relation(fields: [mockTestId], references: [id], onDelete: Cascade)
+  exercises MockTestSectionExercise[]
+
+  @@unique([id, centerId])
+  @@index([centerId])
+  @@index([mockTestId])
+  @@map("mock_test_section")
+}
+
+model MockTestSectionExercise {
+  id         String @id @default(cuid())
+  sectionId  String @map("section_id")
+  centerId   String @map("center_id")
+  exerciseId String @map("exercise_id")
+  orderIndex Int    @map("order_index")
+
+  section  MockTestSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  exercise Exercise        @relation(fields: [exerciseId], references: [id])
+
+  @@unique([id, centerId])
+  @@unique([sectionId, exerciseId])
+  @@index([centerId])
+  @@index([sectionId])
+  @@map("mock_test_section_exercise")
 }
 
 // ─── Email Logging ──────────────────────────────────────────────────
