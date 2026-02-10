@@ -53,12 +53,6 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
-import {
   Archive,
   Book,
   Check,
@@ -85,6 +79,8 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useExercises } from "./hooks/use-exercises";
 import { useTags } from "./hooks/use-tags";
+import { useAssignmentCounts } from "@/features/assignments/hooks/use-assignments";
+import { CreateAssignmentDialog } from "@/features/assignments/components/create-assignment-dialog";
 
 const SKILL_ICONS: Record<ExerciseSkill, React.ReactNode> = {
   READING: <Book className="size-4" />,
@@ -224,6 +220,15 @@ export function ExercisesPage() {
     bulkDuplicate,
     bulkTag,
   } = useExercises(centerId, filters);
+
+  // Assignment counts for library column
+  const exerciseIds = useMemo(() => exercises.map((e) => e.id), [exercises]);
+  const { data: assignmentCounts } = useAssignmentCounts(exerciseIds);
+  const assignmentCountMap = useMemo(
+    () => new Map((assignmentCounts ?? []).map((c: { exerciseId: string; count: number }) => [c.exerciseId, c.count])),
+    [assignmentCounts],
+  );
+  const [assignExerciseId, setAssignExerciseId] = useState<string | undefined>(undefined);
 
   const filteredExercises = useMemo(() => {
     if (!searchQuery.trim()) return exercises;
@@ -391,6 +396,11 @@ export function ExercisesPage() {
           <Copy className="mr-2 size-4" />
           Duplicate
         </DropdownMenuItem>
+        {exercise.status === "PUBLISHED" && (
+          <DropdownMenuItem onClick={() => setAssignExerciseId(exercise.id)}>
+            Assign
+          </DropdownMenuItem>
+        )}
         {exercise.status === "DRAFT" && (
           <DropdownMenuItem onClick={() => handlePublish(exercise)}>
             Publish
@@ -685,18 +695,7 @@ export function ExercisesPage() {
                 <TableHead>Tags</TableHead>
                 <TableHead>Sections</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>Assignments</span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        Assignment tracking available after exercise assignment feature is implemented.
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </TableHead>
+                <TableHead>Assignments</TableHead>
                 <TableHead>Avg Score</TableHead>
                 <TableHead>Last Modified</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -781,8 +780,8 @@ export function ExercisesPage() {
                         {STATUS_VARIANTS[exercise.status]?.label}
                       </Badge>
                     </TableCell>
-                    {/* TODO: Story 3.15 — Replace stubs with real data from assignment queries */}
-                    <TableCell className="text-muted-foreground">&mdash;</TableCell>
+                    <TableCell>{assignmentCountMap.get(exercise.id) ?? 0}</TableCell>
+                    {/* TODO: Epic 5 — Replace stub with real avg score from grading data */}
                     <TableCell className="text-muted-foreground">&mdash;</TableCell>
                     <TableCell className="text-muted-foreground">
                       {formatDate(exercise.updatedAt)}
@@ -863,8 +862,8 @@ export function ExercisesPage() {
                   <div className="flex items-center gap-2">
                     <span>{formatDate(exercise.updatedAt)}</span>
                     <span>{exercise.sections?.length ?? 0} sections</span>
-                    {/* TODO: Story 3.15 — Replace stubs with real data from assignment queries */}
-                    <span>Assignments: &mdash;</span>
+                    <span>Assignments: {assignmentCountMap.get(exercise.id) ?? 0}</span>
+                    {/* TODO: Epic 5 — Replace stub with real avg score from grading data */}
                     <span>Avg Score: &mdash;</span>
                   </div>
                   {renderActionMenu(exercise)}
@@ -925,6 +924,13 @@ export function ExercisesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Assign Exercise Dialog */}
+      <CreateAssignmentDialog
+        open={!!assignExerciseId}
+        onOpenChange={(open) => { if (!open) setAssignExerciseId(undefined); }}
+        defaultExerciseId={assignExerciseId}
+      />
     </div>
   );
 }

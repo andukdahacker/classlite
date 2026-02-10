@@ -3,6 +3,7 @@ import {
   Calendar,
   School,
   Library,
+  FileCheck,
   ClipboardList,
   GraduationCap,
   Users,
@@ -55,6 +56,14 @@ export const getNavigationConfig = (centerId: string): NavItemConfig[] => {
       icon: Library,
       allowedRoles: ["OWNER", "ADMIN", "TEACHER"],
       order: 4,
+      mobileVisible: true,
+    },
+    {
+      title: "Assignments",
+      url: `${dashboardPath}/assignments`,
+      icon: FileCheck,
+      allowedRoles: ["OWNER", "ADMIN", "TEACHER"],
+      order: 4.5,
       mobileVisible: true,
     },
     {

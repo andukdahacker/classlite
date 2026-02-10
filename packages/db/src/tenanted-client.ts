@@ -26,6 +26,8 @@ const TENANTED_MODELS = [
   "MockTest",
   "MockTestSection",
   "MockTestSectionExercise",
+  "Assignment",
+  "AssignmentStudent",
 ];
 
 /**

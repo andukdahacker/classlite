@@ -25,6 +25,7 @@ import { ExerciseEditor } from "./features/exercises/components/ExerciseEditor";
 import { GradingQueuePage } from "./features/grading/GradingQueuePage";
 import { MockTestsPage } from "./features/mock-tests/mock-tests-page";
 import { MockTestEditor } from "./features/mock-tests/components/MockTestEditor";
+import AssignmentsPage from "./features/assignments/assignments-page";
 import { StudentsPage } from "./features/students/StudentsPage";
 import { SettingsLayout } from "./features/settings/components/SettingsLayout";
 import { GeneralSettingsPage } from "./features/settings/pages/GeneralSettingsPage";
@@ -172,6 +173,16 @@ function App() {
                         allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
                       >
                         <ExerciseEditor />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="assignments"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                      >
+                        <AssignmentsPage />
                       </ProtectedRoute>
                     }
                   />

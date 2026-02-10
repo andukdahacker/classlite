@@ -41,6 +41,19 @@ vi.mock("./hooks/use-tags", () => ({
   }),
 }));
 
+// Mock assignment counts hook
+vi.mock("@/features/assignments/hooks/use-assignments", () => ({
+  useAssignmentCounts: () => ({
+    data: [],
+    isLoading: false,
+  }),
+}));
+
+// Mock create assignment dialog
+vi.mock("@/features/assignments/components/create-assignment-dialog", () => ({
+  CreateAssignmentDialog: () => null,
+}));
+
 // Mock sonner toast
 vi.mock("sonner", () => ({
   toast: {
@@ -203,7 +216,7 @@ describe("ExercisesPage", () => {
     );
   });
 
-  it("renders stub columns (Assignments, Avg Score) with em dash", () => {
+  it("renders Assignments column with count and Avg Score stub", () => {
     mockUseExercises.mockReturnValue({
       ...defaultHookReturn,
       exercises: [sampleExercises[0]],
@@ -217,9 +230,10 @@ describe("ExercisesPage", () => {
 
     expect(screen.getByText("Assignments")).toBeInTheDocument();
     expect(screen.getByText("Avg Score")).toBeInTheDocument();
-    // Em dashes render as \u2014 in the DOM
-    const cells = screen.getAllByText("\u2014");
-    expect(cells.length).toBeGreaterThanOrEqual(2);
+    // Assignments column shows 0 (real count from hook), Avg Score still stubbed with em dash
+    expect(screen.getByText("0")).toBeInTheDocument();
+    const emDashes = screen.getAllByText("\u2014");
+    expect(emDashes.length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders grid/list view toggle buttons", () => {

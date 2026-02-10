@@ -31,7 +31,9 @@ model User {
   attendanceMarked  Attendance[]       @relation("AttendanceMarker")
   emailLogs         EmailLog[]
   exercises         Exercise[]         @relation("ExerciseCreator")
-  createdMockTests  MockTest[]         @relation("MockTestCreatedBy")
+  createdMockTests    MockTest[]         @relation("MockTestCreatedBy")
+  createdAssignments  Assignment[]       @relation("AssignmentCreator")
+  studentAssignments  AssignmentStudent[] @relation("AssignmentStudents")
 
   @@map("user")
 }
@@ -167,9 +169,10 @@ model Class {
 
   course    Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
   teacher   User?           @relation("ClassTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
-  students  ClassStudent[]
-  schedules ClassSchedule[]
-  sessions  ClassSession[]
+  students    ClassStudent[]
+  schedules   ClassSchedule[]
+  sessions    ClassSession[]
+  assignments Assignment[]
 
   @@unique([id, centerId])
   @@index([centerId])
@@ -464,6 +467,7 @@ model Exercise {
   tagAssignments             ExerciseTagAssignment[]
   aiGenerationJobs           AIGenerationJob[]
   mockTestSectionExercises   MockTestSectionExercise[]
+  assignments                Assignment[]
 
   @@unique([id, centerId])
   @@index([centerId])
@@ -620,6 +624,57 @@ model MockTestSectionExercise {
   @@index([centerId])
   @@index([sectionId])
   @@map("mock_test_section_exercise")
+}
+
+// ─── Exercise Assignment Management (Story 3.15) ────────────────────
+
+enum AssignmentStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+model Assignment {
+  id           String           @id @default(cuid())
+  centerId     String           @map("center_id")
+  exerciseId   String           @map("exercise_id")
+  classId      String?          @map("class_id")
+  dueDate      DateTime?        @map("due_date")
+  timeLimit    Int?             @map("time_limit")
+  instructions String?
+  status       AssignmentStatus @default(OPEN)
+  createdById  String           @map("created_by_id")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  exercise           Exercise            @relation(fields: [exerciseId], references: [id])
+  class              Class?              @relation(fields: [classId], references: [id])
+  createdBy          User                @relation("AssignmentCreator", fields: [createdById], references: [id])
+  studentAssignments AssignmentStudent[]
+
+  @@unique([id, centerId])
+  @@index([centerId])
+  @@index([centerId, exerciseId])
+  @@index([centerId, classId])
+  @@index([centerId, status])
+  @@index([centerId, dueDate])
+  @@map("assignment")
+}
+
+model AssignmentStudent {
+  id           String   @id @default(cuid())
+  assignmentId String   @map("assignment_id")
+  studentId    String   @map("student_id")
+  centerId     String   @map("center_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    User       @relation("AssignmentStudents", fields: [studentId], references: [id])
+
+  @@unique([assignmentId, studentId])
+  @@index([centerId])
+  @@index([studentId, centerId])
+  @@map("assignment_student")
 }
 
 // ─── Email Logging ──────────────────────────────────────────────────
