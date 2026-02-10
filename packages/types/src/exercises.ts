@@ -675,6 +675,25 @@ export const AutosaveExerciseSchema = z.object({
 });
 export type AutosaveExerciseInput = z.infer<typeof AutosaveExerciseSchema>;
 
+// --- Bulk Action Schemas ---
+
+export const BulkExerciseIdsSchema = z.object({
+  exerciseIds: z.array(z.string()).min(1).max(100),
+});
+export type BulkExerciseIds = z.infer<typeof BulkExerciseIdsSchema>;
+
+export const BulkTagSchema = z.object({
+  exerciseIds: z.array(z.string()).min(1).max(100),
+  tagIds: z.array(z.string()).min(1).max(50),
+});
+export type BulkTag = z.infer<typeof BulkTagSchema>;
+
+export const BulkResultSchema = z.object({
+  count: z.number(),
+});
+export const BulkResultResponseSchema = createResponseSchema(BulkResultSchema);
+export const BulkDuplicateResponseSchema = createResponseSchema(z.array(ExerciseSchema));
+
 // --- Response Schemas ---
 
 export const ExerciseResponseSchema = createResponseSchema(ExerciseSchema);

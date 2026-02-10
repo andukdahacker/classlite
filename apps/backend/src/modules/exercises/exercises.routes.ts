@@ -13,7 +13,12 @@ import {
   ExerciseSkillSchema,
   ExerciseStatusSchema,
   BandLevelSchema,
+  IeltsQuestionTypeSchema,
   SetExerciseTagsInput,
+  BulkExerciseIdsSchema,
+  BulkTagSchema,
+  BulkResultResponseSchema,
+  BulkDuplicateResponseSchema,
 } from "@workspace/types";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -52,6 +57,8 @@ export async function exercisesRoutes(fastify: FastifyInstance) {
         status: ExerciseStatusSchema.optional(),
         bandLevel: BandLevelSchema.optional(),
         tagIds: z.string().optional(),
+        questionType: IeltsQuestionTypeSchema.optional(),
+        excludeArchived: z.coerce.boolean().optional(),
       }),
       response: {
         200: ExerciseListResponseSchema,
@@ -62,16 +69,18 @@ export async function exercisesRoutes(fastify: FastifyInstance) {
     preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
     handler: async (request, reply) => {
       try {
-        const { skill, status, bandLevel, tagIds } = request.query as {
+        const { skill, status, bandLevel, tagIds, questionType, excludeArchived } = request.query as {
           skill?: string;
           status?: string;
           bandLevel?: string;
           tagIds?: string;
+          questionType?: string;
+          excludeArchived?: boolean;
         };
         const tagIdsArray = tagIds?.split(",").filter(Boolean);
         const result = await exercisesController.listExercises(
           request.jwtPayload!,
-          { skill, status, bandLevel, tagIds: tagIdsArray },
+          { skill, status, bandLevel, tagIds: tagIdsArray, questionType, excludeArchived },
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -175,6 +184,96 @@ export async function exercisesRoutes(fastify: FastifyInstance) {
         return reply
           .status(500)
           .send({ message: "Failed to create exercise" });
+      }
+    },
+  });
+
+  // POST /bulk-archive - Bulk archive exercises
+  api.post("/bulk-archive", {
+    schema: {
+      body: BulkExerciseIdsSchema,
+      response: {
+        200: BulkResultResponseSchema,
+        401: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (request, reply) => {
+      try {
+        const { exerciseIds } = request.body as { exerciseIds: string[] };
+        const result = await exercisesController.bulkArchive(exerciseIds, request.jwtPayload!);
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 500).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 500).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to bulk archive exercises" });
+      }
+    },
+  });
+
+  // POST /bulk-duplicate - Bulk duplicate exercises
+  api.post("/bulk-duplicate", {
+    schema: {
+      body: BulkExerciseIdsSchema,
+      response: {
+        200: BulkDuplicateResponseSchema,
+        401: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (request, reply) => {
+      try {
+        const { exerciseIds } = request.body as { exerciseIds: string[] };
+        const result = await exercisesController.bulkDuplicate(exerciseIds, request.jwtPayload!);
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 500).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 500).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to bulk duplicate exercises" });
+      }
+    },
+  });
+
+  // POST /bulk-tag - Bulk tag exercises
+  api.post("/bulk-tag", {
+    schema: {
+      body: BulkTagSchema,
+      response: {
+        200: BulkResultResponseSchema,
+        401: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (request, reply) => {
+      try {
+        const { exerciseIds, tagIds } = request.body as { exerciseIds: string[]; tagIds: string[] };
+        const result = await exercisesController.bulkTag(exerciseIds, tagIds, request.jwtPayload!);
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply.status(error.statusCode as 500).send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply.status(prismaErr.statusCode as 500).send({ message: prismaErr.message });
+        }
+        return reply.status(500).send({ message: "Failed to bulk tag exercises" });
       }
     },
   });
@@ -414,6 +513,95 @@ export async function exercisesRoutes(fastify: FastifyInstance) {
         return reply
           .status(500)
           .send({ message: "Failed to archive exercise" });
+      }
+    },
+  });
+
+  // POST /:id/duplicate - Duplicate exercise
+  api.post("/:id/duplicate", {
+    schema: {
+      params: z.object({
+        id: z.string(),
+      }),
+      response: {
+        201: ExerciseResponseSchema,
+        401: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { id: string } }>,
+      reply,
+    ) => {
+      try {
+        const result = await exercisesController.duplicateExercise(
+          request.params.id,
+          request.jwtPayload!,
+        );
+        return reply.status(201).send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply
+            .status(error.statusCode as 404)
+            .send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply
+            .status(prismaErr.statusCode as 500)
+            .send({ message: prismaErr.message });
+        }
+        return reply
+          .status(500)
+          .send({ message: "Failed to duplicate exercise" });
+      }
+    },
+  });
+
+  // POST /:id/restore - Restore archived exercise to Draft
+  api.post("/:id/restore", {
+    schema: {
+      params: z.object({
+        id: z.string(),
+      }),
+      response: {
+        200: ExerciseResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN", "TEACHER"])],
+    handler: async (
+      request: FastifyRequest<{ Params: { id: string } }>,
+      reply,
+    ) => {
+      try {
+        const result = await exercisesController.restoreExercise(
+          request.params.id,
+          request.jwtPayload!,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        request.log.error(error);
+        if (error instanceof AppError) {
+          return reply
+            .status(error.statusCode as 400)
+            .send({ message: error.message });
+        }
+        const prismaErr = mapPrismaError(error);
+        if (prismaErr) {
+          return reply
+            .status(prismaErr.statusCode as 400)
+            .send({ message: prismaErr.message });
+        }
+        return reply
+          .status(500)
+          .send({ message: "Failed to restore exercise" });
       }
     },
   });

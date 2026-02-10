@@ -5,6 +5,7 @@ import type {
   ExerciseSkill,
   ExerciseStatus,
   BandLevel,
+  IeltsQuestionType,
   CreateExerciseInput,
   UpdateExerciseInput,
   AutosaveExerciseInput,
@@ -15,6 +16,8 @@ type ExerciseFilters = {
   status?: ExerciseStatus;
   bandLevel?: BandLevel;
   tagIds?: string;
+  questionType?: IeltsQuestionType;
+  excludeArchived?: boolean;
 };
 
 export const exercisesKeys = {
@@ -145,6 +148,78 @@ export const useExercises = (
     },
   });
 
+  const duplicateExerciseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await client.POST(
+        "/api/v1/exercises/{id}/duplicate",
+        {
+          params: { path: { id } },
+        },
+      );
+      if (error) throw error;
+      return data?.data as Exercise;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: exercisesKeys.lists() });
+    },
+  });
+
+  const restoreExerciseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await client.POST(
+        "/api/v1/exercises/{id}/restore",
+        {
+          params: { path: { id } },
+        },
+      );
+      if (error) throw error;
+      return data?.data as Exercise;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: exercisesKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: exercisesKeys.detail(id) });
+    },
+  });
+
+  const bulkArchiveMutation = useMutation({
+    mutationFn: async (exerciseIds: string[]) => {
+      const { data, error } = await client.POST("/api/v1/exercises/bulk-archive", {
+        body: { exerciseIds },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: exercisesKeys.lists() });
+    },
+  });
+
+  const bulkDuplicateMutation = useMutation({
+    mutationFn: async (exerciseIds: string[]) => {
+      const { data, error } = await client.POST("/api/v1/exercises/bulk-duplicate", {
+        body: { exerciseIds },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: exercisesKeys.lists() });
+    },
+  });
+
+  const bulkTagMutation = useMutation({
+    mutationFn: async ({ exerciseIds, tagIds }: { exerciseIds: string[]; tagIds: string[] }) => {
+      const { data, error } = await client.POST("/api/v1/exercises/bulk-tag", {
+        body: { exerciseIds, tagIds },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: exercisesKeys.lists() });
+    },
+  });
+
   return {
     exercises: exercisesQuery.data ?? [],
     isLoading: exercisesQuery.isLoading,
@@ -158,6 +233,13 @@ export const useExercises = (
     isPublishing: publishExerciseMutation.isPending,
     archiveExercise: archiveExerciseMutation.mutateAsync,
     isArchiving: archiveExerciseMutation.isPending,
+    duplicateExercise: duplicateExerciseMutation.mutateAsync,
+    isDuplicating: duplicateExerciseMutation.isPending,
+    restoreExercise: restoreExerciseMutation.mutateAsync,
+    isRestoring: restoreExerciseMutation.isPending,
+    bulkArchive: bulkArchiveMutation.mutateAsync,
+    bulkDuplicate: bulkDuplicateMutation.mutateAsync,
+    bulkTag: bulkTagMutation.mutateAsync,
   };
 };
 

@@ -1,5 +1,5 @@
 import { useAuth } from "@/features/auth/auth-context";
-import type { Exercise, ExerciseSkill, ExerciseStatus, BandLevel } from "@workspace/types";
+import type { Exercise, ExerciseSkill, ExerciseStatus, BandLevel, IeltsQuestionType } from "@workspace/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,6 +12,8 @@ import {
 } from "@workspace/ui/components/alert-dialog";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@workspace/ui/components/card";
+import { Checkbox } from "@workspace/ui/components/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,10 +37,13 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
+import { Switch } from "@workspace/ui/components/switch";
 import {
   Table,
   TableBody,
@@ -48,19 +53,34 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip";
+import {
+  Archive,
   Book,
   Check,
+  ChevronLeft,
+  ChevronRight,
   ChevronsUpDown,
+  Copy,
   Headphones,
+  LayoutGrid,
+  LayoutList,
   Loader2,
   Mic,
   MoreHorizontal,
   Pen,
   Plus,
+  RotateCcw,
   Search,
+  Tag,
+  X,
 } from "lucide-react";
 import { cn } from "@workspace/ui/lib/utils";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useExercises } from "./hooks/use-exercises";
@@ -96,20 +116,80 @@ const STATUS_VARIANTS: Record<
   },
 };
 
+const QUESTION_TYPE_GROUPS: { skill: string; types: { value: string; label: string }[] }[] = [
+  {
+    skill: "Reading",
+    types: [
+      { value: "R1_MCQ_SINGLE", label: "MCQ Single Answer" },
+      { value: "R2_MCQ_MULTI", label: "MCQ Multiple Answers" },
+      { value: "R3_TFNG", label: "True/False/Not Given" },
+      { value: "R4_YNNG", label: "Yes/No/Not Given" },
+      { value: "R5_SENTENCE_COMPLETION", label: "Sentence Completion" },
+      { value: "R6_SHORT_ANSWER", label: "Short Answer" },
+      { value: "R7_SUMMARY_WORD_BANK", label: "Summary (Word Bank)" },
+      { value: "R8_SUMMARY_PASSAGE", label: "Summary (Passage)" },
+      { value: "R9_MATCHING_HEADINGS", label: "Matching Headings" },
+      { value: "R10_MATCHING_INFORMATION", label: "Matching Information" },
+      { value: "R11_MATCHING_FEATURES", label: "Matching Features" },
+      { value: "R12_MATCHING_SENTENCE_ENDINGS", label: "Matching Endings" },
+      { value: "R13_NOTE_TABLE_FLOWCHART", label: "Note/Table/Flowchart" },
+      { value: "R14_DIAGRAM_LABELLING", label: "Diagram Labelling" },
+    ],
+  },
+  {
+    skill: "Listening",
+    types: [
+      { value: "L1_FORM_NOTE_TABLE", label: "Form/Note/Table" },
+      { value: "L2_MCQ", label: "Multiple Choice" },
+      { value: "L3_MATCHING", label: "Matching" },
+      { value: "L4_MAP_PLAN_LABELLING", label: "Map/Plan Labelling" },
+      { value: "L5_SENTENCE_COMPLETION", label: "Sentence Completion" },
+      { value: "L6_SHORT_ANSWER", label: "Short Answer" },
+    ],
+  },
+  {
+    skill: "Writing",
+    types: [
+      { value: "W1_TASK1_ACADEMIC", label: "Task 1 Academic" },
+      { value: "W2_TASK1_GENERAL", label: "Task 1 General" },
+      { value: "W3_TASK2_ESSAY", label: "Task 2 Essay" },
+    ],
+  },
+  {
+    skill: "Speaking",
+    types: [
+      { value: "S1_PART1_QA", label: "Part 1 Questions" },
+      { value: "S2_PART2_CUE_CARD", label: "Part 2 Cue Card" },
+      { value: "S3_PART3_DISCUSSION", label: "Part 3 Discussion" },
+    ],
+  },
+];
+
+const QUESTION_TYPE_LABELS = Object.fromEntries(
+  QUESTION_TYPE_GROUPS.flatMap((g) => g.types.map((t) => [t.value, t.label])),
+);
+
+const PAGE_SIZE = 20;
+
 export function ExercisesPage() {
   const { user } = useAuth();
   const centerId = user?.centerId || undefined;
   const navigate = useNavigate();
 
   const [skillFilter, setSkillFilter] = useState<ExerciseSkill | "ALL">("ALL");
-  const [statusFilter, setStatusFilter] = useState<ExerciseStatus | "ALL">(
-    "ALL",
-  );
+  const [statusFilter, setStatusFilter] = useState<ExerciseStatus | "ALL">("ALL");
   const [bandLevelFilter, setBandLevelFilter] = useState<BandLevel | "ALL">("ALL");
+  const [questionTypeFilter, setQuestionTypeFilter] = useState<string | "ALL">("ALL");
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Exercise | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkTagPopoverOpen, setBulkTagPopoverOpen] = useState(false);
+  const [bulkTagSelection, setBulkTagSelection] = useState<string[]>([]);
 
   const { tags: centerTags } = useTags(centerId);
 
@@ -119,13 +199,17 @@ export function ExercisesPage() {
       status?: ExerciseStatus;
       bandLevel?: BandLevel;
       tagIds?: string;
+      questionType?: IeltsQuestionType;
+      excludeArchived?: boolean;
     } = {};
     if (skillFilter !== "ALL") f.skill = skillFilter;
     if (statusFilter !== "ALL") f.status = statusFilter;
     if (bandLevelFilter !== "ALL") f.bandLevel = bandLevelFilter;
     if (tagFilter.length > 0) f.tagIds = tagFilter.join(",");
+    if (questionTypeFilter !== "ALL") f.questionType = questionTypeFilter as IeltsQuestionType;
+    if (!showArchived) f.excludeArchived = true;
     return f;
-  }, [skillFilter, statusFilter, bandLevelFilter, tagFilter]);
+  }, [skillFilter, statusFilter, bandLevelFilter, tagFilter, questionTypeFilter, showArchived]);
 
   const {
     exercises,
@@ -134,6 +218,11 @@ export function ExercisesPage() {
     isDeleting,
     publishExercise,
     archiveExercise,
+    duplicateExercise,
+    restoreExercise,
+    bulkArchive,
+    bulkDuplicate,
+    bulkTag,
   } = useExercises(centerId, filters);
 
   const filteredExercises = useMemo(() => {
@@ -141,6 +230,19 @@ export function ExercisesPage() {
     const query = searchQuery.toLowerCase();
     return exercises.filter((ex) => ex.title.toLowerCase().includes(query));
   }, [exercises, searchQuery]);
+
+  const totalPages = Math.ceil(filteredExercises.length / PAGE_SIZE);
+  const paginatedExercises = filteredExercises.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  const allPageSelected = paginatedExercises.length > 0 &&
+    paginatedExercises.every((ex) => selectedIds.has(ex.id));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [skillFilter, statusFilter, bandLevelFilter, tagFilter, questionTypeFilter, searchQuery, showArchived]);
 
   const handleCreate = () => {
     navigate("../exercises/new");
@@ -188,6 +290,82 @@ export function ExercisesPage() {
     }
   };
 
+  const handleDuplicate = async (exercise: Exercise) => {
+    try {
+      await duplicateExercise(exercise.id);
+      toast.success("Exercise duplicated");
+    } catch {
+      toast.error("Failed to duplicate exercise");
+    }
+  };
+
+  const handleRestore = async (exercise: Exercise) => {
+    try {
+      await restoreExercise(exercise.id);
+      toast.success("Exercise restored to draft");
+    } catch {
+      toast.error("Failed to restore exercise");
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allPageSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        paginatedExercises.forEach((ex) => next.delete(ex.id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        paginatedExercises.forEach((ex) => next.add(ex.id));
+        return next;
+      });
+    }
+  };
+
+  const handleBulkArchive = async () => {
+    try {
+      await bulkArchive([...selectedIds]);
+      toast.success(`${selectedIds.size} exercises archived`);
+      setSelectedIds(new Set());
+    } catch {
+      toast.error("Failed to archive exercises");
+    }
+  };
+
+  const handleBulkDuplicate = async () => {
+    try {
+      await bulkDuplicate([...selectedIds]);
+      toast.success(`${selectedIds.size} exercises duplicated`);
+      setSelectedIds(new Set());
+    } catch {
+      toast.error("Failed to duplicate exercises");
+    }
+  };
+
+  const handleBulkTag = async () => {
+    if (bulkTagSelection.length === 0) return;
+    try {
+      await bulkTag({ exerciseIds: [...selectedIds], tagIds: bulkTagSelection });
+      toast.success("Tags applied to selected exercises");
+      setSelectedIds(new Set());
+      setBulkTagPopoverOpen(false);
+      setBulkTagSelection([]);
+    } catch {
+      toast.error("Failed to tag exercises");
+    }
+  };
+
   const formatDate = (dateStr: string | Date) => {
     const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
     return date.toLocaleDateString(undefined, {
@@ -196,6 +374,54 @@ export function ExercisesPage() {
       year: "numeric",
     });
   };
+
+  const renderActionMenu = (exercise: Exercise) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreHorizontal className="size-4" />
+          <span className="sr-only">Actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => handleEdit(exercise)}>
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleDuplicate(exercise)}>
+          <Copy className="mr-2 size-4" />
+          Duplicate
+        </DropdownMenuItem>
+        {exercise.status === "DRAFT" && (
+          <DropdownMenuItem onClick={() => handlePublish(exercise)}>
+            Publish
+          </DropdownMenuItem>
+        )}
+        {exercise.status !== "ARCHIVED" && (
+          <DropdownMenuItem onClick={() => handleArchive(exercise)}>
+            Archive
+          </DropdownMenuItem>
+        )}
+        {exercise.status === "ARCHIVED" && (
+          <DropdownMenuItem onClick={() => handleRestore(exercise)}>
+            <RotateCcw className="mr-2 size-4" />
+            Restore
+          </DropdownMenuItem>
+        )}
+        {exercise.status === "DRAFT" && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive"
+              disabled={isDeleting}
+              onClick={() => handleDeleteClick(exercise)}
+            >
+              Delete
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   if (isLoading) {
     return (
@@ -220,8 +446,8 @@ export function ExercisesPage() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-4">
+      {/* Filters Row 1 */}
+      <div className="flex flex-wrap items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -257,7 +483,6 @@ export function ExercisesPage() {
             <SelectItem value="ALL">All Statuses</SelectItem>
             <SelectItem value="DRAFT">Draft</SelectItem>
             <SelectItem value="PUBLISHED">Published</SelectItem>
-            <SelectItem value="ARCHIVED">Archived</SelectItem>
           </SelectContent>
         </Select>
         <Select
@@ -274,6 +499,27 @@ export function ExercisesPage() {
             <SelectItem value="6-7">Band 6-7</SelectItem>
             <SelectItem value="7-8">Band 7-8</SelectItem>
             <SelectItem value="8-9">Band 8-9</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={questionTypeFilter}
+          onValueChange={(v) => setQuestionTypeFilter(v)}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="All Question Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Question Types</SelectItem>
+            {QUESTION_TYPE_GROUPS.map((group) => (
+              <SelectGroup key={group.skill}>
+                <SelectLabel>{group.skill}</SelectLabel>
+                {group.types.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ))}
           </SelectContent>
         </Select>
         <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
@@ -324,120 +570,337 @@ export function ExercisesPage() {
         </Popover>
       </div>
 
-      {/* Table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Skill</TableHead>
-              <TableHead>Band</TableHead>
-              <TableHead>Tags</TableHead>
-              <TableHead>Sections</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Last Modified</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredExercises.length === 0 ? (
+      {/* Filters Row 2: Show Archived + View Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Switch
+            id="show-archived"
+            checked={showArchived}
+            onCheckedChange={setShowArchived}
+          />
+          <label htmlFor="show-archived" className="text-sm text-muted-foreground cursor-pointer">
+            Show Archived
+          </label>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="icon"
+            onClick={() => setViewMode("list")}
+            aria-label="List view"
+          >
+            <LayoutList className="size-4" />
+          </Button>
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            size="icon"
+            onClick={() => setViewMode("grid")}
+            aria-label="Grid view"
+          >
+            <LayoutGrid className="size-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Bulk Action Toolbar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <Button variant="outline" size="sm" onClick={handleBulkArchive}>
+            <Archive className="mr-2 size-4" />
+            Archive
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleBulkDuplicate}>
+            <Copy className="mr-2 size-4" />
+            Duplicate
+          </Button>
+          <Popover open={bulkTagPopoverOpen} onOpenChange={setBulkTagPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Tag className="mr-2 size-4" />
+                Tag
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[220px] p-0">
+              <Command>
+                <CommandInput placeholder="Search tags..." />
+                <CommandList>
+                  <CommandEmpty>No tags found.</CommandEmpty>
+                  {centerTags.map((tag) => (
+                    <CommandItem
+                      key={tag.id}
+                      value={tag.name}
+                      onSelect={() => {
+                        setBulkTagSelection((prev) =>
+                          prev.includes(tag.id)
+                            ? prev.filter((id) => id !== tag.id)
+                            : [...prev, tag.id],
+                        );
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          bulkTagSelection.includes(tag.id) ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                      {tag.name}
+                    </CommandItem>
+                  ))}
+                </CommandList>
+              </Command>
+              {bulkTagSelection.length > 0 && (
+                <div className="border-t p-2">
+                  <Button size="sm" className="w-full" onClick={handleBulkTag}>
+                    Apply {bulkTagSelection.length} tag{bulkTagSelection.length > 1 ? "s" : ""}
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+            <X className="mr-2 size-4" />
+            Deselect All
+          </Button>
+        </div>
+      )}
+
+      {/* Content: List or Grid View */}
+      {viewMode === "list" ? (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell
-                  colSpan={8}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  {exercises.length === 0
-                    ? "No exercises found. Create one to get started."
-                    : "No exercises match your search."}
-                </TableCell>
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={allPageSelected}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Select all"
+                  />
+                </TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Skill</TableHead>
+                <TableHead>Types</TableHead>
+                <TableHead>Band</TableHead>
+                <TableHead>Tags</TableHead>
+                <TableHead>Sections</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>Assignments</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Assignment tracking available after exercise assignment feature is implemented.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
+                <TableHead>Avg Score</TableHead>
+                <TableHead>Last Modified</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : (
-              filteredExercises.map((exercise) => (
-                <TableRow key={exercise.id}>
-                  <TableCell className="font-medium">
-                    {exercise.title}
+            </TableHeader>
+            <TableBody>
+              {paginatedExercises.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={12}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    {exercises.length === 0
+                      ? "No exercises found. Create one to get started."
+                      : "No exercises match your search."}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
+                </TableRow>
+              ) : (
+                paginatedExercises.map((exercise) => (
+                  <TableRow
+                    key={exercise.id}
+                    className={cn(exercise.status === "ARCHIVED" && "opacity-60")}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(exercise.id)}
+                        onCheckedChange={() => toggleSelect(exercise.id)}
+                        aria-label={`Select ${exercise.title}`}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {exercise.title}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {SKILL_ICONS[exercise.skill]}
+                        <span>{SKILL_LABELS[exercise.skill]}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const types = [...new Set(exercise.sections?.map((s) => s.sectionType) ?? [])];
+                        if (types.length === 0) return <span className="text-muted-foreground">-</span>;
+                        return (
+                          <div className="flex flex-wrap gap-1">
+                            {types.slice(0, 2).map((t) => (
+                              <Badge key={t} variant="outline" className="text-xs">
+                                {QUESTION_TYPE_LABELS[t] ?? t}
+                              </Badge>
+                            ))}
+                            {types.length > 2 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{types.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell>
+                      {exercise.bandLevel ? (
+                        <Badge variant="outline">{exercise.bandLevel}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {exercise.tags?.map((tag) => (
+                          <Badge key={tag.id} variant="secondary" className="text-xs">
+                            {tag.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell>{exercise.sections?.length ?? 0}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={STATUS_VARIANTS[exercise.status]?.className}
+                      >
+                        {STATUS_VARIANTS[exercise.status]?.label}
+                      </Badge>
+                    </TableCell>
+                    {/* TODO: Story 3.15 — Replace stubs with real data from assignment queries */}
+                    <TableCell className="text-muted-foreground">&mdash;</TableCell>
+                    <TableCell className="text-muted-foreground">&mdash;</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(exercise.updatedAt)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {renderActionMenu(exercise)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        /* Grid View */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {paginatedExercises.length === 0 ? (
+            <div className="col-span-full h-24 flex items-center justify-center text-muted-foreground">
+              {exercises.length === 0
+                ? "No exercises found. Create one to get started."
+                : "No exercises match your search."}
+            </div>
+          ) : (
+            paginatedExercises.map((exercise) => (
+              <Card
+                key={exercise.id}
+                className={cn(
+                  "relative",
+                  exercise.status === "ARCHIVED" && "opacity-60",
+                )}
+              >
+                <div className="absolute top-3 left-3 z-10">
+                  <Checkbox
+                    checked={selectedIds.has(exercise.id)}
+                    onCheckedChange={() => toggleSelect(exercise.id)}
+                    aria-label={`Select ${exercise.title}`}
+                  />
+                </div>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 pl-6">
                       {SKILL_ICONS[exercise.skill]}
-                      <span>{SKILL_LABELS[exercise.skill]}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {SKILL_LABELS[exercise.skill]}
+                      </span>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {exercise.bandLevel ? (
-                      <Badge variant="outline">{exercise.bandLevel}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {exercise.tags?.map((tag) => (
-                        <Badge key={tag.id} variant="secondary" className="text-xs">
-                          {tag.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>{exercise.sections?.length ?? 0}</TableCell>
-                  <TableCell>
                     <Badge
                       variant="outline"
                       className={STATUS_VARIANTS[exercise.status]?.className}
                     >
                       {STATUS_VARIANTS[exercise.status]?.label}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(exercise.updatedAt)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="size-4" />
-                          <span className="sr-only">Actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(exercise)}>
-                          Edit
-                        </DropdownMenuItem>
-                        {exercise.status === "DRAFT" && (
-                          <DropdownMenuItem
-                            onClick={() => handlePublish(exercise)}
-                          >
-                            Publish
-                          </DropdownMenuItem>
-                        )}
-                        {exercise.status !== "ARCHIVED" && (
-                          <DropdownMenuItem
-                            onClick={() => handleArchive(exercise)}
-                          >
-                            Archive
-                          </DropdownMenuItem>
-                        )}
-                        {exercise.status === "DRAFT" && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              disabled={isDeleting}
-                              onClick={() => handleDeleteClick(exercise)}
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                  </div>
+                  <h3 className="font-medium leading-tight line-clamp-2 mt-1">
+                    {exercise.title}
+                  </h3>
+                </CardHeader>
+                <CardContent className="pb-2">
+                  <div className="flex flex-wrap gap-1">
+                    {exercise.bandLevel && (
+                      <Badge variant="outline" className="text-xs">
+                        {exercise.bandLevel}
+                      </Badge>
+                    )}
+                    {exercise.tags?.slice(0, 3).map((tag) => (
+                      <Badge key={tag.id} variant="secondary" className="text-xs">
+                        {tag.name}
+                      </Badge>
+                    ))}
+                    {(exercise.tags?.length ?? 0) > 3 && (
+                      <Badge variant="secondary" className="text-xs">
+                        +{(exercise.tags?.length ?? 0) - 3} more
+                      </Badge>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter className="flex items-center justify-between pt-0 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <span>{formatDate(exercise.updatedAt)}</span>
+                    <span>{exercise.sections?.length ?? 0} sections</span>
+                    {/* TODO: Story 3.15 — Replace stubs with real data from assignment queries */}
+                    <span>Assignments: &mdash;</span>
+                    <span>Avg Score: &mdash;</span>
+                  </div>
+                  {renderActionMenu(exercise)}
+                </CardFooter>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+          >
+            <ChevronLeft className="mr-1 size-4" />
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+          >
+            Next
+            <ChevronRight className="ml-1 size-4" />
+          </Button>
+        </div>
+      )}
 
       <AlertDialog
         open={!!deleteTarget}

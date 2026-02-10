@@ -50,6 +50,8 @@ export class ExercisesService {
       status?: string;
       bandLevel?: string;
       tagIds?: string[];
+      questionType?: string;
+      excludeArchived?: boolean;
     },
   ): Promise<Exercise[]> {
     const db = getTenantedClient(this.prisma, centerId);
@@ -60,6 +62,12 @@ export class ExercisesService {
     if (filters?.bandLevel) where.bandLevel = filters.bandLevel;
     if (filters?.tagIds?.length) {
       where.tagAssignments = { some: { tagId: { in: filters.tagIds } } };
+    }
+    if (filters?.questionType) {
+      where.sections = { some: { sectionType: filters.questionType } };
+    }
+    if (filters?.excludeArchived && !filters?.status) {
+      where.status = { not: "ARCHIVED" };
     }
 
     return await db.exercise.findMany({
@@ -303,6 +311,33 @@ export class ExercisesService {
     id: string,
     input: UpdateExerciseInput,
   ): Promise<Exercise> {
+    const db = getTenantedClient(this.prisma, centerId);
+    const exercise = await db.exercise.findUnique({ where: { id } });
+    if (!exercise) throw AppError.notFound("Exercise not found");
+
+    if (exercise.status === "ARCHIVED") {
+      throw AppError.badRequest("Archived exercises cannot be updated");
+    }
+
+    if (exercise.status === "PUBLISHED") {
+      const allowedKeys = ["title", "bandLevel"];
+      const inputKeys = Object.keys(input).filter(
+        (k) => input[k as keyof typeof input] !== undefined,
+      );
+      const disallowed = inputKeys.filter((k) => !allowedKeys.includes(k));
+      if (disallowed.length > 0) {
+        throw AppError.badRequest(
+          `Published exercises only allow updating: ${allowedKeys.join(", ")}. ` +
+          `Disallowed fields: ${disallowed.join(", ")}`,
+        );
+      }
+      return await db.exercise.update({
+        where: { id },
+        data: { title: input.title, bandLevel: input.bandLevel },
+        include: EXERCISE_INCLUDE,
+      });
+    }
+
     return this.updateDraftExercise(
       centerId,
       id,
@@ -322,6 +357,111 @@ export class ExercisesService {
       input,
       "Only draft exercises can be auto-saved",
     );
+  }
+
+  async duplicateExercise(centerId: string, id: string, firebaseUid: string): Promise<Exercise> {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const authAccount = await db.authAccount.findUniqueOrThrow({
+      where: { provider_providerUserId: { provider: "FIREBASE", providerUserId: firebaseUid } },
+    });
+
+    const source = await db.exercise.findUnique({
+      where: { id },
+      include: {
+        ...EXERCISE_INCLUDE,
+        tagAssignments: { select: { tagId: true } },
+      },
+    });
+    if (!source) throw AppError.notFound("Exercise not found");
+
+    return await db.$transaction(async (tx) => {
+      // NOTE: Copy ALL exercise fields explicitly. If new fields are added to the Exercise model, update this list.
+      const newExercise = await tx.exercise.create({
+        data: {
+          centerId,
+          title: `Copy of ${source.title}`,
+          instructions: source.instructions,
+          skill: source.skill,
+          status: "DRAFT",
+          passageContent: source.passageContent,
+          passageFormat: source.passageFormat,
+          passageSourceType: source.passageSourceType,
+          passageSourceUrl: source.passageSourceUrl,
+          caseSensitive: source.caseSensitive,
+          partialCredit: source.partialCredit,
+          audioUrl: source.audioUrl,
+          audioDuration: source.audioDuration,
+          playbackMode: source.playbackMode,
+          audioSections: source.audioSections ?? Prisma.DbNull,
+          showTranscriptAfterSubmit: source.showTranscriptAfterSubmit,
+          stimulusImageUrl: source.stimulusImageUrl,
+          writingPrompt: source.writingPrompt,
+          letterTone: source.letterTone,
+          wordCountMin: source.wordCountMin,
+          wordCountMax: source.wordCountMax,
+          wordCountMode: source.wordCountMode,
+          sampleResponse: source.sampleResponse,
+          showSampleAfterGrading: source.showSampleAfterGrading,
+          speakingPrepTime: source.speakingPrepTime,
+          speakingTime: source.speakingTime,
+          maxRecordingDuration: source.maxRecordingDuration,
+          enableTranscription: source.enableTranscription,
+          timeLimit: source.timeLimit,
+          timerPosition: source.timerPosition,
+          warningAlerts: source.warningAlerts ?? Prisma.DbNull,
+          autoSubmitOnExpiry: source.autoSubmitOnExpiry,
+          gracePeriodSeconds: source.gracePeriodSeconds,
+          enablePause: source.enablePause,
+          bandLevel: source.bandLevel,
+          createdById: authAccount.userId,
+        },
+      });
+
+      for (const section of source.sections ?? []) {
+        const newSection = await tx.questionSection.create({
+          data: {
+            centerId,
+            exerciseId: newExercise.id,
+            sectionType: section.sectionType,
+            instructions: section.instructions,
+            orderIndex: section.orderIndex,
+            audioSectionIndex: section.audioSectionIndex,
+            sectionTimeLimit: section.sectionTimeLimit,
+          },
+        });
+        for (const question of section.questions ?? []) {
+          await tx.question.create({
+            data: {
+              centerId,
+              sectionId: newSection.id,
+              questionText: question.questionText,
+              questionType: question.questionType,
+              options: question.options ?? Prisma.DbNull,
+              correctAnswer: question.correctAnswer ?? Prisma.DbNull,
+              orderIndex: question.orderIndex,
+              wordLimit: question.wordLimit,
+            },
+          });
+        }
+      }
+
+      const tagIds = (source.tagAssignments ?? []).map((ta: { tagId: string }) => ta.tagId);
+      if (tagIds.length > 0) {
+        await tx.exerciseTagAssignment.createMany({
+          data: tagIds.map((tagId: string) => ({
+            exerciseId: newExercise.id,
+            tagId,
+            centerId,
+          })),
+        });
+      }
+
+      return await tx.exercise.findUniqueOrThrow({
+        where: { id: newExercise.id },
+        include: EXERCISE_INCLUDE,
+      });
+    });
   }
 
   async deleteExercise(centerId: string, id: string): Promise<void> {
@@ -366,6 +506,58 @@ export class ExercisesService {
     return await db.exercise.update({
       where: { id },
       data: { status: "ARCHIVED" },
+      include: EXERCISE_INCLUDE,
+    });
+  }
+
+  async bulkArchive(centerId: string, exerciseIds: string[]): Promise<number> {
+    const db = getTenantedClient(this.prisma, centerId);
+    const result = await db.exercise.updateMany({
+      where: { id: { in: exerciseIds }, status: { not: "ARCHIVED" } },
+      data: { status: "ARCHIVED" },
+    });
+    return result.count;
+  }
+
+  async bulkDuplicate(centerId: string, exerciseIds: string[], firebaseUid: string): Promise<Exercise[]> {
+    const results: Exercise[] = [];
+    for (const id of exerciseIds) {
+      const copy = await this.duplicateExercise(centerId, id, firebaseUid);
+      results.push(copy);
+    }
+    return results;
+  }
+
+  async bulkTag(centerId: string, exerciseIds: string[], tagIds: string[]): Promise<number> {
+    const db = getTenantedClient(this.prisma, centerId);
+    let addedCount = 0;
+    for (const exerciseId of exerciseIds) {
+      for (const tagId of tagIds) {
+        try {
+          await db.exerciseTagAssignment.create({
+            data: { exerciseId, tagId, centerId },
+          });
+          addedCount++;
+        } catch (error) {
+          // Ignore P2002 unique constraint violation (tag already assigned), rethrow others
+          const code = (error as { code?: string })?.code;
+          if (code !== "P2002") throw error;
+        }
+      }
+    }
+    return addedCount;
+  }
+
+  async restoreExercise(centerId: string, id: string): Promise<Exercise> {
+    const db = getTenantedClient(this.prisma, centerId);
+    const exercise = await db.exercise.findUnique({ where: { id } });
+    if (!exercise) throw AppError.notFound("Exercise not found");
+    if (exercise.status !== "ARCHIVED") {
+      throw AppError.badRequest("Only archived exercises can be restored");
+    }
+    return await db.exercise.update({
+      where: { id },
+      data: { status: "DRAFT" },
       include: EXERCISE_INCLUDE,
     });
   }

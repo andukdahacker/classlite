@@ -4671,6 +4671,8 @@ export interface paths {
                     status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
                     bandLevel?: "4-5" | "5-6" | "6-7" | "7-8" | "8-9";
                     tagIds?: string;
+                    questionType?: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                    excludeArchived?: boolean;
                 };
                 header?: never;
                 path?: never;
@@ -5449,6 +5451,298 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/exercises/bulk-archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        exerciseIds: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                count: number;
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exercises/bulk-duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        exerciseIds: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                title: string;
+                                instructions?: string | null;
+                                /** @enum {string} */
+                                skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                                /** @enum {string} */
+                                status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                                passageContent?: string | null;
+                                passageFormat?: string | null;
+                                passageSourceType?: string | null;
+                                passageSourceUrl?: string | null;
+                                /** @default false */
+                                caseSensitive: boolean;
+                                /** @default false */
+                                partialCredit: boolean;
+                                audioUrl?: string | null;
+                                audioDuration?: number | null;
+                                playbackMode?: string | null;
+                                audioSections?: unknown;
+                                /** @default false */
+                                showTranscriptAfterSubmit: boolean;
+                                stimulusImageUrl?: string | null;
+                                writingPrompt?: string | null;
+                                letterTone?: string | null;
+                                wordCountMin?: number | null;
+                                wordCountMax?: number | null;
+                                wordCountMode?: string | null;
+                                sampleResponse?: string | null;
+                                /** @default false */
+                                showSampleAfterGrading: boolean;
+                                speakingPrepTime?: number | null;
+                                speakingTime?: number | null;
+                                maxRecordingDuration?: number | null;
+                                /** @default false */
+                                enableTranscription: boolean;
+                                timeLimit?: number | null;
+                                timerPosition?: string | null;
+                                warningAlerts?: unknown;
+                                /** @default true */
+                                autoSubmitOnExpiry: boolean;
+                                gracePeriodSeconds?: number | null;
+                                /** @default false */
+                                enablePause: boolean;
+                                bandLevel?: string | null;
+                                tags?: {
+                                    id: string;
+                                    name: string;
+                                }[];
+                                createdById: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                sections?: {
+                                    id: string;
+                                    exerciseId: string;
+                                    centerId: string;
+                                    /** @enum {string} */
+                                    sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                    instructions?: string | null;
+                                    orderIndex: number;
+                                    audioSectionIndex?: number | null;
+                                    sectionTimeLimit?: number | null;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    questions?: {
+                                        id: string;
+                                        sectionId: string;
+                                        centerId: string;
+                                        questionText: string;
+                                        questionType: string;
+                                        options?: unknown;
+                                        correctAnswer?: unknown;
+                                        orderIndex: number;
+                                        wordLimit?: number | null;
+                                        createdAt: string;
+                                        updatedAt: string;
+                                    }[];
+                                }[];
+                                createdBy?: {
+                                    id: string;
+                                    name: string | null;
+                                };
+                            }[] | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exercises/bulk-tag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        exerciseIds: string[];
+                        tagIds: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                count: number;
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/exercises/{id}/autosave": {
         parameters: {
             query?: never;
@@ -5833,6 +6127,336 @@ export interface paths {
         trace?: never;
     };
     "/api/v1/exercises/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                title: string;
+                                instructions?: string | null;
+                                /** @enum {string} */
+                                skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                                /** @enum {string} */
+                                status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                                passageContent?: string | null;
+                                passageFormat?: string | null;
+                                passageSourceType?: string | null;
+                                passageSourceUrl?: string | null;
+                                /** @default false */
+                                caseSensitive: boolean;
+                                /** @default false */
+                                partialCredit: boolean;
+                                audioUrl?: string | null;
+                                audioDuration?: number | null;
+                                playbackMode?: string | null;
+                                audioSections?: unknown;
+                                /** @default false */
+                                showTranscriptAfterSubmit: boolean;
+                                stimulusImageUrl?: string | null;
+                                writingPrompt?: string | null;
+                                letterTone?: string | null;
+                                wordCountMin?: number | null;
+                                wordCountMax?: number | null;
+                                wordCountMode?: string | null;
+                                sampleResponse?: string | null;
+                                /** @default false */
+                                showSampleAfterGrading: boolean;
+                                speakingPrepTime?: number | null;
+                                speakingTime?: number | null;
+                                maxRecordingDuration?: number | null;
+                                /** @default false */
+                                enableTranscription: boolean;
+                                timeLimit?: number | null;
+                                timerPosition?: string | null;
+                                warningAlerts?: unknown;
+                                /** @default true */
+                                autoSubmitOnExpiry: boolean;
+                                gracePeriodSeconds?: number | null;
+                                /** @default false */
+                                enablePause: boolean;
+                                bandLevel?: string | null;
+                                tags?: {
+                                    id: string;
+                                    name: string;
+                                }[];
+                                createdById: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                sections?: {
+                                    id: string;
+                                    exerciseId: string;
+                                    centerId: string;
+                                    /** @enum {string} */
+                                    sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                    instructions?: string | null;
+                                    orderIndex: number;
+                                    audioSectionIndex?: number | null;
+                                    sectionTimeLimit?: number | null;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    questions?: {
+                                        id: string;
+                                        sectionId: string;
+                                        centerId: string;
+                                        questionText: string;
+                                        questionType: string;
+                                        options?: unknown;
+                                        correctAnswer?: unknown;
+                                        orderIndex: number;
+                                        wordLimit?: number | null;
+                                        createdAt: string;
+                                        updatedAt: string;
+                                    }[];
+                                }[];
+                                createdBy?: {
+                                    id: string;
+                                    name: string | null;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exercises/{id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                centerId: string;
+                                title: string;
+                                instructions?: string | null;
+                                /** @enum {string} */
+                                skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
+                                /** @enum {string} */
+                                status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                                passageContent?: string | null;
+                                passageFormat?: string | null;
+                                passageSourceType?: string | null;
+                                passageSourceUrl?: string | null;
+                                /** @default false */
+                                caseSensitive: boolean;
+                                /** @default false */
+                                partialCredit: boolean;
+                                audioUrl?: string | null;
+                                audioDuration?: number | null;
+                                playbackMode?: string | null;
+                                audioSections?: unknown;
+                                /** @default false */
+                                showTranscriptAfterSubmit: boolean;
+                                stimulusImageUrl?: string | null;
+                                writingPrompt?: string | null;
+                                letterTone?: string | null;
+                                wordCountMin?: number | null;
+                                wordCountMax?: number | null;
+                                wordCountMode?: string | null;
+                                sampleResponse?: string | null;
+                                /** @default false */
+                                showSampleAfterGrading: boolean;
+                                speakingPrepTime?: number | null;
+                                speakingTime?: number | null;
+                                maxRecordingDuration?: number | null;
+                                /** @default false */
+                                enableTranscription: boolean;
+                                timeLimit?: number | null;
+                                timerPosition?: string | null;
+                                warningAlerts?: unknown;
+                                /** @default true */
+                                autoSubmitOnExpiry: boolean;
+                                gracePeriodSeconds?: number | null;
+                                /** @default false */
+                                enablePause: boolean;
+                                bandLevel?: string | null;
+                                tags?: {
+                                    id: string;
+                                    name: string;
+                                }[];
+                                createdById: string;
+                                createdAt: string;
+                                updatedAt: string;
+                                sections?: {
+                                    id: string;
+                                    exerciseId: string;
+                                    centerId: string;
+                                    /** @enum {string} */
+                                    sectionType: "R1_MCQ_SINGLE" | "R2_MCQ_MULTI" | "R3_TFNG" | "R4_YNNG" | "R5_SENTENCE_COMPLETION" | "R6_SHORT_ANSWER" | "R7_SUMMARY_WORD_BANK" | "R8_SUMMARY_PASSAGE" | "R9_MATCHING_HEADINGS" | "R10_MATCHING_INFORMATION" | "R11_MATCHING_FEATURES" | "R12_MATCHING_SENTENCE_ENDINGS" | "R13_NOTE_TABLE_FLOWCHART" | "R14_DIAGRAM_LABELLING" | "L1_FORM_NOTE_TABLE" | "L2_MCQ" | "L3_MATCHING" | "L4_MAP_PLAN_LABELLING" | "L5_SENTENCE_COMPLETION" | "L6_SHORT_ANSWER" | "W1_TASK1_ACADEMIC" | "W2_TASK1_GENERAL" | "W3_TASK2_ESSAY" | "S1_PART1_QA" | "S2_PART2_CUE_CARD" | "S3_PART3_DISCUSSION";
+                                    instructions?: string | null;
+                                    orderIndex: number;
+                                    audioSectionIndex?: number | null;
+                                    sectionTimeLimit?: number | null;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    questions?: {
+                                        id: string;
+                                        sectionId: string;
+                                        centerId: string;
+                                        questionText: string;
+                                        questionType: string;
+                                        options?: unknown;
+                                        correctAnswer?: unknown;
+                                        orderIndex: number;
+                                        wordLimit?: number | null;
+                                        createdAt: string;
+                                        updatedAt: string;
+                                    }[];
+                                }[];
+                                createdBy?: {
+                                    id: string;
+                                    name: string | null;
+                                };
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exercises/{id}/restore": {
         parameters: {
             query?: never;
             header?: never;

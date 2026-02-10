@@ -1,6 +1,7 @@
 import type {
   AutosaveExerciseInput,
   CreateExerciseInput,
+  Exercise,
   ExerciseListResponse,
   ExerciseResponse,
   UpdateExerciseInput,
@@ -31,6 +32,8 @@ export class ExercisesController {
       status?: string;
       bandLevel?: string;
       tagIds?: string[];
+      questionType?: string;
+      excludeArchived?: boolean;
     },
   ): Promise<ExerciseListResponse> {
     const centerId = user.centerId;
@@ -220,5 +223,67 @@ export class ExercisesController {
       data: flattenTags(exercise),
       message: "Exercise archived successfully",
     };
+  }
+
+  async duplicateExercise(
+    id: string,
+    user: JwtPayload,
+  ): Promise<ExerciseResponse> {
+    const centerId = user.centerId;
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
+
+    const exercise = await this.exercisesService.duplicateExercise(centerId, id, user.uid);
+    return {
+      data: flattenTags(exercise),
+      message: "Exercise duplicated successfully",
+    };
+  }
+
+  async restoreExercise(
+    id: string,
+    user: JwtPayload,
+  ): Promise<ExerciseResponse> {
+    const centerId = user.centerId;
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
+
+    const exercise = await this.exercisesService.restoreExercise(centerId, id);
+    return {
+      data: flattenTags(exercise),
+      message: "Exercise restored to draft",
+    };
+  }
+
+  async bulkArchive(
+    exerciseIds: string[],
+    user: JwtPayload,
+  ): Promise<{ data: { count: number }; message: string }> {
+    const centerId = user.centerId;
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
+
+    const count = await this.exercisesService.bulkArchive(centerId, exerciseIds);
+    return { data: { count }, message: `${count} exercises archived` };
+  }
+
+  async bulkDuplicate(
+    exerciseIds: string[],
+    user: JwtPayload,
+  ): Promise<{ data: Exercise[]; message: string }> {
+    const centerId = user.centerId;
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
+
+    const exercises = await this.exercisesService.bulkDuplicate(centerId, exerciseIds, user.uid);
+    return { data: exercises.map(flattenTags), message: `${exercises.length} exercises duplicated` };
+  }
+
+  async bulkTag(
+    exerciseIds: string[],
+    tagIds: string[],
+    user: JwtPayload,
+  ): Promise<{ data: { count: number }; message: string }> {
+    const centerId = user.centerId;
+    if (!centerId) throw AppError.unauthorized("Center ID missing from token");
+
+    const count = await this.exercisesService.bulkTag(centerId, exerciseIds, tagIds);
+    return { data: { count }, message: `${count} tag assignments added` };
   }
 }
