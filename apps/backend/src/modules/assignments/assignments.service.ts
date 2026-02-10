@@ -285,6 +285,74 @@ export class AssignmentsService {
     });
   }
 
+  async listStudentAssignments(
+    centerId: string,
+    firebaseUid: string,
+    filters?: {
+      skill?: string;
+      status?: "OPEN" | "CLOSED";
+    },
+  ) {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    // Resolve Firebase UID → internal userId (same pattern as createAssignment)
+    const authAccount = await db.authAccount.findUniqueOrThrow({
+      where: { provider_providerUserId: { provider: "FIREBASE", providerUserId: firebaseUid } },
+    });
+    const studentUserId = authAccount.userId;
+
+    const where: Record<string, unknown> = {
+      assignment: {
+        status: filters?.status ? { equals: filters.status } : { not: "ARCHIVED" },
+        ...(filters?.skill ? { exercise: { skill: filters.skill } } : {}),
+      },
+      studentId: studentUserId,
+    };
+
+    const studentAssignments = await db.assignmentStudent.findMany({
+      where,
+      include: {
+        assignment: {
+          include: {
+            exercise: { select: { id: true, title: true, skill: true, status: true } },
+            class: { select: { id: true, name: true } },
+            createdBy: { select: { id: true, name: true } },
+          },
+        },
+      },
+      orderBy: { assignment: { dueDate: "asc" } },
+    });
+
+    return studentAssignments.map((sa) => sa.assignment);
+  }
+
+  async getStudentAssignment(centerId: string, assignmentId: string, firebaseUid: string) {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    // Resolve Firebase UID → internal userId
+    const authAccount = await db.authAccount.findUniqueOrThrow({
+      where: { provider_providerUserId: { provider: "FIREBASE", providerUserId: firebaseUid } },
+    });
+
+    const studentAssignment = await db.assignmentStudent.findFirst({
+      where: {
+        assignmentId,
+        studentId: authAccount.userId,
+      },
+      include: {
+        assignment: {
+          include: {
+            exercise: { select: { id: true, title: true, skill: true, status: true } },
+            class: { select: { id: true, name: true } },
+            createdBy: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+    if (!studentAssignment) throw AppError.notFound("Assignment not found");
+    return studentAssignment.assignment;
+  }
+
   async getAssignmentCountsByExercise(
     centerId: string,
     exerciseIds: string[],

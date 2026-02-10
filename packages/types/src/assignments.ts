@@ -84,6 +84,38 @@ export const AssignmentCountSchema = z.object({
   count: z.number(),
 });
 
+// --- Student Assignment (read-only view) ---
+export const StudentAssignmentSchema = z.object({
+  id: z.string(),
+  exerciseId: z.string(),
+  classId: z.string().nullable(),
+  dueDate: z.string().nullable(),
+  timeLimit: z.number().nullable(),
+  instructions: z.string().nullable(),
+  status: AssignmentStatusSchema,
+  createdAt: z.string(),
+  exercise: z.object({
+    id: z.string(),
+    title: z.string(),
+    skill: z.string(),
+    status: z.string(),
+  }),
+  class: z.object({
+    id: z.string(),
+    name: z.string(),
+  }).nullable(),
+  createdBy: z.object({
+    id: z.string(),
+    name: z.string().nullable(),
+  }),
+});
+export type StudentAssignment = z.infer<typeof StudentAssignmentSchema>;
+
+export const StudentAssignmentResponseSchema = createResponseSchema(StudentAssignmentSchema);
+export const StudentAssignmentListResponseSchema = createResponseSchema(
+  z.array(StudentAssignmentSchema)
+);
+
 // --- Assignment Count per Exercise (for library view) ---
 export const ExerciseAssignmentCountsSchema = createResponseSchema(
   z.array(AssignmentCountSchema)

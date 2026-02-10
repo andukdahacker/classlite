@@ -68,6 +68,8 @@ describe("AssignmentsService", () => {
       },
       assignmentStudent: {
         createMany: vi.fn(),
+        findMany: vi.fn(),
+        findFirst: vi.fn(),
       },
       exercise: {
         findUnique: vi.fn(),
@@ -485,6 +487,185 @@ describe("AssignmentsService", () => {
       await expect(
         service.archiveAssignment(centerId, assignmentId),
       ).rejects.toThrow("Assignment is already archived");
+    });
+  });
+
+  describe("listStudentAssignments", () => {
+    const studentFirebaseUid = "student-firebase-uid-1";
+    const studentUserId = "student-1";
+
+    const mockStudentAssignment = {
+      id: "sa-1",
+      studentId: studentUserId,
+      assignmentId: assignmentId,
+      centerId,
+      assignment: {
+        id: assignmentId,
+        centerId,
+        exerciseId,
+        classId,
+        dueDate: new Date("2026-03-01"),
+        timeLimit: 3600,
+        instructions: "Complete all questions",
+        status: "OPEN",
+        createdById: userId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        exercise: { id: exerciseId, title: "Reading Test 1", skill: "READING", status: "PUBLISHED" },
+        class: { id: classId, name: "Class 10A" },
+        createdBy: { id: userId, name: "Teacher" },
+      },
+    };
+
+    beforeEach(() => {
+      mockDb.authAccount.findUniqueOrThrow.mockResolvedValue({ userId: studentUserId });
+    });
+
+    it("should return only assignments for this student", async () => {
+      mockDb.assignmentStudent.findMany.mockResolvedValue([mockStudentAssignment]);
+
+      const result = await service.listStudentAssignments(centerId, studentFirebaseUid);
+
+      expect(result).toEqual([mockStudentAssignment.assignment]);
+      expect(mockDb.assignmentStudent.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            studentId: studentUserId,
+          }),
+        }),
+      );
+    });
+
+    it("should return empty array for student with no assignments", async () => {
+      mockDb.assignmentStudent.findMany.mockResolvedValue([]);
+
+      const result = await service.listStudentAssignments(centerId, studentFirebaseUid);
+
+      expect(result).toEqual([]);
+    });
+
+    it("should exclude ARCHIVED assignments by default", async () => {
+      mockDb.assignmentStudent.findMany.mockResolvedValue([]);
+
+      await service.listStudentAssignments(centerId, studentFirebaseUid);
+
+      expect(mockDb.assignmentStudent.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            assignment: expect.objectContaining({
+              status: { not: "ARCHIVED" },
+            }),
+          }),
+        }),
+      );
+    });
+
+    it("should filter by skill", async () => {
+      mockDb.assignmentStudent.findMany.mockResolvedValue([]);
+
+      await service.listStudentAssignments(centerId, studentFirebaseUid, { skill: "READING" });
+
+      expect(mockDb.assignmentStudent.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            assignment: expect.objectContaining({
+              exercise: { skill: "READING" },
+            }),
+          }),
+        }),
+      );
+    });
+
+    it("should filter by status (OPEN)", async () => {
+      mockDb.assignmentStudent.findMany.mockResolvedValue([]);
+
+      await service.listStudentAssignments(centerId, studentFirebaseUid, { status: "OPEN" });
+
+      expect(mockDb.assignmentStudent.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            assignment: expect.objectContaining({
+              status: { equals: "OPEN" },
+            }),
+          }),
+        }),
+      );
+    });
+
+    it("should order by dueDate ascending", async () => {
+      mockDb.assignmentStudent.findMany.mockResolvedValue([]);
+
+      await service.listStudentAssignments(centerId, studentFirebaseUid);
+
+      expect(mockDb.assignmentStudent.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { assignment: { dueDate: "asc" } },
+        }),
+      );
+    });
+
+    it("should resolve Firebase UID to userId via authAccount", async () => {
+      mockDb.assignmentStudent.findMany.mockResolvedValue([]);
+
+      await service.listStudentAssignments(centerId, studentFirebaseUid);
+
+      expect(mockDb.authAccount.findUniqueOrThrow).toHaveBeenCalledWith({
+        where: { provider_providerUserId: { provider: "FIREBASE", providerUserId: studentFirebaseUid } },
+      });
+    });
+  });
+
+  describe("getStudentAssignment", () => {
+    const studentFirebaseUid = "student-firebase-uid-1";
+    const studentUserId = "student-1";
+
+    const mockStudentAssignmentRecord = {
+      id: "sa-1",
+      studentId: studentUserId,
+      assignmentId,
+      assignment: {
+        id: assignmentId,
+        centerId,
+        exerciseId,
+        classId,
+        dueDate: new Date("2026-03-01"),
+        timeLimit: 3600,
+        instructions: "Complete all questions",
+        status: "OPEN",
+        createdById: userId,
+        createdAt: new Date(),
+        exercise: { id: exerciseId, title: "Reading Test 1", skill: "READING", status: "PUBLISHED" },
+        class: { id: classId, name: "Class 10A" },
+        createdBy: { id: userId, name: "Teacher" },
+      },
+    };
+
+    beforeEach(() => {
+      mockDb.authAccount.findUniqueOrThrow.mockResolvedValue({ userId: studentUserId });
+    });
+
+    it("should return assignment when student is assigned", async () => {
+      mockDb.assignmentStudent.findFirst.mockResolvedValue(mockStudentAssignmentRecord);
+
+      const result = await service.getStudentAssignment(centerId, assignmentId, studentFirebaseUid);
+
+      expect(result).toEqual(mockStudentAssignmentRecord.assignment);
+    });
+
+    it("should throw NotFound when student is NOT assigned", async () => {
+      mockDb.assignmentStudent.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.getStudentAssignment(centerId, assignmentId, studentFirebaseUid),
+      ).rejects.toThrow("Assignment not found");
+    });
+
+    it("should throw NotFound for non-existent assignment ID", async () => {
+      mockDb.assignmentStudent.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.getStudentAssignment(centerId, "non-existent-id", studentFirebaseUid),
+      ).rejects.toThrow("Assignment not found");
     });
   });
 
