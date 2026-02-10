@@ -11,6 +11,8 @@ type Env = {
   RESEND_API_KEY: string;
   PLATFORM_ADMIN_API_KEY: string;
   EMAIL_FROM?: string;
+  GEMINI_API_KEY?: string;
+  GEMINI_MODEL?: string;
 };
 
 export default Env;

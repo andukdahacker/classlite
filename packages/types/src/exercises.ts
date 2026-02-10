@@ -522,6 +522,8 @@ export const ExerciseSchema = z.object({
   status: ExerciseStatusSchema,
   passageContent: z.string().nullable().optional(),
   passageFormat: z.string().nullable().optional(),
+  passageSourceType: z.string().nullable().optional(),
+  passageSourceUrl: z.string().nullable().optional(),
   caseSensitive: z.boolean().default(false),
   partialCredit: z.boolean().default(false),
   audioUrl: z.string().nullable().optional(),

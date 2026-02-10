@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { ChevronDown, ChevronRight, GripVertical, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, GripVertical, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { QuestionEditorFactory } from "./question-types/QuestionEditorFactory";
 
@@ -74,6 +74,7 @@ interface QuestionSectionEditorProps {
   onCreateQuestion: (sectionId: string, input: CreateQuestionInput) => void;
   onUpdateQuestion: (sectionId: string, questionId: string, input: UpdateQuestionInput) => void;
   onDeleteQuestion: (sectionId: string, questionId: string) => void;
+  onRegenerate?: (sectionId: string, difficulty?: string) => void;
   dragHandleProps?: DraggableProvidedDragHandleProps | null;
 }
 
@@ -89,6 +90,7 @@ export function QuestionSectionEditor({
   onCreateQuestion,
   onUpdateQuestion,
   onDeleteQuestion,
+  onRegenerate,
   dragHandleProps,
 }: QuestionSectionEditorProps) {
   const [newQuestionText, setNewQuestionText] = useState("");
@@ -148,14 +150,26 @@ export function QuestionSectionEditor({
           </div>
           <h4 className="font-semibold">Section {index + 1}</h4>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-destructive hover:text-destructive"
-          onClick={() => onDeleteSection(section.id)}
-        >
-          <Trash2 className="size-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {onRegenerate && (
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Regenerate this section with AI"
+              onClick={() => onRegenerate(section.id)}
+            >
+              <RefreshCw className="size-4" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive hover:text-destructive"
+            onClick={() => onDeleteSection(section.id)}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

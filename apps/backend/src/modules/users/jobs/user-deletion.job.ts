@@ -1,5 +1,5 @@
 import { inngest } from "../../inngest/client.js";
-import { PrismaClient } from "@workspace/db";
+import { createPrisma } from "../../../plugins/create-prisma.js";
 import { getAuth } from "firebase-admin/auth";
 
 // Note: Each step.run() creates a new PrismaClient because:
@@ -44,7 +44,7 @@ export const userDeletionJob = inngest.createFunction(
 
     // Step 2: Check if deletion is still pending
     const shouldDelete = await step.run("check-deletion-status", async () => {
-      const prisma = new PrismaClient();
+      const prisma = createPrisma();
       try {
         const user = await prisma.user.findUnique({
           where: { id: userId },
@@ -75,7 +75,7 @@ export const userDeletionJob = inngest.createFunction(
 
     // Step 3: Delete Firebase auth account
     await step.run("delete-firebase-account", async () => {
-      const prisma = new PrismaClient();
+      const prisma = createPrisma();
       try {
         const authAccount = await prisma.authAccount.findFirst({
           where: { userId, provider: "FIREBASE" },
@@ -96,7 +96,7 @@ export const userDeletionJob = inngest.createFunction(
 
     // Step 4: Delete user data from database
     await step.run("delete-user-data", async () => {
-      const prisma = new PrismaClient();
+      const prisma = createPrisma();
       try {
         // Delete in order to handle foreign key constraints
         // 1. Delete memberships (will cascade to permissions)

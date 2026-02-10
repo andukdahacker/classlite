@@ -22,6 +22,7 @@ const TENANTED_MODELS = [
   "Question",
   "ExerciseTag",
   "ExerciseTagAssignment",
+  "AIGenerationJob",
 ];
 
 /**

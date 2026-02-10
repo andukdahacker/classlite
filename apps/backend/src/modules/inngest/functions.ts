@@ -6,6 +6,7 @@ import {
   sessionEmailNotificationJob,
   sessionCancellationEmailJob,
 } from "../logistics/jobs/session-email-notification.job.js";
+import { questionGenerationJob } from "../exercises/jobs/question-generation.job.js";
 
 // Export functions array - all Inngest functions must be registered here
 export const functions: ReturnType<typeof inngest.createFunction>[] = [
@@ -14,4 +15,5 @@ export const functions: ReturnType<typeof inngest.createFunction>[] = [
   csvImportJob,
   sessionEmailNotificationJob,
   sessionCancellationEmailJob,
+  questionGenerationJob,
 ];

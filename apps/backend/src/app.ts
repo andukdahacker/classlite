@@ -21,6 +21,7 @@ import { roomsRoutes } from "./modules/logistics/rooms.routes.js";
 import { exercisesRoutes } from "./modules/exercises/exercises.routes.js";
 import { sectionsRoutes } from "./modules/exercises/sections.routes.js";
 import { tagsRoutes } from "./modules/exercises/tags.routes.js";
+import { aiGenerationRoutes } from "./modules/exercises/ai-generation.routes.js";
 import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
 import { usersRoutes } from "./modules/users/users.routes.js";
 import { inngestRoutes } from "./modules/inngest/inngest.routes.js";
@@ -90,6 +91,12 @@ export const buildApp = async () => {
           type: "string",
         },
         EMAIL_FROM: {
+          type: "string",
+        },
+        GEMINI_API_KEY: {
+          type: "string",
+        },
+        GEMINI_MODEL: {
           type: "string",
         },
       },
@@ -206,6 +213,7 @@ export const buildApp = async () => {
   await app.register(roomsRoutes, { prefix: "/api/v1/logistics/rooms" });
   await app.register(exercisesRoutes, { prefix: "/api/v1/exercises" });
   await app.register(sectionsRoutes, { prefix: "/api/v1/exercises" });
+  await app.register(aiGenerationRoutes, { prefix: "/api/v1/exercises" });
   await app.register(tagsRoutes, { prefix: "/api/v1/tags" });
   await app.register(notificationsRoutes, { prefix: "/api/v1/notifications" });
   await app.register(usersRoutes, { prefix: "/api/v1/users" });

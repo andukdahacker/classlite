@@ -424,8 +424,10 @@ model Exercise {
   instructions   String?
   skill          ExerciseSkill
   status         ExerciseStatus @default(DRAFT)
-  passageContent String?        @map("passage_content") @db.Text
-  passageFormat  String?        @map("passage_format")
+  passageContent    String?        @map("passage_content") @db.Text
+  passageFormat     String?        @map("passage_format")
+  passageSourceType String?        @map("passage_source_type")
+  passageSourceUrl  String?        @map("passage_source_url")
   caseSensitive             Boolean        @default(false) @map("case_sensitive")
   partialCredit             Boolean        @default(false) @map("partial_credit")
   audioUrl                  String?        @map("audio_url")
@@ -456,9 +458,10 @@ model Exercise {
   createdAt                 DateTime       @default(now()) @map("created_at")
   updatedAt                 DateTime       @updatedAt @map("updated_at")
 
-  createdBy      User                    @relation("ExerciseCreator", fields: [createdById], references: [id])
-  sections       QuestionSection[]
-  tagAssignments ExerciseTagAssignment[]
+  createdBy         User                    @relation("ExerciseCreator", fields: [createdById], references: [id])
+  sections          QuestionSection[]
+  tagAssignments    ExerciseTagAssignment[]
+  aiGenerationJobs  AIGenerationJob[]
 
   @@unique([id, centerId])
   @@index([centerId])
@@ -539,6 +542,25 @@ model Question {
   @@index([centerId])
   @@index([sectionId])
   @@map("question")
+}
+
+model AIGenerationJob {
+  id            String   @id @default(cuid())
+  centerId      String   @map("center_id")
+  exerciseId    String   @map("exercise_id")
+  status        String   @default("pending")
+  questionTypes Json     @map("question_types")
+  difficulty    String?
+  error         String?
+  result        Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@index([centerId])
+  @@index([exerciseId])
+  @@map("ai_generation_job")
 }
 
 // ─── Email Logging ──────────────────────────────────────────────────

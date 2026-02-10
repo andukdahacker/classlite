@@ -61,6 +61,9 @@ import { WritingTaskEditor } from "./WritingTaskEditor";
 import { WritingRubricDisplay } from "./WritingRubricDisplay";
 import { SpeakingTaskEditor } from "./SpeakingTaskEditor";
 import { TimerSettingsEditor } from "./TimerSettingsEditor";
+import { DocumentUploadPanel } from "./DocumentUploadPanel";
+import { AIGenerationPanel } from "./AIGenerationPanel";
+import { useAIGeneration } from "../hooks/use-ai-generation";
 import type { Exercise } from "@workspace/types";
 
 // Default first question type per skill
@@ -370,7 +373,7 @@ export function ExerciseEditor() {
 
   // Hooks
   const { createExercise, updateExercise, publishExercise } = useExercises(centerId);
-  const { exercise, isLoading, autosave, isAutosaving } = useExercise(
+  const { exercise, isLoading, autosave, isAutosaving, refetch: refetchExercise } = useExercise(
     centerId,
     id,
   );
@@ -384,6 +387,7 @@ export function ExerciseEditor() {
     deleteQuestion,
   } = useSections(id);
   const { exerciseTags, setExerciseTags } = useExerciseTags(centerId, id);
+  const { regenerateSection } = useAIGeneration(id);
 
   // Load existing exercise data
   useEffect(() => {
@@ -915,6 +919,21 @@ export function ExerciseEditor() {
         </div>
       )}
 
+      {/* Document Upload (Reading only) */}
+      {isEditing && id && centerId && selectedSkill === "READING" && (
+        <div className="max-w-3xl">
+          <DocumentUploadPanel
+            exerciseId={id}
+            currentPassageContent={passageContent}
+            currentSourceType={exercise?.passageSourceType ?? null}
+            onPassageUpdated={(text) => {
+              setPassageContent(text);
+              userHasEdited.current = true;
+            }}
+          />
+        </div>
+      )}
+
       {/* Passage Editor */}
       {showPassage && (
         <div className="max-w-3xl">
@@ -923,6 +942,20 @@ export function ExerciseEditor() {
             onChange={(v) => handleFieldChange(setPassageContent, v)}
             label={selectedSkill === "LISTENING" ? "Transcript (Optional)" : undefined}
             placeholder={selectedSkill === "LISTENING" ? "Enter the transcript here. Use blank lines to separate paragraphs..." : undefined}
+          />
+        </div>
+      )}
+
+      {/* AI Generation (Reading only) */}
+      {isEditing && id && centerId && selectedSkill === "READING" && (
+        <div className="max-w-3xl">
+          <AIGenerationPanel
+            exerciseId={id}
+            hasPassage={!!passageContent?.trim()}
+            existingSections={exercise?.sections ?? []}
+            onGenerationComplete={() => {
+              refetchExercise();
+            }}
           />
         </div>
       )}
@@ -1056,6 +1089,9 @@ export function ExerciseEditor() {
                           onCreateQuestion={handleCreateQuestion}
                           onUpdateQuestion={handleUpdateQuestion}
                           onDeleteQuestion={handleDeleteQuestion}
+                          onRegenerate={selectedSkill === "READING" ? (sectionId, difficulty) => {
+                            regenerateSection({ sectionId, difficulty: difficulty as "easy" | "medium" | "hard" | undefined });
+                          } : undefined}
                           dragHandleProps={provided.dragHandleProps}
                         />
                       </div>

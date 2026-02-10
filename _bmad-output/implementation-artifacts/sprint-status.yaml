@@ -89,7 +89,7 @@ development_status:
   3-9-speaking-exercise-builder: done # S1-S3 (Phase 2) — Code review fixes applied 2026-02-09
   3-10-timer-test-conditions: done # Time limits, auto-submit — Code review fixes applied 2026-02-09
   3-11-exercise-tagging-organization: done # Skill/band/topic tags — Code review fixes applied 2026-02-09
-  3-12-ai-content-generation-reading: backlog # PDF upload, AI questions
+  3-12-ai-content-generation-reading: done # PDF upload, AI questions — Code review fixes applied 2026-02-10
   3-13-mock-test-assembly: backlog # Full test simulation
   3-14-exercise-library-management: backlog # Browse, organize
   3-15-exercise-assignment-management: backlog # Assign to classes

@@ -1,12 +1,12 @@
 import { inngest } from "../../inngest/client.js";
 import {
-  PrismaClient,
   CenterRole,
   MembershipStatus,
   CsvImportStatus,
   CsvImportRowStatus,
   getTenantedClient,
 } from "@workspace/db";
+import { createPrisma } from "../../../plugins/create-prisma.js";
 import { Resend } from "resend";
 
 // Event type for CSV import batch processing
@@ -59,7 +59,7 @@ export const csvImportJob = inngest.createFunction(
 
     // Step 1: Verify import belongs to center (security check)
     const importVerified = await step.run("verify-ownership", async () => {
-      const prisma = new PrismaClient();
+      const prisma = createPrisma();
       try {
         const db = getTenantedClient(prisma, centerId);
         const importLog = await db.csvImportLog.findUnique({
@@ -84,7 +84,7 @@ export const csvImportJob = inngest.createFunction(
 
     // Step 2: Fetch rows to process
     const rowsToProcess = await step.run("fetch-rows", async () => {
-      const prisma = new PrismaClient();
+      const prisma = createPrisma();
       try {
         const db = getTenantedClient(prisma, centerId);
         const rows = await db.csvImportRowLog.findMany({
@@ -118,7 +118,7 @@ export const csvImportJob = inngest.createFunction(
 
     // Get center info for emails
     const centerInfo = await step.run("fetch-center", async () => {
-      const prisma = new PrismaClient();
+      const prisma = createPrisma();
       try {
         const center = await prisma.center.findUnique({
           where: { id: centerId },
@@ -142,7 +142,7 @@ export const csvImportJob = inngest.createFunction(
       const batchResults = await step.run(
         `process-batch-${batchIndex}`,
         async () => {
-          const prisma = new PrismaClient();
+          const prisma = createPrisma();
           const resend = resendApiKey ? new Resend(resendApiKey) : null;
           const results: {
             rowId: string;
@@ -259,7 +259,7 @@ export const csvImportJob = inngest.createFunction(
 
       // Update row statuses
       await step.run(`update-batch-${batchIndex}-statuses`, async () => {
-        const prisma = new PrismaClient();
+        const prisma = createPrisma();
         try {
           const db = getTenantedClient(prisma, centerId);
           for (const result of batchResults) {
@@ -290,7 +290,7 @@ export const csvImportJob = inngest.createFunction(
 
     // Update final import log status
     await step.run("finalize-import", async () => {
-      const prisma = new PrismaClient();
+      const prisma = createPrisma();
       try {
         const db = getTenantedClient(prisma, centerId);
 

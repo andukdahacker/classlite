@@ -1,5 +1,6 @@
 import { inngest } from "../../inngest/client.js";
-import { PrismaClient, getTenantedClient } from "@workspace/db";
+import { getTenantedClient } from "@workspace/db";
+import { createPrisma } from "../../../plugins/create-prisma.js";
 import { Resend } from "resend";
 import { buildScheduleChangeEmail } from "../emails/schedule-change.template.js";
 import { buildSessionCancelledEmail } from "../emails/session-cancelled.template.js";
@@ -44,7 +45,7 @@ async function fetchRecipientsForClass(
   centerId: string,
   classId: string,
 ): Promise<Recipient[]> {
-  const prisma = new PrismaClient();
+  const prisma = createPrisma();
   try {
     const db = getTenantedClient(prisma, centerId);
     const classData = await db.class.findUnique({
@@ -96,7 +97,7 @@ async function fetchRecipientsForClass(
 }
 
 async function fetchCenterName(centerId: string): Promise<string> {
-  const prisma = new PrismaClient();
+  const prisma = createPrisma();
   try {
     const center = await prisma.center.findUnique({
       where: { id: centerId },
@@ -135,7 +136,7 @@ export const sessionEmailNotificationJob = inngest.createFunction(
 
     // Re-fetch current session state (gets final values after rapid edits)
     const session = await step.run("fetch-session", async () => {
-      const prisma = new PrismaClient();
+      const prisma = createPrisma();
       try {
         const db = getTenantedClient(prisma, centerId);
         const result = await db.classSession.findUnique({
@@ -191,7 +192,7 @@ export const sessionEmailNotificationJob = inngest.createFunction(
       const result = await step.run(
         `send-email-${recipient.id}`,
         async () => {
-          const prisma = new PrismaClient();
+          const prisma = createPrisma();
           try {
             const resend = resendApiKey ? new Resend(resendApiKey) : null;
             const db = getTenantedClient(prisma, centerId);
@@ -301,7 +302,7 @@ export const sessionCancellationEmailJob = inngest.createFunction(
 
     // Fetch class and course info
     const classInfo = await step.run("fetch-class-info", async () => {
-      const prisma = new PrismaClient();
+      const prisma = createPrisma();
       try {
         const db = getTenantedClient(prisma, centerId);
         const classData = await db.class.findUnique({
@@ -334,7 +335,7 @@ export const sessionCancellationEmailJob = inngest.createFunction(
       const result = await step.run(
         `send-cancellation-${recipient.id}`,
         async () => {
-          const prisma = new PrismaClient();
+          const prisma = createPrisma();
           try {
             const resend = resendApiKey ? new Resend(resendApiKey) : null;
             const db = getTenantedClient(prisma, centerId);

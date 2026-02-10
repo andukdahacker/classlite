@@ -565,4 +565,57 @@ export class ExercisesService {
 
     return `https://storage.googleapis.com/${bucket.name}/${filePath}`;
   }
+
+  async uploadDocument(
+    centerId: string,
+    exerciseId: string,
+    fileBuffer: Buffer,
+    contentType: string,
+  ): Promise<string> {
+    if (!this.firebaseStorage || !this.bucketName) {
+      throw new Error("Storage not configured");
+    }
+
+    const db = getTenantedClient(this.prisma, centerId);
+    await this.verifyDraftExercise(
+      db,
+      exerciseId,
+      "Only draft exercises can have documents uploaded",
+    );
+
+    const ext = contentType.includes("pdf") ? "pdf" : "docx";
+    const bucket = this.firebaseStorage.bucket(this.bucketName);
+    const filePath = `exercises/${centerId}/${exerciseId}/documents/${Date.now()}.${ext}`;
+    const file = bucket.file(filePath);
+
+    await file.save(fileBuffer, {
+      metadata: {
+        contentType,
+        cacheControl: "public, max-age=31536000",
+      },
+    });
+
+    await file.makePublic();
+
+    return `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+  }
+
+  async updatePassageFromDocument(
+    centerId: string,
+    exerciseId: string,
+    extractedText: string,
+    sourceType: string,
+    sourceUrl: string | null,
+  ): Promise<void> {
+    const db = getTenantedClient(this.prisma, centerId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (db.exercise as any).update({
+      where: { id: exerciseId },
+      data: {
+        passageContent: extractedText,
+        passageSourceType: sourceType,
+        passageSourceUrl: sourceUrl,
+      },
+    });
+  }
 }
