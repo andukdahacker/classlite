@@ -31,6 +31,19 @@
 #
 # CHANGE LOG:
 # ===========
+# 2026-02-11: Course correction - Zalo removal, billing addition
+#   - Story 6-3: Renamed from zalo-intervention-loop to email-intervention-loop
+#   - Epic 7: Rewritten from "Zalo Integration" to "Email Notifications & Parent Communication"
+#   - Stories 7-1, 7-2, 7-3: Rewritten for email-based notifications (was Zalo)
+#   - Epic 9: Added (Billing & Subscription via Polar.sh)
+#   - Epic 9 stories: 4 stories created (9.1-9.4), all backlog
+#   - Payment provider: Polar.sh (no VN business registration required)
+# 2026-02-10: Epic 3 retrospective completed + Epic 3.5 stories created
+#   - Epic 3: Marked as done (16/16 stories complete)
+#   - epic-3-retrospective: marked done
+#   - Epic 3.5: Added (Deployment & Infrastructure on Railway) - created during retro
+#   - Epic 3.5 stories: 5 stories created (3.5.1-3.5.5), all ready-for-dev
+#   - Retro saved: epic-3-retro-2026-02-10.md
 # 2026-01-29: Major update - Added stories from epics.md completeness review
 #   - Epic 1: Added 1.6-1.11 (auth, user management, navigation gaps)
 #   - Epic 2: Added 2.5-2.6 (session CRUD, email notifications)
@@ -75,9 +88,8 @@ development_status:
   epic-2-retrospective: done # Completed 2026-02-06 - Full epic review
 
   # Epic 3: IELTS Exercise Builder & Content
-  # Status: BACKLOG (completely restructured 2026-01-29 for IELTS question types)
-  # OLD stories 3.1-3.5 replaced with comprehensive 3.1-3.16
-  epic-3: in-progress
+  # Status: DONE (all 16 stories complete, retrospective done 2026-02-10)
+  epic-3: done
   3-1-exercise-builder-core-passage-management: done # Implementation complete 2026-02-06
   3-2-reading-question-types-basic: done # R1-R8 — Implementation complete 2026-02-07
   3-3-reading-question-types-matching: done # R9-R12 (Phase 1.5) — Code review fixes applied 2026-02-07
@@ -94,7 +106,19 @@ development_status:
   3-14-exercise-library-management: done # Browse, organize — Code review complete 2026-02-10
   3-15-exercise-assignment-management: done # Assign to classes — Code review fixes applied 2026-02-10
   3-16-student-assignment-dashboard: done # Student view — Code review fixes applied 2026-02-10
-  epic-3-retrospective: optional
+  epic-3-retrospective: done # Completed 2026-02-10 - Full epic review. Epic 3.5 (Deployment) created.
+
+  # Epic 3.5: Deployment & Infrastructure (Railway)
+  # Status: BACKLOG (created during Epic 3 retro 2026-02-10)
+  # Scope: CI/CD, staging, production, a11y, error boundaries, Epic 3 E2E tests
+  # Stories created: 2026-02-10
+  epic-3.5: backlog
+  3.5-1-dockerfiles-cicd-railway-staging: ready-for-dev
+  3.5-2-database-migration-strategy: ready-for-dev
+  3.5-3-production-environment-deployment-workflow: ready-for-dev
+  3.5-4-error-boundaries-accessibility-enforcement: ready-for-dev
+  3.5-5-epic-3-e2e-tests: ready-for-dev
+  epic-3.5-retrospective: optional
 
   # Epic 4: Student Submission & Offline-Proofing
   epic-4: backlog
@@ -117,16 +141,27 @@ development_status:
   epic-6: backlog
   6-1-traffic-light-dashboard: backlog
   6-2-student-profile-overlay: backlog
-  6-3-zalo-intervention-loop: backlog
+  6-3-email-intervention-loop: backlog
   6-4-teacher-student-health-view: backlog # NEW
   epic-6-retrospective: optional
 
-  # Epic 7: Zalo Integration & Notifications
+  # Epic 7: Email Notifications & Parent Communication
+  # Status: BACKLOG (rewritten during course correction 2026-02-11, was Zalo Integration)
   epic-7: backlog
-  7-1-engagement-notifications: backlog
-  7-2-notification-management: backlog
-  7-3-zalo-account-linking: backlog # NEW - prerequisite for 7.1-7.2
+  7-1-engagement-email-notifications: backlog
+  7-2-notification-preferences: backlog
+  7-3-parent-email-registration: backlog
   epic-7-retrospective: optional
+
+  # Epic 9: Billing & Subscription
+  # Status: BACKLOG (created during course correction 2026-02-11)
+  # Scope: Polar.sh integration, billing dashboard, usage metering, grace period
+  epic-9: backlog
+  9-1-billing-dashboard: backlog
+  9-2-polar-integration-payment-processing: backlog
+  9-3-billing-reminders-grace-period: backlog
+  9-4-subscription-tier-management: backlog
+  epic-9-retrospective: optional
 
   # Epic 8: Platform Compliance & Methodology
   epic-8: backlog

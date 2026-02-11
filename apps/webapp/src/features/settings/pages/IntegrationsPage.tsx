@@ -16,8 +16,8 @@ export function IntegrationsPage() {
         </div>
         <h3 className="text-base font-semibold">Coming Soon</h3>
         <p className="text-muted-foreground max-w-sm mt-2">
-          Zalo integration and other third-party services will be available in
-          Epic 7.
+          Google Calendar, email notifications, and billing integrations will be
+          available in future updates.
         </p>
       </div>
     </div>

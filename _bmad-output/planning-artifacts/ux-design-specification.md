@@ -74,7 +74,7 @@ The core experience centers on **High-Velocity Pedagogy**. Unlike administrative
 ### Critical Success Moments
 
 - **The "Done by 5 PM" Moment:** A teacher finishes grading a stack of 20 essays in 45 minutes instead of 2 hours, feeling energized rather than drained.
-- **The "Rescue" Moment:** An Owner sees a "Red" flag on the Student Health Dashboard, clicks once to see the root cause (missed 3 homeworks), and sends a pre-scripted Zalo message to the parent to prevent churn.
+- **The "Rescue" Moment:** An Owner sees a "Red" flag on the Student Health Dashboard, clicks once to see the root cause (missed 3 homeworks), and sends a pre-filled email to the parent to prevent churn.
 - **The "Saved" Moment:** A student's internet cuts out while submitting an essay, but the "Saved locally" indicator stays green. They submit when connection returns with zero data loss.
 
 ### Experience Principles
@@ -343,13 +343,9 @@ graph TD
     G -- Ignore --> H[Dismiss]
     G -- Intervene --> I[Click 'Message Parent']
 
-    I --> J{Deep Link Success?}
-    J -- Yes --> K[Open Zalo App]
-    J -- No --> L[Show 'Copy Message' Button]
-    L --> M[Manual Paste]
+    I --> J[Send Email Notification]
 
-    K --> N[Log Intervention]
-    M --> N
+    J --> N[Log Intervention]
 ```
 
 ### 5.4 Admin Logistics Flow ("Logistics Master")
@@ -389,7 +385,7 @@ graph TD
 ### Flow Optimization Principles
 
 1.  **Safeguards over Speed:** In offline states, we prioritize _warnings_ ("Don't Close") over cleanliness.
-2.  **Platform Resilience:** We assume external links (Zalo) will fail and always provide a manual "Copy" fallback.
+2.  **Platform Resilience:** Email-based parent communication ensures delivery without dependency on third-party messaging platforms.
 3.  **Human Pacing:** We interrupt the "Auto-Advance" loop periodically to prevent teacher fatigue.
 4.  **Conflict Clarity:** Never block an action; always propose an alternative (e.g., suggesting an available room).
 5.  **Visibility Control:** UI elements for CRUD operations are conditionally rendered based on the RBAC session context.

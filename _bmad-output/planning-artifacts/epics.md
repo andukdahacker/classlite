@@ -17,12 +17,14 @@ stepsCompleted:
     step-14-stories-refinement,
     step-15-completeness-review,
   ]
-lastEdited: "2026-01-29"
+lastEdited: "2026-02-11"
 editHistory:
   - date: "2026-01-29"
     changes: "Added 15 new stories and updated 5 existing stories to close gaps: Login/Auth (1.6-1.7), User Management (1.8-1.10), Navigation (1.11), Session CRUD (2.5), Email Notifications (2.6), Exercise Library (3.4-3.5), Grading Queue (5.5), Student Feedback View (5.6), Teacher Health View (6.4), Zalo Linking (7.3), i18n (8.4), Golden Sample UI (8.5)."
   - date: "2026-01-29"
     changes: "Major Epic 3 expansion for IELTS Exercise Builder: Added FR37-FR42 to inventory. Expanded from 5 to 16 stories covering all IELTS question types (Reading R1-R14, Listening L1-L6, Writing W1-W3, Speaking S1-S3), audio upload/playback, timer functionality, answer key variants, skill/band tagging, AI content generation, and mock test assembly."
+  - date: "2026-02-11"
+    changes: "Course correction: Removed Zalo integration. Rewrote Epic 7 from 'Zalo Integration' to 'Email Notifications & Parent Communication' with new stories (7.1-7.3). Rewrote Story 6.3 from Zalo to email intervention. Updated FR29-FR31. Added FR43-FR48 for billing. Added Epic 9 (Billing & Subscription) with 4 stories (9.1-9.4) using Polar.sh. Updated FR Coverage Map."
 inputDocuments:
   [
     "_bmad-output/planning-artifacts/prd.md",
@@ -71,9 +73,9 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 | **FR26** | System             | Shall  | Auto-advance to the next submission upon approval.                            |
 | **FR27** | Owner/Admin        | Can    | View "Student Health Dashboard" with Traffic Light (Red/Yellow/Green) status. |
 | **FR28** | Owner/Admin        | Can    | Open Student Profile Overlay from dashboard without page reload.              |
-| **FR29** | Owner/Admin        | Can    | Initiate interventions via Zalo Deep Links with pre-filled templates.         |
-| **FR30** | System             | Shall  | Send automated Zalo notifications for Personal Bests or streaks.              |
-| **FR31** | Parent/User        | Can    | Manage Zalo notification preferences.                                         |
+| **FR29** | Owner/Admin        | Can    | Initiate parent interventions via email with pre-filled concern templates.    |
+| **FR30** | System             | Shall  | Send automated email notifications to parents for Personal Bests or streaks. |
+| **FR31** | Parent/User        | Can    | Manage email notification preferences.                                        |
 | **FR32** | Owner              | Can    | Upload "Golden Sample" feedback to tune AI pedagogical style.                 |
 | **FR33** | System             | Shall  | Utilize Few-Shot Prompting using Golden Samples for > 85% style alignment.    |
 | **FR34** | System             | Shall  | Display persistent "Do Not Close" warning banner during offline submissions.  |
@@ -85,6 +87,12 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 | **FR40** | Teacher            | Can    | Define answer keys with acceptable variants for auto-grading.                 |
 | **FR41** | Teacher            | Can    | Tag exercises by Skill, Target Band Level, and Topic.                         |
 | **FR42** | System             | Shall  | Provide IELTS band descriptor rubrics for Writing/Speaking scoring.           |
+| **FR43** | Center Owner       | Can    | View enrolled student count, billing estimate, and payment history.           |
+| **FR44** | System             | Shall  | Track enrolled student count per center per billing cycle.                    |
+| **FR45** | System             | Shall  | Process self-serve payments via Polar.sh with receipt generation.             |
+| **FR46** | System             | Shall  | Send billing reminders via email 7 days before renewal.                       |
+| **FR47** | System             | Shall  | Enforce grace period on payment lapse, restricting new enrollments.           |
+| **FR48** | Center Owner       | Can    | Upgrade/downgrade subscription tier from Billing Dashboard.                   |
 
 ### 1.2 Non-Functional Requirements (NFR)
 
@@ -114,8 +122,9 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 | **Epic 4** | Student Submission & Offline-Proofing | FR18, FR19, FR34, FR35                             |
 | **Epic 5** | AI Grading Workbench                  | FR20, FR21, FR22, FR23, FR24, FR25, FR26           |
 | **Epic 6** | Student Health & Intervention         | FR27, FR28, FR29                                   |
-| **Epic 7** | Zalo Integration & Notifications      | FR30, FR31                                         |
+| **Epic 7** | Email Notifications & Parent Comms    | FR30, FR31                                         |
 | **Epic 8** | Platform Compliance & Methodology     | FR32, FR33, FR36                                   |
+| **Epic 9** | Billing & Subscription                | FR43, FR44, FR45, FR46, FR47, FR48                 |
 
 ---
 
@@ -145,19 +154,35 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 
 **Summary:** Provides owners with "Glanceable Intelligence" via a Traffic Light dashboard. Enables 3-click interventions by connecting performance data to communication channels.
 
-### Epic 7: Zalo Integration & Notifications
+### Epic 7: Email Notifications & Parent Communication
 
-**Summary:** Automates student and parent engagement through Vietnam's primary messaging platform. Focuses on positive reinforcement (streaks, personal bests) and preference management.
+**Summary:** Automates student and parent engagement through email notifications. Focuses on positive reinforcement (streaks, personal bests), intervention alerts, and notification preference management. Lays groundwork for Phase 2 Parent Portal.
 
 ### Epic 8: Platform Compliance & Methodology
 
 **Summary:** Ensures the platform adheres to local regulations (Decree 13, Decree 72) and maintains the center's specific teaching style through AI customization (Golden Samples).
+
+### Epic 9: Billing & Subscription
+
+**Summary:** Implements per-active-student subscription billing via Polar.sh for Phase 1.5. Covers billing dashboard, usage metering, payment processing, renewal reminders, and grace period enforcement. Free during pilot; self-serve checkout post-pilot.
 
 ---
 
 ## 4. User Stories
 
 ### Epic 1: Tenant & User Management
+
+#### Story 1.0: Build Verification & Dependency Cleanup
+
+**As a** Developer starting implementation,
+**I want to** verify the existing monorepo scaffold builds correctly and dependencies are clean,
+**So that** feature development starts from a stable foundation.
+
+- **AC1:** Run `pnpm install && pnpm build` successfully with zero errors across all workspaces (`apps/backend`, `apps/webapp`, `apps/website`, all `packages/*`).
+- **AC2:** Remove any unused dependencies identified during the build audit.
+- **AC3:** Verify all shared packages (`@workspace/types`, `@workspace/ui`, `@workspace/db`) are correctly linked and importable.
+- **AC4:** Ensure `pnpm lint` passes across the monorepo.
+- **AC5:** Confirm the development server (`pnpm dev`) starts all apps without errors.
 
 #### Story 1.1: Multi-tenant Onboarding (FR1, FR2, FR5)
 
@@ -718,7 +743,7 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 **So that** I can learn from my mistakes and improve.
 
 - **AC1: Notification:** Student receives in-app notification when their submission is graded.
-- **AC2: Access Path:** From Student Dashboard (Story 3.3), clicking a "Graded" assignment opens feedback view.
+- **AC2: Access Path:** From Student Dashboard (Story 3.16), clicking a "Graded" assignment opens feedback view.
 - **AC3: Feedback Layout:** Display student's original submission with:
   - Overall score prominently displayed
   - Inline comments anchored to specific text (teacher-approved AI comments)
@@ -752,15 +777,16 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 - **AC1:** Clicking a student card opens a slide-over/overlay with detailed attendance and grade trends.
 - **AC2:** The overlay does not trigger a full page reload and preserves the background scroll position.
 
-#### Story 6.3: Zalo Intervention Loop (FR29)
+#### Story 6.3: Email Intervention Loop (FR29)
 
 **As a** Teaching Owner,
-**I want to** message a parent via Zalo when a student falls behind,
+**I want to** email a parent when a student falls behind,
 **So that** I can prevent churn with a personal touch.
 
-- **AC1:** Profile view contains a "Message Parent" button.
-- **AC2:** Clicking the button opens a Zalo deep-link with a pre-filled template (e.g., "Hi [Parent], [Student] has missed 3 classes...").
-- **AC3:** Intervention action is logged in the student's activity history.
+- **AC1:** Student Profile Overlay contains a "Contact Parent" button (visible to Owner/Admin only).
+- **AC2:** Clicking the button opens an email compose modal with a pre-filled concern template (e.g., "Hi [Parent], [Student] has missed 3 classes..."). Owner can edit before sending.
+- **AC3:** System sends the email via transactional email service.
+- **AC4:** Intervention action is logged in the student's activity history with timestamp and template used.
 
 #### Story 6.4: Teacher Student Health View (FR27)
 
@@ -770,45 +796,47 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 
 - **AC1: Scoped Access:** Teachers see Student Health data only for students enrolled in their assigned classes (per RBAC matrix).
 - **AC2: Teacher Dashboard Widget:** Teacher dashboard includes "My Students at Risk" widget showing Red/Yellow students from their classes.
-- **AC3: Limited Actions:** Teachers can view Student Profile Overlay (Story 6.2) but cannot initiate Zalo intervention (Owner/Admin only).
+- **AC3: Limited Actions:** Teachers can view Student Profile Overlay (Story 6.2) but cannot initiate email intervention (Owner/Admin only).
 - **AC4: Class-Level View:** Teacher can view health status grouped by class from their Class detail page.
 - **AC5: Note to Admin:** Teachers can flag a student for admin attention with a note (e.g., "Parent meeting needed").
 
 ---
 
-### Epic 7: Zalo Integration & Notifications
+### Epic 7: Email Notifications & Parent Communication
 
-#### Story 7.1: Engagement Notifications (FR30)
+#### Story 7.1: Engagement Email Notifications (FR30)
 
 **As a** Student,
-**I want to** receive Zalo alerts for my achievements,
+**I want to** receive email notifications for my achievements,
 **So that** I feel motivated to keep studying.
 
-- **AC1:** System sends an automated Zalo message when a student hits a "7-day streak" or a "Personal Best" score improvement.
-- **AC2:** Messages include encouraging copy and a link to view the achievement in ClassLite.
+- **AC1:** System sends automated email when student hits a "7-day streak" or "Personal Best" score improvement.
+- **AC2:** Emails include encouraging copy, achievement details, and deep-link to view in ClassLite.
+- **AC3:** Emails use center branding (logo, name from Story 1.2).
+- **AC4:** System batches notifications (max 1 engagement email per student per day).
 
-#### Story 7.2: Notification Management (FR31)
+#### Story 7.2: Notification Preferences (FR31)
 
-**As a** Parent or User,
-**I want to** control which notifications I receive on Zalo,
+**As a** User,
+**I want to** control which email notifications I receive,
 **So that** I don't feel overwhelmed by messages.
 
-- **AC1:** User settings include a toggle for Zalo notifications (On/Off).
-- **AC2:** Users can select specific categories (Grades, Attendance, Streaks) to receive via Zalo.
+- **AC1:** User Profile (Story 1.9) includes "Notification Preferences" section.
+- **AC2:** Toggle categories: Grades, Attendance, Streaks/Achievements, Schedule Changes.
+- **AC3:** Master toggle "Pause all notifications" for temporary opt-out.
+- **AC4:** Default: all categories ON for new users.
 
-#### Story 7.3: Zalo Account Linking
+#### Story 7.3: Parent Email Registration
 
-**As a** User (Student/Parent),
-**I want to** link my Zalo account to ClassLite,
-**So that** I can receive notifications through my preferred messaging app.
+**As a** Center Owner,
+**I want to** register parent email addresses for students,
+**So that** parents receive intervention and achievement notifications.
 
-- **AC1: Link Prompt:** User Profile (Story 1.9) contains "Connect Zalo" section with explanation of notification types.
-- **AC2: OAuth Flow:** "Connect" button initiates Zalo OAuth flow. User authorizes ClassLite to send messages.
-- **AC3: Link Confirmation:** On successful OAuth, display linked Zalo display name and profile picture.
-- **AC4: Test Message:** "Send Test Message" button sends a verification message to confirm connection works.
-- **AC5: Unlink:** "Disconnect Zalo" button removes authorization. Requires confirmation.
-- **AC6: Parent Linking:** For Student accounts, Parent can link their own Zalo via a separate invitation flow (Parent receives link to connect their Zalo to student's account).
-- **AC7: Multiple Recipients:** A student can have both their own Zalo and a Parent Zalo linked (both receive notifications).
+- **AC1:** Student Profile includes "Parent/Guardian Email" field (editable by Owner/Admin).
+- **AC2:** Adding a parent email triggers a welcome email explaining what notifications they'll receive.
+- **AC3:** Parent emails receive: intervention alerts (Story 6.3), achievement notifications (Story 7.1).
+- **AC4:** Parents can unsubscribe via email footer link.
+- **AC5:** Multiple parent emails supported per student (max 3).
 
 ---
 
@@ -873,3 +901,54 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 - **AC6: Toggle Active:** Samples can be deactivated without deletion (excluded from AI prompting).
 - **AC7: Sample Limit:** Display "X/10 samples used" with explanation that 5-10 samples recommended.
 - **AC8: Delete:** Samples can be permanently deleted with confirmation.
+
+---
+
+### Epic 9: Billing & Subscription
+
+#### Story 9.1: Billing Dashboard (FR43, FR44)
+
+**As a** Center Owner,
+**I want to** view my billing status and student usage,
+**So that** I can understand my costs and manage my subscription.
+
+- **AC1:** Billing page at `/:centerId/settings/billing` shows: current tier, enrolled student count, monthly cost estimate, next billing date.
+- **AC2:** Payment history table with: date, amount, status (Paid/Failed/Pending), receipt download.
+- **AC3:** Usage chart showing enrolled student count over last 6 months.
+- **AC4:** "Manage Subscription" button links to Polar.sh checkout/portal.
+
+#### Story 9.2: Polar.sh Integration & Payment Processing (FR45)
+
+**As a** Center Owner,
+**I want to** pay my subscription via self-serve checkout,
+**So that** I can manage billing without contacting sales.
+
+- **AC1:** "Subscribe" or "Upgrade" action redirects to Polar.sh checkout with center context.
+- **AC2:** Polar.sh webhook updates center subscription status in real-time.
+- **AC3:** Successful payment activates/renews subscription and unlocks full platform access.
+- **AC4:** Failed payment triggers retry flow and updates status to "Payment Failed".
+- **AC5:** Receipts are auto-generated and accessible from Billing Dashboard.
+
+#### Story 9.3: Billing Reminders & Grace Period (FR46, FR47)
+
+**As a** Center Owner,
+**I want to** receive billing reminders and have a grace period if payment lapses,
+**So that** my center's operations aren't disrupted by a missed payment.
+
+- **AC1:** System sends email reminder 7 days before renewal date.
+- **AC2:** System sends follow-up reminder 1 day before renewal.
+- **AC3:** On payment lapse, 14-day grace period begins. Center continues operating normally.
+- **AC4:** During grace period, Owner sees persistent banner: "Payment overdue — update billing to avoid service interruption."
+- **AC5:** After grace period expires, new student enrollments are restricted. Existing students can still access submitted work and grades.
+- **AC6:** Payment at any point during/after grace period immediately restores full access.
+
+#### Story 9.4: Subscription Tier Management (FR48)
+
+**As a** Center Owner,
+**I want to** view available tiers and upgrade/downgrade my plan,
+**So that** my subscription matches my center's current size.
+
+- **AC1:** Billing page shows current tier and comparison table of all tiers (student limits, per-student rate).
+- **AC2:** "Change Plan" opens Polar.sh portal for tier changes.
+- **AC3:** Upgrades take effect immediately (prorated). Downgrades take effect at next billing cycle.
+- **AC4:** If enrolled students exceed new tier limit on downgrade, system warns before confirming.

@@ -27,7 +27,7 @@ classification:
   domain: edtech
   complexity: medium
   projectContext: brownfield
-lastEdited: "2026-01-29"
+lastEdited: "2026-02-11"
 editHistory:
   - date: "2026-01-17"
     changes: "Updated Executive Summary, User Journeys, Functional Requirements, and NFRs based on UX Design Specification (High-Velocity Pedagogy, Offline-Proofing, Grading Workbench details)."
@@ -35,6 +35,8 @@ editHistory:
     changes: "Narrative expansion (Admin & Content journeys), domain compliance (Decree 13), RBAC matrix addition, and structural hardening of FRs/NFRs to remove implementation leakage and improve SMART alignment."
   - date: "2026-01-29"
     changes: "Added comprehensive IELTS Exercise Type Taxonomy (Section 3.1) with 13 Reading types, 6 Listening types, Writing tasks, and Speaking format. Added FRs for audio support, timers, mock tests, rubrics, skill tagging, and answer key management. Updated Journey 5 for realistic IELTS workflow."
+  - date: "2026-02-11"
+    changes: "Removed Zalo integration entirely (business registration blocker, poor docs, no validated demand). Replaced parent communication with email-based notifications. Added Parent Portal to Phase 2. Added Section 9: Billing & Subscription with per-active-student pricing model, Polar.sh self-serve billing, and billing FRs (FR43-FR48). Updated integrations and RBAC matrix."
 ---
 
 # Product Requirements Document - classlite
@@ -112,14 +114,15 @@ The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the gradin
 
 **Focus:** Innovation and Retention. De-risked features deployed shortly after stability is proven.
 
-- **Innovation**: **Zalo Integration** (Parent Loop) and **Methodology Guardian** (Style Cloning).
+- **Innovation**: **Methodology Guardian** (Style Cloning).
+- **Billing**: Self-serve subscription via Polar.sh (per-active-student pricing).
 - **Exercise Builder Additions:** R9-R12 (Matching types: Headings, Information, Features, Sentence Endings)
 
 ### Phase 2 (Growth)
 
 **Focus:** Scale and Ecosystem.
 
-- **Features**: Knowledge Hub (Asset Library), Gamification (Badges/Points), Native Mobile Apps.
+- **Features**: Knowledge Hub (Asset Library), Gamification (Badges/Points), Native Mobile Apps, **Parent Portal** (Parent role with read-only student progress view, invite/onboarding flow).
 - **Exercise Builder Additions:** R13-R14 (Diagram/Flow-chart types), S1-S3 (Speaking with audio recording), Full Mock Test Assembly with band conversion.
 
 ---
@@ -144,7 +147,7 @@ The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the gradin
 - **Trigger:** Owner sees "Red Light" indicator on Dashboard.
 - **Step 1 (Scan):** Click Red indicator. Student Profile Overlay opens (no page reload).
 - **Step 2 (Diagnose):** Root cause displayed immediately (e.g., "Missed 3 Homeworks").
-- **Step 3 (Act):** Click "Message Parent". System opens Zalo deep-link with pre-filled "Concern Template".
+- **Step 3 (Act):** Click "Contact Parent". System sends email notification with pre-filled "Concern Template" and logs the intervention in-app.
 - **Validation:** Intervention logged. Owner feels "in control".
 
 ### Journey 3: The "Offline-Proof" Submission (Student)
@@ -255,18 +258,19 @@ _Traces to: Journey 2_
 
 - **FR27**: [Owner/Admin] can [view "Student Health Dashboard" with real-time updates based on attendance and submission data].
 - **FR28**: [Owner/Admin] can [open Student Profile Overlay from the dashboard without a page reload].
-- **FR29**: [Owner/Admin] can [initiate interventions via Zalo Deep Links with pre-filled templates].
+- **FR29**: [Owner/Admin] can [initiate parent interventions via email with pre-filled concern templates and in-app logging].
 
 ### 6. Innovation & Reliability (Phase 1.5)
 
 _Traces to: Journey 1, 2, 3_
 
-- **FR30**: [System] can [send automated Zalo notifications for Personal Bests or 7-day assignment streaks].
-- **FR31**: [Parent] can [manage Zalo notification preferences].
+- **FR30**: [System] can [send automated email notifications to parents for Personal Bests or 7-day assignment streaks].
+- **FR31**: [Parent] can [manage email notification preferences] (Phase 2: via Parent Portal).
 - **FR32**: [Owner] can [upload "Golden Sample" feedback to tune AI style].
 - **FR33**: [System] can [utilize Few-Shot Prompting using Golden Samples to target > 85% style alignment].
 - **FR34**: [System] can [detect offline status and display a persistent "Do Not Close" warning banner during submission attempts].
 - **FR35**: [System] can [queue failed submissions and auto-retry upon network reconnection via Background Sync].
+- **FR36**: [System] can [screen AI-generated and user-submitted content for compliance with local regulations (Decree 72/2013/ND-CP) and flag violations for admin review].
 
 ---
 
@@ -405,7 +409,7 @@ Teachers can combine exercises into a **Mock Test** that simulates full IELTS te
 | AI Grading Workbench     | CRUD  | CRUD  |       CRUD       |    -    |
 | Band Rubric Config       | CRUD  | CRUD  |        R         |    -    |
 | Student Health Dashboard |   R   |   R   | R (Own Students) |    -    |
-| Zalo Integration Config  | CRUD  | CRUD  |        -         |    -    |
+| Billing & Subscription   | CRUD  |   R   |        -         |    -    |
 
 ---
 
@@ -416,12 +420,50 @@ Teachers can combine exercises into a **Mock Test** that simulates full IELTS te
 - **Tenant Model**: Logical Separation (Logical data isolation via tenant identifiers).
 - **Layering**: Clean architecture (Route -> Controller -> Service) to ensure testability and logic decoupling.
 - **Enforcement**: Middleware-level security enforcement.
-- **Subscription**: Freemium model (MVP) with future billing integration.
+- **Subscription**: Free during pilot; per-active-student billing in Phase 1.5 (see Section 9: Billing).
 
 ### Integrations
 
-- **Primary**: Zalo (Notification API).
-- **Secondary**: Google Calendar (One-way sync), Google Meet (Link generation).
+- **Primary**: Google Calendar (One-way sync), Google Meet (Link generation).
+- **Secondary**: Polar.sh (Subscription billing — Phase 1.5), Email (Transactional notifications).
+
+---
+
+## Section 9: Billing & Subscription (Phase 1.5)
+
+### Pricing Model
+
+- **Model:** Per-active-student per month.
+- **Definition of "Active Student":** Any student enrolled in at least one class during the billing period. Center owners control count by managing their roster.
+- **Volume Tiers:**
+
+| Enrolled Students | Per-Student Rate | Notes |
+|:------------------|:-----------------|:------|
+| 1–30 | Base rate | Small center |
+| 31–100 | Discounted rate | Medium center |
+| 100+ | Further discounted rate | Large center |
+
+*Exact pricing TBD based on market research and pilot feedback.*
+
+### Billing Functional Requirements
+
+- **FR43**: [Center Owner] can [view current enrolled student count, billing estimate, and payment history via a Billing Dashboard].
+- **FR44**: [System] can [track enrolled student count per center per billing cycle for metered billing].
+- **FR45**: [System] can [process self-serve payments via Polar.sh with receipt generation].
+- **FR46**: [System] can [send billing reminders via email 7 days before renewal date].
+- **FR47**: [System] can [enforce a grace period (configurable, default 14 days) when payment lapses, then restrict new student enrollments until payment is resolved].
+- **FR48**: [Center Owner] can [upgrade/downgrade tier or view tier benefits from the Billing Dashboard].
+
+### Payment Provider
+
+- **Provider:** Polar.sh (self-serve subscription billing).
+- **Note:** Polar.sh is an international billing platform with good developer experience. No Vietnamese business registration required for payment processing. Supports subscription management, invoicing, and checkout out of the box.
+
+### Pilot Phase (MVP)
+
+- All features are **free** during pilot (2–3 centers).
+- Billing UI may be present in read-only/preview mode to gather feedback on pricing presentation.
+- No payment processing during pilot.
 
 ---
 

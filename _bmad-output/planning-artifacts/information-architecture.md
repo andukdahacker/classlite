@@ -139,7 +139,7 @@ _Focus: "Safe & Seen" experience and frictionless submission._
 
 ### 5.2 Settings View
 
-- **General:** Language, timezone, and notification preferences (Email, Zalo, Push).
+- **General:** Language, timezone, and notification preferences (Email, Push).
 - **Security:** Password management, session history, and 2FA configuration.
 - **Role-Specific Preferences:**
   - **Owner/Admin:** Center-level branding, default grading SLAs, and methodology configurations.
@@ -156,5 +156,5 @@ _Focus: "Safe & Seen" experience and frictionless submission._
 | **Offline-First**     | LocalStorage/IndexedDB caching for Student Exercises and Sync Status Bar.               | `networkMode: 'offlineFirst'` via TanStack Query. |
 | **Mobile-Responsive** | Bottom Tab Bar for Student/Teacher mobile views; collapsible Sidebar for Admin desktop. | Shadcn/UI responsive primitives.                  |
 | **Low Latency**       | Pre-fetching next submission in Grading Workbench.                                      | NFR1 (< 500ms load time).                         |
-| **Zalo Integration**  | "Parent Loop" toggle in Student Profile and Owner Intervention buttons.                 | FR28, FR29 integration hooks.                     |
+| **Billing (Polar.sh)** | Subscription management in Settings > Billing. Webhook-driven status sync.              | FR43-FR48 integration hooks.                      |
 | **Offline/Sync**      | Dedicated Sync Status indicator and priority settings in Global Settings.               | NFR10 (Offline accessibility).                    |

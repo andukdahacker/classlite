@@ -16,6 +16,8 @@ stepsCompleted:
 
 ---
 
+> **Note (2026-02-11):** This report predates the course correction that removed Zalo integration and added Billing (Polar.sh). FR27-FR29 references to Zalo and Epic 5/6 Zalo stories are superseded by email-based communication (see updated PRD and epics.md). Epic 9 (Billing) was added post this report.
+
 # Implementation Readiness Assessment Report
 
 **Date:** 2026-01-18

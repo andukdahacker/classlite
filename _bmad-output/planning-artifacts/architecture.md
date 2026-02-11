@@ -46,7 +46,7 @@ The system centers around three distinct user personas with specialized workflow
 
 - **Existing Stack:** Monorepo (Turbo), Fastify (Backend), React (Webapp), Astro (Website), Prisma (ORM), shadcn/ui.
 - **AI Integration:** Dependency on external LLM APIs (implying latency management strategies).
-- **External Services:** Zalo API for notifications.
+- **External Services:** Polar.sh for subscription billing (Phase 1.5). Email (transactional notifications).
 - **Browser Storage:** Heavy reliance on LocalStorage/IndexedDB for offline capabilities.
 
 ### Cross-Cutting Concerns Identified
@@ -375,7 +375,7 @@ classlite/
 **External Integrations:**
 
 - **Firebase Auth:** Client-side SDK (Frontend) + Admin SDK (Backend).
-- **Zalo:** `apps/backend/src/services/zalo.service.ts`.
+- **Polar.sh:** `apps/backend/src/services/billing.service.ts` (Phase 1.5).
 
 ### File Organization Patterns
 

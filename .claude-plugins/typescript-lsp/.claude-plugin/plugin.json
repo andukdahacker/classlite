@@ -1,0 +1,6 @@
+{
+  "name": "typescript-lsp",
+  "version": "1.0.0",
+  "description": "TypeScript language server for code intelligence",
+  "lspServers": "../.lsp.json"
+}
