@@ -13,6 +13,7 @@
     "db:migrate:status": "prisma migrate status",
     "db:push": "echo '⚠️  db:push is deprecated — use db:migrate:dev for local development' && prisma db push",
     "db:seed:staging": "tsx prisma/seed-staging.ts",
+    "db:seed:production": "tsx prisma/seed-production.ts",
     "db:studio": "prisma studio",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run src",

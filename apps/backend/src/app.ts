@@ -28,12 +28,14 @@ import { studentAssignmentsRoutes } from "./modules/assignments/student-assignme
 import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
 import { usersRoutes } from "./modules/users/users.routes.js";
 import { inngestRoutes } from "./modules/inngest/inngest.routes.js";
+import { healthRoutes } from "./modules/health/health.routes.js";
 import firebasePlugin from "./plugins/firebase.plugin.js";
 import prismaPlugin from "./plugins/prisma.plugin.js";
 import resendPlugin from "./plugins/resend.plugin.js";
 import multipart from "@fastify/multipart";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import Fastify from "fastify";
@@ -132,6 +134,11 @@ export const buildApp = async () => {
     crossOriginResourcePolicy: { policy: "cross-origin" },
   });
 
+  await app.register(rateLimit, {
+    max: 100,
+    timeWindow: "1 minute",
+  });
+
   app.register(swagger, {
     openapi: {
       openapi: "3.0.0",
@@ -204,6 +211,9 @@ export const buildApp = async () => {
   });
 
   await app.register(fastifyCookie);
+
+  // Health check (no auth required)
+  await app.register(healthRoutes, { prefix: "/api/v1" });
 
   // Register routes
   await app.register(tenantRoutes, { prefix: "/api/v1/tenants" });

@@ -190,4 +190,101 @@ describe("Docker Infrastructure", () => {
       expect(content).toContain("workflow_run.conclusion == 'success'");
     });
   });
+
+  describe("Deploy Production Workflow", () => {
+    const workflowPath = resolve(
+      projectRoot,
+      ".github/workflows/deploy-production.yml",
+    );
+
+    it("exists", () => {
+      expect(existsSync(workflowPath)).toBe(true);
+    });
+
+    it("triggers after CI workflow completes on master branch", () => {
+      const content = readFileSync(workflowPath, "utf-8");
+      expect(content).toContain("workflow_run:");
+      expect(content).toContain('workflows: ["CI"]');
+      expect(content).toContain("master");
+    });
+
+    it("deploys backend and webapp to Railway production environment", () => {
+      const content = readFileSync(workflowPath, "utf-8");
+      expect(content).toContain("deploy-backend:");
+      expect(content).toContain("deploy-webapp:");
+      expect(content).toContain("railway up");
+      expect(content).toContain("--environment production");
+    });
+
+    it("only deploys on successful CI", () => {
+      const content = readFileSync(workflowPath, "utf-8");
+      expect(content).toContain("workflow_run.conclusion == 'success'");
+    });
+
+    it("uses RAILWAY_TOKEN secret", () => {
+      const content = readFileSync(workflowPath, "utf-8");
+      expect(content).toContain("RAILWAY_TOKEN");
+    });
+  });
+
+  describe("Production Seed Script", () => {
+    const seedPath = resolve(
+      projectRoot,
+      "packages/db/prisma/seed-production.ts",
+    );
+
+    it("exists", () => {
+      expect(existsSync(seedPath)).toBe(true);
+    });
+
+    it("requires DATABASE_URL environment variable", () => {
+      const content = readFileSync(seedPath, "utf-8");
+      expect(content).toContain("DATABASE_URL");
+    });
+
+    it("creates only platform admin account (no test data)", () => {
+      const content = readFileSync(seedPath, "utf-8");
+      expect(content).toContain("platform");
+      expect(content).not.toContain("staging-demo-center");
+      expect(content).not.toContain("staging-owner");
+    });
+
+    it("is idempotent using upsert", () => {
+      const content = readFileSync(seedPath, "utf-8");
+      expect(content).toContain("upsert");
+    });
+
+    it("requires explicit confirmation to run", () => {
+      const content = readFileSync(seedPath, "utf-8");
+      expect(content).toContain("PRODUCTION_SEED_CONFIRM");
+    });
+  });
+
+  describe("Webapp nginx.conf - Content Security Policy", () => {
+    const nginxPath = resolve(projectRoot, "apps/webapp/nginx.conf");
+
+    it("includes Content-Security-Policy header", () => {
+      const content = readFileSync(nginxPath, "utf-8");
+      expect(content).toContain("Content-Security-Policy");
+    });
+
+    it("restricts default-src", () => {
+      const content = readFileSync(nginxPath, "utf-8");
+      expect(content).toContain("default-src");
+    });
+  });
+
+  describe("Security - .gitignore", () => {
+    const gitignorePath = resolve(projectRoot, ".gitignore");
+
+    it("excludes .env files", () => {
+      const content = readFileSync(gitignorePath, "utf-8");
+      expect(content).toContain(".env");
+    });
+
+    it("excludes Firebase service account key files", () => {
+      const content = readFileSync(gitignorePath, "utf-8");
+      expect(content).toMatch(/service.?account/i);
+    });
+  });
 });

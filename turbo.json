@@ -1,7 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
-  "globalEnv": ["DATABASE_URL", "DEV", "NODE_ENV", "SHADOW_DATABASE_URL", "STAGING_SEED_CONFIRM"],
+  "globalEnv": ["DATABASE_URL", "DEV", "NODE_ENV", "PRODUCTION_ADMIN_EMAIL", "PRODUCTION_ADMIN_FIREBASE_UID", "PRODUCTION_SEED_CONFIRM", "SHADOW_DATABASE_URL", "STAGING_SEED_CONFIRM"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
