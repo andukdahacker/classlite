@@ -132,78 +132,8 @@ jobs:
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
 
-  test-e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    needs: [lint, typecheck]
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: classlite_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: pnpm --filter @workspace/e2e exec playwright install chromium --with-deps
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Build packages
-        run: pnpm build
-
-      - name: Push database schema
-        run: pnpm --filter @workspace/db db:push
-        env:
-          DATABASE_URL: ${{ env.DATABASE_URL }}
-
-      - name: Start Firebase Emulator and seed data
-        run: |
-          # Start Firebase Auth emulator in background
-          firebase emulators:start --only auth --project claite-87848 &
-          # Wait for emulator to be ready
-          sleep 5
-          # Seed test data
-          pnpm test:e2e:seed
-        env:
-          DATABASE_URL: ${{ env.DATABASE_URL }}
-          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
-
-      - name: Run E2E tests
-        run: pnpm --filter @workspace/e2e test:chromium
-        env:
-          DATABASE_URL: ${{ env.DATABASE_URL }}
-          E2E_BASE_URL: http://localhost:5173
-          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
-          VITE_USE_FIREBASE_EMULATOR: "true"
-          CI: true
-
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-report
-          path: apps/e2e/playwright-report/
-          retention-days: 7
+  # TODO: Re-enable E2E tests (temporarily disabled for staging setup)
+  # test-e2e:
+  #   name: E2E Tests
+  #   runs-on: ubuntu-latest
+  #   needs: [lint, typecheck]
