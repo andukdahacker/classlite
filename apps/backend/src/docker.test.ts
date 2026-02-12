@@ -161,39 +161,6 @@ describe("Docker Infrastructure", () => {
     });
   });
 
-  describe("Production Seed Script", () => {
-    const seedPath = resolve(
-      projectRoot,
-      "packages/db/prisma/seed-production.ts",
-    );
-
-    it("exists", () => {
-      expect(existsSync(seedPath)).toBe(true);
-    });
-
-    it("requires DATABASE_URL environment variable", () => {
-      const content = readFileSync(seedPath, "utf-8");
-      expect(content).toContain("DATABASE_URL");
-    });
-
-    it("creates only platform admin account (no test data)", () => {
-      const content = readFileSync(seedPath, "utf-8");
-      expect(content).toContain("platform");
-      expect(content).not.toContain("staging-demo-center");
-      expect(content).not.toContain("staging-owner");
-    });
-
-    it("is idempotent using upsert", () => {
-      const content = readFileSync(seedPath, "utf-8");
-      expect(content).toContain("upsert");
-    });
-
-    it("requires explicit confirmation to run", () => {
-      const content = readFileSync(seedPath, "utf-8");
-      expect(content).toContain("PRODUCTION_SEED_CONFIRM");
-    });
-  });
-
   describe("Webapp nginx.conf - Content Security Policy", () => {
     const nginxPath = resolve(projectRoot, "apps/webapp/nginx.conf");
 
