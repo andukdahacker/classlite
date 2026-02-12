@@ -26,7 +26,8 @@ COPY packages/typescript-config/ ./packages/typescript-config/
 COPY packages/types/ ./packages/types/
 COPY packages/db/ ./packages/db/
 COPY apps/backend/ ./apps/backend/
-RUN pnpm --filter=@workspace/db db:generate \
+RUN pnpm --filter=@workspace/types build \
+    && pnpm --filter=@workspace/db db:generate \
     && pnpm --filter=@workspace/db build \
     && pnpm --filter=backend build
 
