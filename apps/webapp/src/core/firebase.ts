@@ -8,28 +8,16 @@ import { connectAuthEmulator, getAuth } from "firebase/auth";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyDNMsGfLxgq2OmD0xcBZo4rjC5y2ZDpdjI",
-  authDomain: "claite-87848.firebaseapp.com",
-  projectId: "claite-87848",
-  storageBucket: "claite-87848.firebasestorage.app",
-  messagingSenderId: "776124420322",
-  appId: "1:776124420322:web:d5b22f779b3eefc95ecebb",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDNMsGfLxgq2OmD0xcBZo4rjC5y2ZDpdjI",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "claite-87848.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "claite-87848",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "claite-87848.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "776124420322",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:776124420322:web:d5b22f779b3eefc95ecebb",
   measurementId: "G-BZ4PGCHMNK",
 };
 
-const firebaseConfigStaging = {
-  apiKey: "AIzaSyDfGawd-Tr0-nBtfKHvT8B0PCHgJrjKQKg",
-  authDomain: "claite-staging.firebaseapp.com",
-  projectId: "claite-staging",
-  storageBucket: "claite-staging.firebasestorage.app",
-  messagingSenderId: "821518176669",
-  appId: "1:821518176669:web:2a43da36fb63e98b201f74",
-  measurementId: "G-T987G9TRPP",
-};
-
-export const firebase = initializeApp(
-  import.meta.env.DEV ? firebaseConfigStaging : firebaseConfig,
-);
+export const firebase = initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(firebase);
 
 // Connect to Firebase Auth Emulator only when explicitly enabled (e.g., E2E tests)
