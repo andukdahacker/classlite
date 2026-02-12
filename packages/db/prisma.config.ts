@@ -10,5 +10,7 @@ export default defineConfig({
     // Use process.env with fallback for CI builds where prisma generate
     // doesn't need actual database connection
     url: process.env.DATABASE_URL || "postgresql://localhost:5432/placeholder",
+    // Shadow database used by prisma migrate diff --from-migrations
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 });
