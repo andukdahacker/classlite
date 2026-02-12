@@ -67,7 +67,7 @@ function EmptyState() {
       </div>
       <h2 className="text-lg font-semibold">No assignments</h2>
       <p className="text-muted-foreground max-w-sm mt-2">
-        You don't have any assignments right now. Check back later!
+        You don&apos;t have any assignments right now. Check back later!
       </p>
     </div>
   );

@@ -77,6 +77,7 @@ export const useSections = (exerciseId?: string) => {
 
   const reorderSectionsMutation = useMutation({
     mutationFn: async (sectionIds: string[]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- reorder endpoint not yet in generated API types
       const { data, error } = await (client as any).PATCH(
         `/api/v1/exercises/${exerciseId}/sections/reorder`,
         { body: { sectionIds } },

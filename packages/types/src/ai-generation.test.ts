@@ -246,10 +246,12 @@ describe("AI Generation Schemas", () => {
     });
 
     it("should reject missing required fields", () => {
-      const { id: _, ...noId } = validJob;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, ...noId } = validJob;
       expect(AIGenerationJobSchema.safeParse(noId).success).toBe(false);
 
-      const { exerciseId: __, ...noExerciseId } = validJob;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { exerciseId: _exerciseId, ...noExerciseId } = validJob;
       expect(AIGenerationJobSchema.safeParse(noExerciseId).success).toBe(false);
     });
 

@@ -106,7 +106,7 @@ export function WritingTaskEditor({
         );
       }
     },
-    [exerciseId, uploadMutation.mutateAsync],
+    [exerciseId, uploadMutation],
   );
 
   const handleInputChange = useCallback(
@@ -146,7 +146,7 @@ export function WritingTaskEditor({
           : "Failed to remove stimulus image",
       );
     }
-  }, [exerciseId, deleteMutation.mutateAsync]);
+  }, [exerciseId, deleteMutation]);
 
   const isUploading = uploadMutation.isPending;
   const isDeleting = deleteMutation.isPending;

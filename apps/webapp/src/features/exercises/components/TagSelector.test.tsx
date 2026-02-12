@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { IeltsQuestionType } from "@workspace/types";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TagSelector } from "./TagSelector";
 
@@ -22,7 +23,8 @@ vi.mock("@workspace/ui/components/popover", () => ({
   Popover: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   PopoverTrigger: ({
     children,
-    asChild,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    asChild: _asChild,
     ...props
   }: {
     children: React.ReactNode;
@@ -68,7 +70,16 @@ vi.mock("@workspace/ui/components/command", () => ({
     value?: string;
     disabled?: boolean;
   }) => (
-    <div role="option" onClick={onSelect} {...props}>
+    <div
+      role="option"
+      aria-selected={false}
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onSelect?.();
+      }}
+      {...props}
+    >
       {children}
     </div>
   ),
@@ -79,7 +90,7 @@ describe("TagSelector", () => {
     centerId: "center-1",
     bandLevel: null as string | null,
     selectedTagIds: [] as string[],
-    questionTypes: [] as any[],
+    questionTypes: [] as IeltsQuestionType[],
     onBandLevelChange: vi.fn(),
     onTagsChange: vi.fn(),
   };

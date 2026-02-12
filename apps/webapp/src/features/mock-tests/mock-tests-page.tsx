@@ -349,7 +349,7 @@ export function MockTestsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete mock test?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{deleteTarget?.title}". This action
+              This will permanently delete &quot;{deleteTarget?.title}&quot;. This action
               cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

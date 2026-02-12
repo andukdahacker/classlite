@@ -273,7 +273,7 @@ export function MockTestEditor() {
                 {/* Exercise List */}
                 {(!section.exercises || section.exercises.length === 0) ? (
                   <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-md">
-                    No exercises added yet. Click "Add Exercise" to start.
+                    No exercises added yet. Click &quot;Add Exercise&quot; to start.
                   </div>
                 ) : (
                   <div className="space-y-2">

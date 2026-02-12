@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
@@ -14,7 +14,7 @@ export function SpeakingCueCardEditor({
   onChange,
 }: SpeakingCueCardEditorProps) {
   const topic = options?.topic ?? "";
-  const bulletPoints = options?.bulletPoints ?? [""];
+  const bulletPoints = useMemo(() => options?.bulletPoints ?? [""], [options?.bulletPoints]);
 
   const handleTopicChange = useCallback(
     (value: string) => {
