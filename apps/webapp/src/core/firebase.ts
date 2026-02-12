@@ -17,23 +17,24 @@ const firebaseConfig = {
   measurementId: "G-BZ4PGCHMNK",
 };
 
-export const firebase = initializeApp(firebaseConfig);
+const firebaseConfigStaging = {
+  apiKey: "AIzaSyDfGawd-Tr0-nBtfKHvT8B0PCHgJrjKQKg",
+  authDomain: "claite-staging.firebaseapp.com",
+  projectId: "claite-staging",
+  storageBucket: "claite-staging.firebasestorage.app",
+  messagingSenderId: "821518176669",
+  appId: "1:821518176669:web:2a43da36fb63e98b201f74",
+  measurementId: "G-T987G9TRPP",
+};
+
+export const firebase = initializeApp(
+  import.meta.env.DEV ? firebaseConfigStaging : firebaseConfig,
+);
 export const firebaseAuth = getAuth(firebase);
 
 // Connect to Firebase Auth Emulator only when explicitly enabled (e.g., E2E tests)
 // Set VITE_USE_FIREBASE_EMULATOR=true in .env or CLI to enable
 const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true";
-
-if (import.meta.env.DEV) {
-  console.log("[Firebase] Configuration:");
-  console.log(
-    "  VITE_USE_FIREBASE_EMULATOR:",
-    import.meta.env.VITE_USE_FIREBASE_EMULATOR,
-  );
-  console.log("  DEV mode:", import.meta.env.DEV);
-  console.log("  hostname:", window.location.hostname);
-  console.log("  useEmulator:", useEmulator);
-}
 
 if (useEmulator) {
   // Connect to the emulator - use 127.0.0.1 to match firebase.json config
