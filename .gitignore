@@ -37,3 +37,7 @@ firebase-debug.log
 .DS_Store
 *.pem
 apps/e2e/test-results/
+
+# Firebase service account keys
+*-service-account*.json
+*-firebase-adminsdk*.json
