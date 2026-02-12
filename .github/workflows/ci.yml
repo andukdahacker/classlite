@@ -117,15 +117,8 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Create shadow database for migration diff
-        run: psql -h localhost -U postgres -c "CREATE DATABASE classlite_shadow;"
-        env:
-          PGPASSWORD: postgres
-
       - name: Check migrations in sync with schema
-        run: pnpm --filter @workspace/db exec prisma migrate diff --from-migrations ./prisma/migrations --to-schema ./prisma/schema.prisma --shadow-database-url postgresql://postgres:postgres@localhost:5432/classlite_shadow --exit-code
-        env:
-          DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: pnpm --filter @workspace/db exec prisma migrate diff --from-migrations ./prisma/migrations --to-schema ./prisma/schema.prisma --exit-code
 
       - name: Apply database migrations
         run: pnpm --filter @workspace/db db:migrate:deploy
