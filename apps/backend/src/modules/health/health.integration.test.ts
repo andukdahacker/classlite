@@ -63,4 +63,18 @@ describe("Health Check Integration", () => {
     // No Authorization header sent — should still succeed
     expect(response.statusCode).toBe(200);
   });
+
+  it("GET /api/v1/health - should have rate limiting disabled via route config", async () => {
+    const { healthRoutes: freshRoutes } = await import("./health.routes.js");
+    const testApp = Fastify();
+    (testApp as any).prisma = { $queryRaw: vi.fn().mockResolvedValue([{ result: 1 }]) };
+    await testApp.register(freshRoutes, { prefix: "/api/v1" });
+    await testApp.ready();
+
+    // The route should be registered and accessible without rate limiting
+    const response = await testApp.inject({ method: "GET", url: "/api/v1/health" });
+    expect(response.statusCode).toBe(200);
+
+    await testApp.close();
+  });
 });

@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 
 export async function healthRoutes(fastify: FastifyInstance) {
-  fastify.get("/health", async (_request, reply) => {
+  fastify.get("/health", { config: { rateLimit: false } }, async (_request, reply) => {
     try {
       await fastify.prisma.$queryRaw`SELECT 1`;
 
