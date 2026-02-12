@@ -336,7 +336,7 @@ model CsvImportLog {
 
   @@index([centerId])
   @@index([status])
-  @@map("csv_import_logs")
+  @@map("csv_import_log")
 }
 
 model CsvImportRowLog {
@@ -352,7 +352,7 @@ model CsvImportRowLog {
   importLog CsvImportLog @relation(fields: [importLogId], references: [id], onDelete: Cascade)
 
   @@index([importLogId])
-  @@map("csv_import_row_logs")
+  @@map("csv_import_row_log")
 }
 
 enum CsvImportStatus {

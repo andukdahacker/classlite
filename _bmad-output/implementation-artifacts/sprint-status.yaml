@@ -109,12 +109,12 @@ development_status:
   epic-3-retrospective: done # Completed 2026-02-10 - Full epic review. Epic 3.5 (Deployment) created.
 
   # Epic 3.5: Deployment & Infrastructure (Railway)
-  # Status: BACKLOG (created during Epic 3 retro 2026-02-10)
+  # Status: IN-PROGRESS (created during Epic 3 retro 2026-02-10)
   # Scope: CI/CD, staging, production, a11y, error boundaries, Epic 3 E2E tests
   # Stories created: 2026-02-10
-  epic-3.5: backlog
-  3.5-1-dockerfiles-cicd-railway-staging: in-progress
-  3.5-2-database-migration-strategy: ready-for-dev
+  epic-3.5: in-progress
+  3.5-1-dockerfiles-cicd-railway-staging: done # Completed 2026-02-12 - Railway + Firebase staging deployed
+  3.5-2-database-migration-strategy: done # Code review fixes applied 2026-02-12
   3.5-3-production-environment-deployment-workflow: ready-for-dev
   3.5-4-error-boundaries-accessibility-enforcement: ready-for-dev
   3.5-5-epic-3-e2e-tests: ready-for-dev

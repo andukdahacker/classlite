@@ -150,10 +150,15 @@ _This file contains critical rules and patterns that AI agents must follow when 
 ### Database (packages/db)
 
 - **Generate Prisma Client:** `pnpm --filter=db db:generate`
-- **Push Schema to DB:** `pnpm --filter=db db:push`
+- **Create Migration:** `pnpm --filter=db db:migrate:create --name <description>` (generates SQL without applying)
+- **Apply Migrations (dev):** `pnpm --filter=db db:migrate:dev` (creates + applies migrations locally)
+- **Apply Migrations (deploy):** `pnpm --filter=db db:migrate:deploy` (applies pending migrations — used in CI/staging/production)
+- **Migration Status:** `pnpm --filter=db db:migrate:status` (check which migrations are applied)
 - **Prisma Studio:** `pnpm --filter=db db:studio`
 - **Build:** `pnpm --filter=db build` (generate + tsc + copy generated)
-- **Rule:** After modifying `schema.prisma`, run `db:generate` to update the TypeScript client, then `db:push` to sync the database. Always use `pnpm --filter=db` prefix, NOT bare `npx prisma`.
+- **Rule:** After modifying `schema.prisma`, run `db:migrate:dev --name <description>` to generate a migration SQL file, then commit the migration with code changes. Do NOT use `db:push` for schema changes — it is deprecated for prototyping only. Always use `pnpm --filter=db` prefix, NOT bare `npx prisma`.
+- **Migration Workflow:** Modify schema → `db:migrate:dev --name <desc>` → migration SQL generated in `packages/db/prisma/migrations/` → commit migration with code → PR review → `db:migrate:deploy` runs automatically on staging/production start.
+- **Rollback:** Prisma Migrate does not support down migrations. To revert a bad migration, create a new corrective migration that undoes the changes.
 
 ### Schema Sync (Frontend)
 
