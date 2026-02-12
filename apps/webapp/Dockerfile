@@ -32,7 +32,8 @@ COPY packages/typescript-config/ ./packages/typescript-config/
 COPY packages/types/ ./packages/types/
 COPY packages/ui/ ./packages/ui/
 COPY apps/webapp/ ./apps/webapp/
-RUN pnpm --filter=webapp build
+RUN pnpm --filter=@workspace/types build \
+    && pnpm --filter=webapp build
 
 # --- Production ---
 FROM nginx:alpine AS production
