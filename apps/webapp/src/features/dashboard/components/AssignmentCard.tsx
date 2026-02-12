@@ -27,8 +27,9 @@ export function formatRelativeDue(dueDate: string | null): { text: string; class
   const isPast = due < now;
   if (isPast) return { text: "Overdue", className: "text-red-600 font-medium" };
   if (isToday) return { text: "Due today", className: "text-orange-600 font-medium" };
-  const diffMs = due.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((dueDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   if (diffDays === 1) return { text: "Due tomorrow", className: "text-orange-500" };
   if (diffDays <= 7) return { text: `Due in ${diffDays} days`, className: "" };
   return { text: due.toLocaleDateString(), className: "" };
