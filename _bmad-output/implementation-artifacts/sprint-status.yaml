@@ -113,7 +113,7 @@ development_status:
   # Scope: CI/CD, staging, production, a11y, error boundaries, Epic 3 E2E tests
   # Stories created: 2026-02-10
   epic-3.5: backlog
-  3.5-1-dockerfiles-cicd-railway-staging: ready-for-dev
+  3.5-1-dockerfiles-cicd-railway-staging: in-progress
   3.5-2-database-migration-strategy: ready-for-dev
   3.5-3-production-environment-deployment-workflow: ready-for-dev
   3.5-4-error-boundaries-accessibility-enforcement: ready-for-dev

@@ -14,7 +14,8 @@
     "clean": "rm -rf dist .turbo node_modules"
   },
   "dependencies": {
-    "@prisma/client": "^7.1.0"
+    "@prisma/client": "^7.1.0",
+    "@prisma/client-runtime-utils": "^7.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",

@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: classlite
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  firebase-emulator:
+    image: node:20-alpine
+    command: >
+      sh -c "npm install -g firebase-tools &&
+             firebase emulators:start --only auth --project classlite-dev"
+    ports:
+      - "9099:9099"
+      - "4400:4400"
+    environment:
+      FIREBASE_AUTH_EMULATOR_HOST: "0.0.0.0:9099"
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/classlite
+      PORT: "4000"
+      NODE_ENV: development
+      FIREBASE_AUTH_EMULATOR_HOST: firebase-emulator:9099
+    env_file:
+      - apps/backend/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  webapp:
+    build:
+      context: .
+      dockerfile: apps/webapp/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:4000
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
