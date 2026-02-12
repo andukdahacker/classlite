@@ -45,7 +45,7 @@ describe("Security Hardening", () => {
 
     it("restricts production origins to specific domains", () => {
       const content = readFileSync(appPath, "utf-8");
-      expect(content).toContain("classlite.app");
+      expect(content).toContain("my.classlite.app");
     });
   });
 

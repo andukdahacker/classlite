@@ -113,7 +113,7 @@ export const buildApp = async () => {
   app.register(cors, {
     origin:
       env.NODE_ENV == "production"
-        ? ["https://classlite.app", "https://staging.classlite.app"]
+        ? ["https://my.classlite.app", "https://staging.classlite.app"]
         : [
             "https://staging.classlite.app",
             "http://localhost:5173",
