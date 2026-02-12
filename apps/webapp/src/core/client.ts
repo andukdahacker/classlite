@@ -37,7 +37,9 @@ export const client = createClient<paths>({
   // eslint-disable-next-line turbo/no-undeclared-env-vars
   baseUrl: import.meta.env.PROD
     ? "https://api.classlite.app"
-    : "http://localhost:4000",
+    : import.meta.env.DEV
+      ? "https://api-staging.classlite.app"
+      : "http://localhost:4000",
   credentials: "include",
 });
 
