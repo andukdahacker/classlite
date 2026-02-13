@@ -56,6 +56,7 @@ describe("ExercisesService", () => {
     mockDb = {
       exercise: {
         findMany: vi.fn(),
+        findFirst: vi.fn(),
         findUnique: vi.fn(),
         findUniqueOrThrow: vi.fn(),
         create: vi.fn(),
@@ -1138,7 +1139,7 @@ describe("ExercisesService", () => {
       mockDb.questionSection.create.mockResolvedValue({ id: "sec-copy" });
       mockDb.question.create.mockResolvedValue({});
       mockDb.exerciseTagAssignment.createMany.mockResolvedValue({ count: 1 });
-      mockDb.exercise.findUniqueOrThrow.mockResolvedValue({
+      mockDb.exercise.findFirst.mockResolvedValue({
         ...mockExercise,
         id: "ex-copy",
         title: `Copy of ${sourceExercise.title}`,
@@ -1168,7 +1169,7 @@ describe("ExercisesService", () => {
       mockDb.questionSection.create.mockResolvedValue({ id: "sec-copy" });
       mockDb.question.create.mockResolvedValue({});
       mockDb.exerciseTagAssignment.createMany.mockResolvedValue({ count: 1 });
-      mockDb.exercise.findUniqueOrThrow.mockResolvedValue({ ...mockExercise, id: "ex-copy" });
+      mockDb.exercise.findFirst.mockResolvedValue({ ...mockExercise, id: "ex-copy" });
 
       await service.duplicateExercise(centerId, "ex-1", firebaseUid);
 
@@ -1196,7 +1197,7 @@ describe("ExercisesService", () => {
       mockDb.questionSection.create.mockResolvedValue({ id: "sec-copy" });
       mockDb.question.create.mockResolvedValue({});
       mockDb.exerciseTagAssignment.createMany.mockResolvedValue({ count: 1 });
-      mockDb.exercise.findUniqueOrThrow.mockResolvedValue({ ...mockExercise, id: "ex-copy" });
+      mockDb.exercise.findFirst.mockResolvedValue({ ...mockExercise, id: "ex-copy" });
 
       await service.duplicateExercise(centerId, "ex-1", firebaseUid);
 
@@ -1315,7 +1316,7 @@ describe("ExercisesService", () => {
       mockDb.authAccount.findUniqueOrThrow.mockResolvedValue({ userId });
       mockDb.exercise.findUnique.mockResolvedValue(source);
       mockDb.exercise.create.mockResolvedValue({ ...mockExercise, id: "ex-copy" });
-      mockDb.exercise.findUniqueOrThrow.mockResolvedValue({ ...mockExercise, id: "ex-copy" });
+      mockDb.exercise.findFirst.mockResolvedValue({ ...mockExercise, id: "ex-copy" });
 
       const result = await service.bulkDuplicate(centerId, ["ex-1", "ex-2"], firebaseUid);
 

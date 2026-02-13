@@ -59,6 +59,7 @@ describe("AssignmentsService", () => {
     mockDb = {
       assignment: {
         findMany: vi.fn(),
+        findFirst: vi.fn(),
         findUnique: vi.fn(),
         findUniqueOrThrow: vi.fn(),
         create: vi.fn(),
@@ -217,7 +218,7 @@ describe("AssignmentsService", () => {
       mockDb.class.findUnique.mockResolvedValue(mockClass);
       mockDb.assignment.create.mockResolvedValue({ id: "new-assign-1" });
       mockDb.assignmentStudent.createMany.mockResolvedValue({ count: 2 });
-      mockDb.assignment.findUniqueOrThrow.mockResolvedValue(mockAssignment);
+      mockDb.assignment.findFirst.mockResolvedValue(mockAssignment);
 
       const result = await service.createAssignment(
         centerId,
@@ -242,7 +243,7 @@ describe("AssignmentsService", () => {
         .mockResolvedValueOnce(class2);
       mockDb.assignment.create.mockResolvedValue({ id: "new-assign" });
       mockDb.assignmentStudent.createMany.mockResolvedValue({ count: 1 });
-      mockDb.assignment.findUniqueOrThrow
+      mockDb.assignment.findFirst
         .mockResolvedValueOnce({ ...mockAssignment, id: "assign-a" })
         .mockResolvedValueOnce({ ...mockAssignment, id: "assign-b", classId: "class-2" });
 
@@ -262,7 +263,7 @@ describe("AssignmentsService", () => {
         .mockResolvedValueOnce({ userId: "student-2", role: "STUDENT" });
       mockDb.assignment.create.mockResolvedValue({ id: "new-assign-ind" });
       mockDb.assignmentStudent.createMany.mockResolvedValue({ count: 2 });
-      mockDb.assignment.findUniqueOrThrow.mockResolvedValue({ ...mockAssignment, classId: null });
+      mockDb.assignment.findFirst.mockResolvedValue({ ...mockAssignment, classId: null });
 
       const result = await service.createAssignment(
         centerId,
@@ -313,7 +314,7 @@ describe("AssignmentsService", () => {
       mockDb.class.findUnique.mockResolvedValue(mockClass);
       mockDb.assignment.create.mockResolvedValue({ id: "new-assign" });
       mockDb.assignmentStudent.createMany.mockResolvedValue({ count: 2 });
-      mockDb.assignment.findUniqueOrThrow.mockResolvedValue(mockAssignment);
+      mockDb.assignment.findFirst.mockResolvedValue(mockAssignment);
 
       await service.createAssignment(
         centerId,

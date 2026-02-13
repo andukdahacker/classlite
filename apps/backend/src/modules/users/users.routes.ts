@@ -412,7 +412,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
       }
 
       try {
-        const userId = request.jwtPayload!.uid;
+        const userId = await usersService.resolveFirebaseUid(request.jwtPayload!.uid);
         const centerId = request.jwtPayload!.centerId;
 
         const bucket = fastify.firebaseStorage.bucket();

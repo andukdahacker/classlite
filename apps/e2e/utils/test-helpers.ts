@@ -7,13 +7,16 @@ import { Page, expect } from "@playwright/test";
  */
 export async function waitForToast(
   page: Page,
-  text?: string
+  text?: string,
+  timeout = 10000
 ): Promise<void> {
   const toastSelector = '[data-sonner-toast]';
-  await page.waitForSelector(toastSelector, { timeout: 5000 });
-
   if (text) {
-    await expect(page.locator(toastSelector)).toContainText(text);
+    await expect(
+      page.locator(toastSelector).filter({ hasText: text }).first()
+    ).toBeVisible({ timeout });
+  } else {
+    await page.waitForSelector(toastSelector, { timeout });
   }
 }
 

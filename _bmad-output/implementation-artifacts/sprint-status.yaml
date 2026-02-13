@@ -117,7 +117,7 @@ development_status:
   3.5-2-database-migration-strategy: done # Code review fixes applied 2026-02-12
   3.5-3-production-environment-deployment-workflow: done
   3.5-4-error-boundaries-accessibility-enforcement: done
-  3.5-5-epic-3-e2e-tests: ready-for-dev
+  3.5-5-epic-3-e2e-tests: done
   epic-3.5-retrospective: optional
 
   # Epic 4: Student Submission & Offline-Proofing

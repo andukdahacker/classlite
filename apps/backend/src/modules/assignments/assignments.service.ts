@@ -108,7 +108,7 @@ export class AssignmentsService {
         });
         if (!cls) throw AppError.notFound(`Class ${classId} not found`);
 
-        const assignment = await db.$transaction(async (tx) => {
+        const createdId = await db.$transaction(async (tx) => {
           const created = await tx.assignment.create({
             data: {
               centerId,
@@ -133,11 +133,17 @@ export class AssignmentsService {
             });
           }
 
-          return await tx.assignment.findUniqueOrThrow({
-            where: { id: created.id },
-            include: ASSIGNMENT_INCLUDE,
-          });
+          return created.id;
         });
+
+        // Refetch with includes outside the transaction — findUniqueOrThrow
+        // inside db.$transaction is rewritten by getTenantedClient to use the
+        // base (non-transactional) Prisma client, which can't see uncommitted data.
+        const assignment = await db.assignment.findFirst({
+          where: { id: createdId },
+          include: ASSIGNMENT_INCLUDE,
+        });
+        if (!assignment) throw new Error("Assignment not found after creation");
 
         assignments.push(assignment);
 
@@ -162,7 +168,7 @@ export class AssignmentsService {
       }
 
       // Individual student assignment (no classId)
-      const assignment = await db.$transaction(async (tx) => {
+      const createdStudentId = await db.$transaction(async (tx) => {
         const created = await tx.assignment.create({
           data: {
             centerId,
@@ -184,11 +190,15 @@ export class AssignmentsService {
           })),
         });
 
-        return await tx.assignment.findUniqueOrThrow({
-          where: { id: created.id },
-          include: ASSIGNMENT_INCLUDE,
-        });
+        return created.id;
       });
+
+      // Refetch with includes outside the transaction (see class-based branch comment)
+      const assignment = await db.assignment.findFirst({
+        where: { id: createdStudentId },
+        include: ASSIGNMENT_INCLUDE,
+      });
+      if (!assignment) throw new Error("Assignment not found after creation");
 
       assignments.push(assignment);
 

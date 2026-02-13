@@ -92,25 +92,25 @@ export class TagsService {
     }
 
     return await this.prisma.$transaction(async (tx) => {
-      const txDb = getTenantedClient(tx as PrismaClient, centerId);
-
-      const sourceTag = await txDb.exerciseTag.findUnique({
-        where: { id: input.sourceTagId },
+      // Use tx directly with explicit centerId instead of getTenantedClient —
+      // Prisma 7 transaction clients do not support $extends.
+      const sourceTag = await tx.exerciseTag.findFirst({
+        where: { id: input.sourceTagId, centerId },
       });
       if (!sourceTag) {
         throw AppError.notFound("Source tag not found");
       }
 
-      const targetTag = await txDb.exerciseTag.findUnique({
-        where: { id: input.targetTagId },
+      const targetTag = await tx.exerciseTag.findFirst({
+        where: { id: input.targetTagId, centerId },
       });
       if (!targetTag) {
         throw AppError.notFound("Target tag not found");
       }
 
       // Find exercises that already have the target tag
-      const targetAssignments = await txDb.exerciseTagAssignment.findMany({
-        where: { tagId: input.targetTagId },
+      const targetAssignments = await tx.exerciseTagAssignment.findMany({
+        where: { tagId: input.targetTagId, centerId },
         select: { exerciseId: true },
       });
       const exercisesWithTarget = new Set(
@@ -118,8 +118,8 @@ export class TagsService {
       );
 
       // Get all source assignments
-      const sourceAssignments = await txDb.exerciseTagAssignment.findMany({
-        where: { tagId: input.sourceTagId },
+      const sourceAssignments = await tx.exerciseTagAssignment.findMany({
+        where: { tagId: input.sourceTagId, centerId },
       });
 
       // Delete source assignments for exercises that already have the target tag (duplicates)
@@ -128,25 +128,27 @@ export class TagsService {
         .map((a) => a.id);
 
       if (duplicateIds.length > 0) {
-        await txDb.exerciseTagAssignment.deleteMany({
-          where: { id: { in: duplicateIds } },
+        await tx.exerciseTagAssignment.deleteMany({
+          where: { id: { in: duplicateIds }, centerId },
         });
       }
 
       // Update remaining source assignments to point to target
-      await txDb.exerciseTagAssignment.updateMany({
-        where: { tagId: input.sourceTagId },
+      await tx.exerciseTagAssignment.updateMany({
+        where: { tagId: input.sourceTagId, centerId },
         data: { tagId: input.targetTagId },
       });
 
       // Delete the source tag
-      await txDb.exerciseTag.delete({ where: { id: input.sourceTagId } });
+      await tx.exerciseTag.delete({ where: { id: input.sourceTagId } });
 
       // Return the target tag with updated count
-      return await txDb.exerciseTag.findUniqueOrThrow({
-        where: { id: input.targetTagId },
+      const merged = await tx.exerciseTag.findFirst({
+        where: { id: input.targetTagId, centerId },
         include: { _count: { select: { tagAssignments: true } } },
       });
+      if (!merged) throw new Error("Target tag not found after merge");
+      return merged;
     });
   }
 
@@ -155,17 +157,17 @@ export class TagsService {
     exerciseId: string,
     tagIds: string[],
   ): Promise<void> {
+    // Use tx directly with explicit centerId instead of getTenantedClient —
+    // Prisma 7 transaction clients do not support $extends.
     await this.prisma.$transaction(async (tx) => {
-      const txDb = getTenantedClient(tx as PrismaClient, centerId);
-
-      // Delete all existing assignments for this exercise
-      await txDb.exerciseTagAssignment.deleteMany({
-        where: { exerciseId },
+      // Delete all existing assignments for this exercise within the center
+      await tx.exerciseTagAssignment.deleteMany({
+        where: { exerciseId, centerId },
       });
 
       // Create new assignments
       if (tagIds.length > 0) {
-        await txDb.exerciseTagAssignment.createMany({
+        await tx.exerciseTagAssignment.createMany({
           data: tagIds.map((tagId) => ({
             exerciseId,
             tagId,

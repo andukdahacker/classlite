@@ -36,21 +36,37 @@ pnpm --filter @workspace/e2e test -g "login"
 ```
 apps/e2e/
 ├── fixtures/
-│   └── auth.fixture.ts      # Role-based authentication fixtures
+│   ├── auth.fixture.ts          # Role-based authentication fixtures
+│   ├── exercise-fixtures.ts     # Exercise creation/cleanup helpers
+│   └── assignment-fixtures.ts   # Assignment creation/cleanup helpers
 ├── tests/
-│   ├── auth/                # Authentication flow tests
+│   ├── auth/                    # Authentication flow tests
 │   │   ├── login.spec.ts
 │   │   ├── forgot-password.spec.ts
 │   │   ├── reset-password.spec.ts
 │   │   └── protected-routes.spec.ts
-│   ├── users/               # User management tests
+│   ├── exercises/               # Exercise builder & content tests (Epic 3)
+│   │   ├── create-exercise.spec.ts
+│   │   ├── question-types.spec.ts
+│   │   ├── exercise-editor.spec.ts
+│   │   ├── exercise-library.spec.ts
+│   │   ├── assignments.spec.ts
+│   │   ├── mock-tests.spec.ts
+│   │   └── tags.spec.ts
+│   ├── users/                   # User management tests
 │   │   ├── user-management.spec.ts
 │   │   └── csv-import.spec.ts
-│   └── navigation/          # Navigation tests
+│   ├── logistics/               # Logistics feature tests
+│   │   ├── classes.spec.ts
+│   │   ├── courses.spec.ts
+│   │   ├── rooms.spec.ts
+│   │   └── schedule.spec.ts
+│   └── navigation/              # Navigation tests
 │       └── navigation.spec.ts
 ├── utils/
-│   └── test-helpers.ts      # Common test utilities
-└── playwright.config.ts     # Playwright configuration
+│   ├── test-helpers.ts          # Common test utilities
+│   └── close-ai-assistant.ts   # AI Assistant dialog helper
+└── playwright.config.ts         # Playwright configuration
 ```
 
 ## Auth Fixtures
@@ -152,7 +168,17 @@ Key settings in `playwright.config.ts`:
 
 ## CI Integration
 
-E2E tests run in GitHub Actions after lint and typecheck pass:
+### Staging E2E Tests
+
+Railway connects directly to GitHub and auto-deploys on push to `develop`. E2E tests can be run manually against staging:
+
+```bash
+E2E_BASE_URL=https://staging.classlite.app pnpm --filter e2e test:chromium
+```
+
+### Local CI
+
+E2E tests also run in the main CI workflow (`.github/workflows/ci.yml`):
 
 - Uses PostgreSQL service container
 - Installs Playwright chromium browser

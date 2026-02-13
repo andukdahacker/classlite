@@ -146,7 +146,7 @@ export const useMockTest = (centerId?: string | null, id?: string) => {
 
   return {
     mockTest: mockTestQuery.data,
-    isLoading: mockTestQuery.isLoading,
+    isLoading: mockTestQuery.isPending,
     refetch: mockTestQuery.refetch,
   };
 };

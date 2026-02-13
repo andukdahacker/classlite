@@ -100,7 +100,7 @@ export function MockTestsPage() {
       setNewTestType("ACADEMIC");
       setNewDescription("");
       toast.success("Mock test created");
-      navigate(`mock-tests/${created.id}/edit`);
+      navigate(`../mock-tests/${created.id}/edit`);
     } catch {
       toast.error("Failed to create mock test");
     }
@@ -213,7 +213,7 @@ export function MockTestsPage() {
               <TableRow
                 key={mt.id}
                 className="cursor-pointer"
-                onClick={() => navigate(`mock-tests/${mt.id}/edit`)}
+                onClick={() => navigate(`../mock-tests/${mt.id}/edit`)}
               >
                 <TableCell className="font-medium">{mt.title}</TableCell>
                 <TableCell>
@@ -243,7 +243,7 @@ export function MockTestsPage() {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <DropdownMenuItem
-                        onClick={() => navigate(`mock-tests/${mt.id}/edit`)}
+                        onClick={() => navigate(`../mock-tests/${mt.id}/edit`)}
                       >
                         Edit
                       </DropdownMenuItem>

@@ -375,7 +375,7 @@ export class ExercisesService {
     });
     if (!source) throw AppError.notFound("Exercise not found");
 
-    return await db.$transaction(async (tx) => {
+    const duplicatedId = await db.$transaction(async (tx) => {
       // NOTE: Copy ALL exercise fields explicitly. If new fields are added to the Exercise model, update this list.
       const newExercise = await tx.exercise.create({
         data: {
@@ -457,11 +457,18 @@ export class ExercisesService {
         });
       }
 
-      return await tx.exercise.findUniqueOrThrow({
-        where: { id: newExercise.id },
-        include: EXERCISE_INCLUDE,
-      });
+      return newExercise.id;
     });
+
+    // Refetch with includes outside the transaction — findUniqueOrThrow
+    // inside db.$transaction is rewritten by getTenantedClient to use the
+    // base (non-transactional) Prisma client, which can't see uncommitted data.
+    const duplicated = await db.exercise.findFirst({
+      where: { id: duplicatedId },
+      include: EXERCISE_INCLUDE,
+    });
+    if (!duplicated) throw new Error("Exercise not found after duplication");
+    return duplicated;
   }
 
   async deleteExercise(centerId: string, id: string): Promise<void> {

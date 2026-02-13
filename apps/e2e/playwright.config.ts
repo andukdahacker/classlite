@@ -60,8 +60,8 @@ export default defineConfig({
     },
   },
 
-  /* Increase timeout for slower operations */
-  timeout: 30000,
+  /* Increase timeout for slower operations (60s needed for complex exercises tests with parallel workers) */
+  timeout: 60000,
   expect: {
     timeout: 5000,
   },

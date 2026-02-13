@@ -135,7 +135,7 @@ export const buildApp = async () => {
   });
 
   await app.register(rateLimit, {
-    max: 100,
+    max: env.NODE_ENV === "production" ? 100 : 10000,
     timeWindow: "1 minute",
   });
 

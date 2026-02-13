@@ -389,9 +389,15 @@ export function ExerciseEditor() {
   const { exerciseTags, setExerciseTags } = useExerciseTags(centerId, id);
   const { regenerateSection } = useAIGeneration(id);
 
-  // Load existing exercise data
+  // Reset edit tracking when switching to a different exercise
   useEffect(() => {
-    if (exercise) {
+    userHasEdited.current = false;
+  }, [id]);
+
+  // Load existing exercise data — only on initial load or when user hasn't edited.
+  // This prevents refetches (e.g. after auto-section creation) from overwriting user edits.
+  useEffect(() => {
+    if (exercise && !userHasEdited.current) {
       setTitle(exercise.title);
       setInstructions(exercise.instructions ?? "");
       setPassageContent(exercise.passageContent ?? "");
@@ -427,8 +433,6 @@ export function ExerciseEditor() {
       setGracePeriodSeconds(exercise.gracePeriodSeconds ?? null);
       setEnablePause(exercise.enablePause ?? false);
       setBandLevel(exercise.bandLevel ?? null);
-      // Reset edit tracking — data was just loaded, not user-edited
-      userHasEdited.current = false;
     }
   }, [exercise]);
 

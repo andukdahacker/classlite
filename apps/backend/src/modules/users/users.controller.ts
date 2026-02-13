@@ -90,10 +90,11 @@ export class UsersController {
     const centerId = user.centerId;
     if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
+    const requestingUserId = await this.usersService.resolveFirebaseUid(user.uid);
     const result = await this.usersService.deactivateUser(
       centerId,
       userId,
-      user.uid
+      requestingUserId
     );
     return {
       data: result,
@@ -122,10 +123,11 @@ export class UsersController {
     const centerId = user.centerId;
     if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
+    const requestingUserId = await this.usersService.resolveFirebaseUid(user.uid);
     const result = await this.usersService.bulkDeactivate(
       centerId,
       input,
-      user.uid
+      requestingUserId
     );
     return {
       data: result,
@@ -205,7 +207,8 @@ export class UsersController {
     input: UpdateProfileInput,
     user: JwtPayload
   ): Promise<UpdateProfileResponse> {
-    const profile = await this.usersService.updateProfile(user.uid, input);
+    const userId = await this.usersService.resolveFirebaseUid(user.uid);
+    const profile = await this.usersService.updateProfile(userId, input);
     return {
       data: profile,
       message: "Profile updated successfully",
@@ -217,8 +220,9 @@ export class UsersController {
     user: JwtPayload,
     firebaseApiKey: string
   ): Promise<ChangePasswordResponse> {
+    const userId = await this.usersService.resolveFirebaseUid(user.uid);
     const result = await this.usersService.changePassword(
-      user.uid,
+      userId,
       input.currentPassword,
       input.newPassword,
       firebaseApiKey
@@ -230,7 +234,8 @@ export class UsersController {
   }
 
   async hasPasswordProvider(user: JwtPayload): Promise<{ hasPassword: boolean }> {
-    const hasPassword = await this.usersService.hasPasswordProvider(user.uid);
+    const userId = await this.usersService.resolveFirebaseUid(user.uid);
+    const hasPassword = await this.usersService.hasPasswordProvider(userId);
     return { hasPassword };
   }
 
@@ -238,7 +243,8 @@ export class UsersController {
     const centerId = user.centerId;
     if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
-    const result = await this.usersService.requestDeletion(centerId, user.uid);
+    const userId = await this.usersService.resolveFirebaseUid(user.uid);
+    const result = await this.usersService.requestDeletion(centerId, userId);
     return {
       data: {
         deletionRequestedAt: result.deletionRequestedAt.toISOString(),
@@ -249,7 +255,8 @@ export class UsersController {
   }
 
   async cancelMyDeletion(user: JwtPayload): Promise<CancelDeletionResponse> {
-    const result = await this.usersService.cancelDeletion(user.uid);
+    const userId = await this.usersService.resolveFirebaseUid(user.uid);
+    const result = await this.usersService.cancelDeletion(userId);
     return {
       data: result,
       message: "Account deletion cancelled",

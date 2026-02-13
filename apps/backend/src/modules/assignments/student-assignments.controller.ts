@@ -1,5 +1,16 @@
 import { AssignmentsService } from "./assignments.service.js";
 
+/** Serialize all Date fields in an object to ISO strings so the response matches Zod string schemas. */
+function serializeDates<T extends Record<string, unknown>>(obj: T): T {
+  const result = { ...obj };
+  for (const key of Object.keys(result)) {
+    if (result[key] instanceof Date) {
+      (result as Record<string, unknown>)[key] = (result[key] as Date).toISOString();
+    }
+  }
+  return result;
+}
+
 export class StudentAssignmentsController {
   constructor(private readonly service: AssignmentsService) {}
 
@@ -9,7 +20,7 @@ export class StudentAssignmentsController {
       user.uid,
       filters,
     );
-    return { data: assignments, message: "Student assignments retrieved" };
+    return { data: assignments.map((a) => serializeDates(a as Record<string, unknown>)), message: "Student assignments retrieved" };
   }
 
   async get(id: string, user: { uid: string; centerId: string }) {
@@ -18,6 +29,6 @@ export class StudentAssignmentsController {
       id,
       user.uid,
     );
-    return { data: assignment, message: "Assignment retrieved" };
+    return { data: serializeDates(assignment as Record<string, unknown>), message: "Assignment retrieved" };
   }
 }

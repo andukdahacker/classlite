@@ -72,7 +72,7 @@ export const TEST_USERS: Record<UserRole, TestUser> = {
 async function resetLoginAttempts(email: string): Promise<void> {
   const backendUrl = process.env.VITE_API_URL || "http://localhost:4000";
   try {
-    await fetch(`${backendUrl}/auth/login-attempt/${encodeURIComponent(email)}`, {
+    await fetch(`${backendUrl}/api/v1/auth/login-attempt?email=${encodeURIComponent(email)}`, {
       method: "DELETE",
     });
   } catch {
@@ -92,8 +92,19 @@ export async function loginAs(page: Page, user: TestUser): Promise<void> {
 
   await page.goto("/sign-in");
 
-  // Wait for the login form to be visible
-  await page.waitForSelector('input[type="email"]');
+  // Wait for either the login form or dashboard redirect (if already logged in)
+  const emailInput = page.locator('input[type="email"]');
+  try {
+    await emailInput.waitFor({ state: "visible", timeout: 5000 });
+  } catch {
+    // Login form didn't appear — if we're already on the dashboard, we're logged in
+    if (page.url().includes("/dashboard")) {
+      return;
+    }
+    throw new Error(
+      `loginAs: Neither login form nor dashboard found. URL: ${page.url()}`
+    );
+  }
 
   // Fill in credentials
   await page.fill('input[type="email"]', user.email);

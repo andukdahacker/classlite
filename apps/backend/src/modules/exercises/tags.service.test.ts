@@ -13,6 +13,7 @@ describe("TagsService", () => {
     mockTenantedClient = {
       exerciseTag: {
         findMany: vi.fn(),
+        findFirst: vi.fn(),
         findUnique: vi.fn(),
         findUniqueOrThrow: vi.fn(),
         create: vi.fn(),
@@ -30,7 +31,10 @@ describe("TagsService", () => {
     mockPrisma = {
       $extends: vi.fn().mockReturnValue(mockTenantedClient),
       $transaction: vi.fn().mockImplementation(async (fn: any) => {
-        return fn(mockPrisma);
+        // The transaction callback receives a tx client with model properties.
+        // Reuse mockTenantedClient mocks so assertions work for both
+        // tenanted (non-tx) and raw tx code paths.
+        return fn(mockTenantedClient);
       }),
     };
 
@@ -181,7 +185,7 @@ describe("TagsService", () => {
 
   describe("mergeTags", () => {
     it("should throw not found when source tag does not exist", async () => {
-      mockTenantedClient.exerciseTag.findUnique.mockResolvedValue(null);
+      mockTenantedClient.exerciseTag.findFirst.mockResolvedValue(null);
 
       await expect(
         tagsService.mergeTags(centerId, {
@@ -192,7 +196,7 @@ describe("TagsService", () => {
     });
 
     it("should throw not found when target tag does not exist", async () => {
-      mockTenantedClient.exerciseTag.findUnique
+      mockTenantedClient.exerciseTag.findFirst
         .mockResolvedValueOnce({ id: "tag-1", name: "Source", centerId })
         .mockResolvedValueOnce(null);
 
@@ -217,7 +221,8 @@ describe("TagsService", () => {
       const sourceTagId = "tag-1";
       const targetTagId = "tag-2";
 
-      mockTenantedClient.exerciseTag.findUnique
+      // findFirst is used inside the transaction for source and target lookups
+      mockTenantedClient.exerciseTag.findFirst
         .mockResolvedValueOnce({ id: sourceTagId, name: "Source", centerId })
         .mockResolvedValueOnce({ id: targetTagId, name: "Target", centerId });
 
@@ -238,7 +243,8 @@ describe("TagsService", () => {
         centerId,
         _count: { tagAssignments: 2 },
       };
-      mockTenantedClient.exerciseTag.findUniqueOrThrow.mockResolvedValue(mergedTag);
+      // findFirst is used for the final refetch after merge
+      mockTenantedClient.exerciseTag.findFirst.mockResolvedValueOnce(mergedTag);
 
       const result = await tagsService.mergeTags(centerId, {
         sourceTagId,

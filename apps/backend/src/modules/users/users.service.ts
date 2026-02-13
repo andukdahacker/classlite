@@ -18,7 +18,32 @@ import { inngest } from "../inngest/client.js";
 import type { UserDeletionScheduledEvent } from "./jobs/user-deletion.job.js";
 
 export class UsersService {
+  private readonly firebaseUidCache = new Map<string, string>();
+
   constructor(private readonly prisma: PrismaClient) {}
+
+  /**
+   * Resolve a Firebase UID to the database User ID via the AuthAccount table.
+   * Results are cached in-memory since the mapping is permanent.
+   */
+  async resolveFirebaseUid(firebaseUid: string): Promise<string> {
+    const cached = this.firebaseUidCache.get(firebaseUid);
+    if (cached) return cached;
+
+    const authAccount = await this.prisma.authAccount.findUnique({
+      where: {
+        provider_providerUserId: {
+          provider: "FIREBASE",
+          providerUserId: firebaseUid,
+        },
+      },
+    });
+    if (!authAccount) {
+      throw AppError.notFound("User not found");
+    }
+    this.firebaseUidCache.set(firebaseUid, authAccount.userId);
+    return authAccount.userId;
+  }
 
   async getUserById(
     centerId: string,
