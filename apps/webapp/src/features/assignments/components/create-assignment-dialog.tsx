@@ -45,7 +45,7 @@ export function CreateAssignmentDialog({
   const { createAssignment, isCreating } = useAssignments(centerId ?? undefined);
   const { exercises } = useExercises(centerId, { status: "PUBLISHED" as ExerciseStatus });
   const { classes } = useClasses(centerId ?? undefined);
-  const { data: studentsData } = useUsers({ page: 1, limit: 200, role: "STUDENT" });
+  const { data: studentsData } = useUsers({ page: 1, limit: 100, role: "STUDENT" });
 
   const [exerciseId, setExerciseId] = useState(defaultExerciseId ?? "");
   const [assignTarget, setAssignTarget] = useState<AssignTarget>("classes");
