@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="mark-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="white"/>
+
+  <!-- Subtle gradient accent bar at top -->
+  <rect width="1200" height="6" fill="url(#bg)"/>
+
+  <!-- Logo mark (centered, larger) -->
+  <g transform="translate(520, 140)">
+    <svg viewBox="0 0 40 40" width="160" height="160">
+      <rect x="2" y="2" width="36" height="36" rx="8" fill="url(#mark-bg)"/>
+      <path d="M28 8C28 8 20 10 15 16C10 22 9 28 10 32L19 22Z" fill="white" opacity="0.4"/>
+      <path d="M28 8C28 8 30 14 28 20C26 26 22 30 19 32L19 22Z" fill="white" opacity="0.8"/>
+      <line x1="28" y1="8" x2="10" y2="34" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+      <line x1="24" y1="13" x2="16" y2="19" stroke="white" stroke-width="0.8" stroke-linecap="round" opacity="0.35"/>
+      <line x1="21" y1="18" x2="13" y2="24" stroke="white" stroke-width="0.8" stroke-linecap="round" opacity="0.35"/>
+    </svg>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="600" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="600" fill="#1e293b" text-anchor="middle" letter-spacing="-1">ClassLite</text>
+
+  <!-- Tagline -->
+  <text x="600" y="430" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#64748b" text-anchor="middle">Teaching, without the clutter.</text>
+
+  <!-- URL -->
+  <text x="600" y="570" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#94a3b8" text-anchor="middle">classlite.app</text>
+</svg>

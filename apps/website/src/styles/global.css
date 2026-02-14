@@ -1,1 +1,75 @@
 @import "tailwindcss";
+@import "../../../../packages/ui/src/styles/brand.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
+
+/* Scroll-triggered reveal */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-reveal].revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-reveal][data-delay="1"] {
+  transition-delay: 120ms;
+}
+[data-reveal][data-delay="2"] {
+  transition-delay: 240ms;
+}
+[data-reveal][data-delay="3"] {
+  transition-delay: 360ms;
+}
+[data-reveal][data-delay="4"] {
+  transition-delay: 480ms;
+}
+[data-reveal][data-delay="5"] {
+  transition-delay: 600ms;
+}
+
+/* Atmospheric orb animations */
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(15px, -20px) scale(1.04);
+  }
+  66% {
+    transform: translate(-10px, -30px) scale(0.97);
+  }
+}
+
+@keyframes drift-reverse {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-12px, -18px) scale(0.96);
+  }
+  66% {
+    transform: translate(8px, -24px) scale(1.03);
+  }
+}
+
+.animate-drift {
+  animation: drift 18s ease-in-out infinite;
+}
+
+.animate-drift-reverse {
+  animation: drift-reverse 22s ease-in-out infinite;
+}

@@ -125,6 +125,7 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 | **Epic 7** | Email Notifications & Parent Comms    | FR30, FR31                                         |
 | **Epic 8** | Platform Compliance & Methodology     | FR32, FR33, FR36                                   |
 | **Epic 9** | Billing & Subscription                | FR43, FR44, FR45, FR46, FR47, FR48                 |
+| **Epic 10** | Public Website                       | — (Marketing/credibility, no PRD FRs)              |
 
 ---
 
@@ -165,6 +166,10 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 ### Epic 9: Billing & Subscription
 
 **Summary:** Implements per-active-student subscription billing via Polar.sh for Phase 1.5. Covers billing dashboard, usage metering, payment processing, renewal reminders, and grace period enforcement. Free during pilot; self-serve checkout post-pilot.
+
+### Epic 10: Public Website
+
+**Summary:** A minimal credibility landing page at classlite.app to establish professional presence for pilot outreach. Single page, brand-consistent, no fluff — just enough to answer "what is ClassLite?" for anyone who finds us.
 
 ---
 
@@ -952,3 +957,22 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 - **AC2:** "Change Plan" opens Polar.sh portal for tier changes.
 - **AC3:** Upgrades take effect immediately (prorated). Downgrades take effect at next billing cycle.
 - **AC4:** If enrolled students exceed new tier limit on downgrade, system warns before confirming.
+
+---
+
+### Epic 10: Public Website
+
+#### Story 10.1: Credibility Landing Page
+
+**As** the ClassLite team,
+**We want** a polished single-page credibility site at classlite.app,
+**So that** pilot prospects and anyone who searches for us see a professional, trustworthy product presence.
+
+- **AC1:** Single scrollable page in the existing `apps/website` Astro app. No additional routes.
+- **AC2:** Nav with Lucide Feather logo + "ClassLite" wordmark (left) and "Sign In" link (right) → `my.classlite.app/sign-up`.
+- **AC3:** Hero: "Teaching, without the clutter." + subheadline + "Get Started" CTA → `my.classlite.app/sign-up`.
+- **AC4:** Three value cards: "Grade in minutes, not hours", "Know who needs help", "Schedule without the mess".
+- **AC5:** How it works: Build exercises → Students submit from any phone → AI helps you grade.
+- **AC6:** Footer with contact email and copyright.
+- **AC7:** Webapp brand palette (Primary #2563EB, white bg, dark navy text). Responsive to 375px.
+- **AC8:** No pricing, testimonials, dark mode, blog, or team section.

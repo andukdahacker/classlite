@@ -1,0 +1,66 @@
+---
+const signUpUrl = "https://my.classlite.app/sign-up";
+---
+
+<section class="relative overflow-hidden px-6 pt-28 pb-32 md:pt-40 md:pb-48">
+  <!-- Atmospheric gradient orbs -->
+  <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+    <div
+      class="absolute -top-40 right-[15%] h-[480px] w-[480px] rounded-full blur-[100px] animate-drift"
+      style="background: oklch(0.541 0.225 259.02 / 0.08);"
+    ></div>
+    <div
+      class="absolute -bottom-32 left-[10%] h-[380px] w-[380px] rounded-full blur-[100px] animate-drift-reverse"
+      style="background: oklch(0.762 0.174 74.34 / 0.08);"
+    ></div>
+    <div
+      class="absolute top-1/3 left-1/2 -translate-x-1/2 h-[280px] w-[280px] rounded-full blur-[80px]"
+      style="background: oklch(0.541 0.225 259.02 / 0.04);"
+    ></div>
+  </div>
+
+  <div class="relative mx-auto max-w-3xl text-center">
+    <h1
+      data-reveal
+      class="font-heading text-5xl font-bold tracking-tight leading-[1.1] text-foreground sm:text-6xl lg:text-7xl"
+    >
+      Teaching, without
+      <br class="hidden sm:block" />
+      <span class="text-primary">the clutter.</span>
+    </h1>
+
+    <p
+      data-reveal
+      data-delay="1"
+      class="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl"
+    >
+      A lightweight LMS for IELTS centers — grading, scheduling, and student progress in one calm place.
+    </p>
+
+    <div data-reveal data-delay="2" class="mt-12">
+      <a
+        href={signUpUrl}
+        class="group inline-flex items-center gap-2.5 rounded-xl bg-primary px-8 py-4 text-base font-semibold text-primary-foreground shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary no-underline"
+        style="box-shadow: 0 8px 30px oklch(0.541 0.225 259.02 / 0.2);"
+      >
+        Get Started
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="transition-transform duration-300 group-hover:translate-x-1"
+          aria-hidden="true"
+        >
+          <path d="M5 12h14" />
+          <path d="m12 5 7 7-7 7" />
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>

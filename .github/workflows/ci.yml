@@ -56,6 +56,25 @@ jobs:
       - name: Run type check
         run: pnpm --filter webapp exec tsc --noEmit
 
+  build-website:
+    name: Build Website
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build website
+        run: pnpm --filter=website build
+
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest

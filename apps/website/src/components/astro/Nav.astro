@@ -1,0 +1,71 @@
+---
+const signUpUrl = "https://my.classlite.app/sign-up";
+---
+
+<nav class="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-lg border-b border-border/40">
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+    <!-- Logo -->
+    <a href="/" class="flex items-center gap-3 group no-underline">
+      <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" class="h-9 w-9 transition-transform duration-300 group-hover:scale-105" aria-hidden="true">
+        <defs>
+          <linearGradient id="logo-bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1d4ed8" />
+            <stop offset="100%" stop-color="#3b82f6" />
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="36" height="36" rx="8" fill="url(#logo-bg)" />
+        <path d="M28 8C28 8 20 10 15 16C10 22 9 28 10 32L19 22Z" fill="white" opacity="0.4" />
+        <path d="M28 8C28 8 30 14 28 20C26 26 22 30 19 32L19 22Z" fill="white" opacity="0.8" />
+        <line x1="28" y1="8" x2="10" y2="34" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.9" />
+        <line x1="24" y1="13" x2="16" y2="19" stroke="white" stroke-width="0.8" stroke-linecap="round" opacity="0.35" />
+        <line x1="21" y1="18" x2="13" y2="24" stroke="white" stroke-width="0.8" stroke-linecap="round" opacity="0.35" />
+      </svg>
+      <span class="font-heading text-xl font-semibold tracking-tight text-foreground">ClassLite</span>
+    </a>
+
+    <!-- Right side -->
+    <div class="flex items-center gap-4">
+      <!-- Dark mode toggle -->
+      <button
+        id="theme-toggle"
+        class="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary cursor-pointer"
+        aria-label="Toggle dark mode"
+      >
+        <!-- Sun icon (shown in dark mode) -->
+        <svg class="hidden dark:block h-[18px] w-[18px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2" />
+          <path d="M12 20v2" />
+          <path d="m4.93 4.93 1.41 1.41" />
+          <path d="m17.66 17.66 1.41 1.41" />
+          <path d="M2 12h2" />
+          <path d="M20 12h2" />
+          <path d="m6.34 17.66-1.41 1.41" />
+          <path d="m19.07 4.93-1.41 1.41" />
+        </svg>
+        <!-- Moon icon (shown in light mode) -->
+        <svg class="block dark:hidden h-[18px] w-[18px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+        </svg>
+      </button>
+
+      <!-- Sign In -->
+      <a
+        href={signUpUrl}
+        class="text-sm font-medium text-muted-foreground transition-colors hover:text-primary no-underline"
+      >
+        Sign In
+      </a>
+    </div>
+  </div>
+</nav>
+
+<script is:inline>
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    document.documentElement.classList.toggle("dark");
+    localStorage.setItem(
+      "theme",
+      document.documentElement.classList.contains("dark") ? "dark" : "light"
+    );
+  });
+</script>
