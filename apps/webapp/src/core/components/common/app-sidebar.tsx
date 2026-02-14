@@ -1,7 +1,7 @@
 "use client";
 
-import { GalleryVerticalEnd } from "lucide-react";
 import * as React from "react";
+import { LogoMark } from "@workspace/ui/components/logo";
 
 import {
   Sidebar,
@@ -49,15 +49,15 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg">
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+              <div className="flex aspect-square size-8 items-center justify-center">
                 {tenant?.logoUrl ? (
                   <img
                     src={tenant.logoUrl}
                     alt={tenant.name}
-                    className="size-6 rounded"
+                    className="size-8 rounded-lg"
                   />
                 ) : (
-                  <GalleryVerticalEnd className="size-4" />
+                  <LogoMark size={32} />
                 )}
               </div>
               <div className="flex flex-col text-left text-sm leading-tight">

@@ -8,11 +8,13 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
+import { Logo } from "@workspace/ui/components/logo";
 import { Link } from "react-router";
 
 export function SignupPage() {
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-muted/40 p-4">
+    <div className="flex h-screen w-screen flex-col items-center justify-center bg-muted/40 p-4">
+      <Logo size={40} className="mb-6" />
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">
