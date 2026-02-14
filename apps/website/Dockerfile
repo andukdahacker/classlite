@@ -21,6 +21,8 @@ RUN pnpm install --frozen-lockfile
 
 # --- Build ---
 FROM deps AS build
+ARG PUBLIC_SIGN_UP_URL
+ENV PUBLIC_SIGN_UP_URL=$PUBLIC_SIGN_UP_URL
 COPY packages/typescript-config/ ./packages/typescript-config/
 COPY packages/ui/ ./packages/ui/
 COPY apps/website/ ./apps/website/
