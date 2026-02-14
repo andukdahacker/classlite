@@ -194,6 +194,7 @@ export function SpeakingInput({
 
           {audioUrl && !isRecording && (
             <div className="flex flex-col items-center gap-2 w-full">
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption -- Student-recorded speech has no captions */}
               <audio src={audioUrl} controls className="w-full max-w-xs" />
               <div className="flex gap-2">
                 <Badge variant="outline" className="text-xs">

@@ -123,7 +123,7 @@ development_status:
   # Epic 4: Student Submission & Offline-Proofing
   epic-4: in-progress
   4-1-mobile-submission-interface: done
-  4-2-local-auto-save-persistent-storage: ready-for-dev
+  4-2-local-auto-save-persistent-storage: review
   4-3-offline-safeguards-sync: backlog
   epic-4-retrospective: optional
 

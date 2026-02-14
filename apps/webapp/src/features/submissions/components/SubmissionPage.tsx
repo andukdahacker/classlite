@@ -9,6 +9,8 @@ import { useSaveAnswers } from "../hooks/use-save-answers";
 import { useSubmitSubmission } from "../hooks/use-submit-submission";
 import { useAssignmentDetail } from "../hooks/use-assignment-detail";
 import { useUploadPhoto } from "../hooks/use-upload-photo";
+import { useAutoSave } from "../hooks/use-auto-save";
+import { loadAnswersLocal, clearAnswersLocal } from "../lib/submission-storage";
 
 import { SubmissionHeader } from "./SubmissionHeader";
 import { QuestionNumberPills } from "./QuestionNumberPills";
@@ -52,6 +54,25 @@ export function SubmissionPage() {
   const prevIndexRef = useRef(currentIndex);
   const elapsedRef = useRef(0);
   const pendingPhotos = useRef<Map<string, File>>(new Map());
+
+  // Auto-save hook
+  const { saveStatus, lastServerSaveTimestamp } = useAutoSave({
+    centerId,
+    assignmentId,
+    submissionId,
+    answers,
+    enabled: !!submissionId && !isSubmitted,
+  });
+
+  // Restore answers from IndexedDB after server answers are seeded
+  useEffect(() => {
+    if (!centerId || !assignmentId || !submissionId) return;
+    loadAnswersLocal(centerId, assignmentId).then((stored) => {
+      if (stored?.answers && Object.keys(stored.answers).length > 0) {
+        setAnswers((prev) => ({ ...prev, ...stored.answers }));
+      }
+    });
+  }, [centerId, assignmentId, submissionId]);
 
   // Flatten questions from sections
   const flatQuestions = useMemo<FlatQuestion[]>(() => {
@@ -114,9 +135,20 @@ export function SubmissionPage() {
     if (!assignmentId || submissionId) return;
     startSubmission.mutate(assignmentId, {
       onSuccess: (data) => {
-        const sub = (data as { data: { id: string; startedAt: string } }).data;
+        const sub = (data as { data: { id: string; startedAt: string; answers?: Array<{ questionId: string; answer: unknown }> } }).data;
         setSubmissionId(sub.id);
         setStartedAt(sub.startedAt);
+        if (sub.answers?.length) {
+          setAnswers((prev) => {
+            const seeded = { ...prev };
+            for (const a of sub.answers!) {
+              if (a.answer && !seeded[a.questionId]) {
+                seeded[a.questionId] = a.answer;
+              }
+            }
+            return seeded;
+          });
+        }
       },
       onError: (err) => {
         toast.error(err.message || "Failed to start submission");
@@ -140,6 +172,11 @@ export function SubmissionPage() {
     if (prevIndexRef.current === currentIndex) return;
     const prevQuestion = flatQuestions[prevIndexRef.current];
     if (prevQuestion && submissionId && answers[prevQuestion.id]) {
+      // Skip if auto-save just sent a server save
+      if (Date.now() - lastServerSaveTimestamp.current < 1000) {
+        prevIndexRef.current = currentIndex;
+        return;
+      }
       saveAnswers.mutate({
         submissionId,
         answers: [{ questionId: prevQuestion.id, answer: answers[prevQuestion.id] }],
@@ -198,6 +235,11 @@ export function SubmissionPage() {
         timeSpentSec: elapsedRef.current,
       });
 
+      // Clean up IndexedDB after successful submit
+      if (centerId && assignmentId) {
+        await clearAnswersLocal(centerId, assignmentId);
+      }
+
       setIsSubmitted(true);
       setShowConfirm(false);
     } catch (err) {
@@ -205,7 +247,7 @@ export function SubmissionPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [submissionId, answers, saveAnswers, uploadPhoto, submitSubmission]);
+  }, [submissionId, answers, saveAnswers, uploadPhoto, submitSubmission, assignmentId, centerId]);
 
   // Loading states
   if (isLoadingAssignment) {
@@ -267,6 +309,7 @@ export function SubmissionPage() {
         startedAt={startedAt ?? undefined}
         autoSubmitOnExpiry={autoSubmitOnExpiry}
         onTimerExpired={handleSubmit}
+        saveStatus={saveStatus}
       />
 
       {isListening && audioUrl && <AudioPlayerPanel audioUrl={audioUrl} />}

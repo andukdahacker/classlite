@@ -1,7 +1,8 @@
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, LoaderCircle, Check, CircleAlert } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { useNavigate, useParams } from "react-router";
 import { useState, useEffect, useRef } from "react";
+import type { SaveStatus } from "../hooks/use-auto-save";
 
 interface SubmissionHeaderProps {
   title: string;
@@ -12,6 +13,7 @@ interface SubmissionHeaderProps {
   startedAt?: string;
   autoSubmitOnExpiry?: boolean;
   onTimerExpired?: () => void;
+  saveStatus?: SaveStatus;
 }
 
 function formatTimer(seconds: number) {
@@ -22,6 +24,70 @@ function formatTimer(seconds: number) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+const SAVE_INDICATOR_CONFIG: Record<
+  Exclude<SaveStatus, "idle">,
+  { icon: React.ReactNode; text: string; className: string }
+> = {
+  saving: {
+    icon: <LoaderCircle className="size-3.5 animate-spin" />,
+    text: "Saving...",
+    className: "text-muted-foreground",
+  },
+  saved: {
+    icon: <Check className="size-3.5" />,
+    text: "Saved",
+    className: "text-green-600",
+  },
+  error: {
+    icon: <CircleAlert className="size-3.5" />,
+    text: "Save failed",
+    className: "text-destructive",
+  },
+};
+
+function SaveIndicator({ saveStatus }: { saveStatus?: SaveStatus }) {
+  const [displayStatus, setDisplayStatus] = useState<SaveStatus>("idle");
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (!saveStatus) {
+      setDisplayStatus("idle");
+      return;
+    }
+
+    setDisplayStatus(saveStatus);
+
+    if (saveStatus === "saved") {
+      timerRef.current = window.setTimeout(() => {
+        setDisplayStatus("idle");
+        timerRef.current = null;
+      }, 2000);
+    }
+
+    return () => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+      }
+    };
+  }, [saveStatus]);
+
+  if (displayStatus === "idle") return null;
+
+  const config = SAVE_INDICATOR_CONFIG[displayStatus];
+
+  return (
+    <div className={`flex items-center gap-1 shrink-0 ${config.className}`} data-testid="save-indicator">
+      {config.icon}
+      <span className="hidden sm:inline text-xs">{config.text}</span>
+    </div>
+  );
+}
+
 export function SubmissionHeader({
   title,
   currentQuestion,
@@ -30,6 +96,7 @@ export function SubmissionHeader({
   startedAt,
   autoSubmitOnExpiry,
   onTimerExpired,
+  saveStatus,
 }: SubmissionHeaderProps) {
   const navigate = useNavigate();
   const { centerId } = useParams();
@@ -79,6 +146,8 @@ export function SubmissionHeader({
             Question {currentQuestion + 1} of {totalQuestions}
           </p>
         </div>
+
+        <SaveIndicator saveStatus={saveStatus} />
 
         {remaining !== null && (
           <div
