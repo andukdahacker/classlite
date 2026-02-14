@@ -32,7 +32,7 @@ ClassLite uses **Railway** with GitHub integration for deployments. No separate 
 
 | Environment | Branch    | URL                          | Database         |
 |-------------|-----------|------------------------------|------------------|
-| Staging     | `develop` | `staging.classlite.app`      | Railway Postgres (staging) |
+| Staging     | `develop` | `my-staging.classlite.app`      | Railway Postgres (staging) |
 | Production  | `master`  | `my.classlite.app` / `api.classlite.app` | Railway Postgres (production) |
 
 ### Promotion Flow

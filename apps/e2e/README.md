@@ -173,7 +173,7 @@ Key settings in `playwright.config.ts`:
 Railway connects directly to GitHub and auto-deploys on push to `develop`. E2E tests can be run manually against staging:
 
 ```bash
-E2E_BASE_URL=https://staging.classlite.app pnpm --filter e2e test:chromium
+E2E_BASE_URL=https://my-staging.classlite.app pnpm --filter e2e test:chromium
 ```
 
 ### Local CI
