@@ -67,11 +67,15 @@ export function SubmissionPage() {
   // Restore answers from IndexedDB after server answers are seeded
   useEffect(() => {
     if (!centerId || !assignmentId || !submissionId) return;
-    loadAnswersLocal(centerId, assignmentId).then((stored) => {
-      if (stored?.answers && Object.keys(stored.answers).length > 0) {
-        setAnswers((prev) => ({ ...prev, ...stored.answers }));
-      }
-    });
+    loadAnswersLocal(centerId, assignmentId)
+      .then((stored) => {
+        if (stored?.answers && Object.keys(stored.answers).length > 0) {
+          setAnswers((prev) => ({ ...prev, ...stored.answers }));
+        }
+      })
+      .catch(() => {
+        // IndexedDB unavailable — server answers already seeded
+      });
   }, [centerId, assignmentId, submissionId]);
 
   // Flatten questions from sections

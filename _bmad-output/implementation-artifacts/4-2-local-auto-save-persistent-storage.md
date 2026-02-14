@@ -1,6 +1,6 @@
 # Story 4.2: Local Auto-save & Persistent Storage
 
-Status: review
+Status: done
 
 ## Story
 
@@ -455,24 +455,29 @@ Claude Opus 4.6
 - SubmissionPage: seeds server answers from `startSubmission` response, restores from IndexedDB on mount (local wins merge), clears IndexedDB on submit
 - Save-on-navigate guards against doubled server saves using `lastServerSaveTimestamp` ref
 - SaveIndicator component auto-hides "Saved" state after 2s, error state persists, text hidden on small screens (`hidden sm:inline`)
-- 28 new tests across 3 test files, 586 total tests passing, zero regressions
+- 34 new tests across 4 test files, 592 total tests passing, zero regressions
 - Frontend-only story — no backend changes
 
 ### Change Log
 
+- 2026-02-14: Code review fixes applied — 3 bugs fixed, 6 tests added, File List corrected
 - 2026-02-14: Story 4.2 implemented — Local auto-save with IndexedDB persistence and saved indicator UI
 
 ### File List
 
 **New files:**
 - `apps/webapp/src/features/submissions/lib/submission-storage.ts` — IndexedDB storage utility via idb-keyval
-- `apps/webapp/src/features/submissions/lib/submission-storage.test.ts` — 9 unit tests for storage utility
+- `apps/webapp/src/features/submissions/lib/submission-storage.test.ts` — 11 unit tests for storage utility (incl. error propagation)
 - `apps/webapp/src/features/submissions/hooks/use-auto-save.ts` — Auto-save hook with 3s interval + server debounce
 - `apps/webapp/src/features/submissions/hooks/use-auto-save.test.ts` — 12 unit tests for auto-save hook
 - `apps/webapp/src/features/submissions/components/SubmissionHeader.test.tsx` — 7 component tests for save indicator
+- `apps/webapp/src/features/submissions/components/SubmissionPage.test.tsx` — 4 integration tests (IndexedDB restore+merge, save-on-navigate skip, auto-save params)
 
 **Modified files:**
 - `apps/webapp/src/features/submissions/components/SubmissionPage.tsx` — Added useAutoSave, IndexedDB restore, server answer seeding, clearAnswersLocal on submit, save-on-navigate guard
 - `apps/webapp/src/features/submissions/components/SubmissionHeader.tsx` — Added saveStatus prop, SaveIndicator component with 4 states
+- `apps/webapp/src/features/submissions/components/AudioPlayerPanel.tsx` — Added eslint-disable for jsx-a11y/media-has-caption
+- `apps/webapp/src/features/submissions/components/question-inputs/SpeakingInput.tsx` — Added eslint-disable for jsx-a11y/media-has-caption
+- `apps/webapp/nginx.conf` — Added CSP sha256 hash for inline script
 - `apps/webapp/package.json` — Added idb-keyval dependency
 - `pnpm-lock.yaml` — Updated lockfile

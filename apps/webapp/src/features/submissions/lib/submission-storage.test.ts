@@ -104,6 +104,20 @@ describe("loadAnswersLocal", () => {
   });
 });
 
+describe("saveAnswersLocal error propagation", () => {
+  it("rejects when IndexedDB set throws", async () => {
+    mockSet.mockRejectedValueOnce(new Error("QuotaExceededError"));
+    await expect(saveAnswersLocal("c1", "a1", "sub-1", {})).rejects.toThrow("QuotaExceededError");
+  });
+});
+
+describe("loadAnswersLocal error propagation", () => {
+  it("rejects when IndexedDB get throws", async () => {
+    mockGet.mockRejectedValueOnce(new Error("read failed"));
+    await expect(loadAnswersLocal("c1", "a1")).rejects.toThrow("read failed");
+  });
+});
+
 describe("clearAnswersLocal", () => {
   it("deletes entry with correct key", async () => {
     await clearAnswersLocal("c1", "a1");

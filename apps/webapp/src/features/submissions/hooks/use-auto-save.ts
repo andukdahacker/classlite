@@ -46,7 +46,7 @@ export function useAutoSave({
   const answersRef = useRef(answers);
   answersRef.current = answers;
 
-  const saveAnswersMutation = useSaveAnswers();
+  const { mutate: saveAnswersMutate } = useSaveAnswers();
 
   // Check storage availability once on mount
   useEffect(() => {
@@ -68,7 +68,7 @@ export function useAutoSave({
     (changedAnswers: { questionId: string; answer: unknown }[]) => {
       if (!submissionId || changedAnswers.length === 0) return;
 
-      saveAnswersMutation.mutate(
+      saveAnswersMutate(
         { submissionId, answers: changedAnswers },
         {
           onSuccess: () => {
@@ -78,7 +78,7 @@ export function useAutoSave({
         },
       );
     },
-    [submissionId, saveAnswersMutation],
+    [submissionId, saveAnswersMutate],
   );
 
   // Main auto-save interval
