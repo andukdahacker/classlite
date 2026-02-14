@@ -125,10 +125,11 @@ development_status:
   epic-3.5-retrospective: done # Completed 2026-02-13 - Full epic review. Outstanding action items consolidated.
 
   # Epic 4: Student Submission & Offline-Proofing
-  epic-4: in-progress
+  epic-4: done
   4-1-mobile-submission-interface: done
   4-2-local-auto-save-persistent-storage: done
   4-3-offline-safeguards-sync: done
+  4-4-epic-4-e2e-tests: done
   epic-4-retrospective: optional
 
   # Epic 5: AI Grading Workbench
