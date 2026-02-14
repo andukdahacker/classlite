@@ -88,6 +88,44 @@ describe("SubmissionHeader SaveIndicator", () => {
     expect(screen.queryByTestId("save-indicator")).not.toBeInTheDocument();
   });
 
+  it("renders CloudOff + 'Offline' indicator when offline", () => {
+    renderHeader("offline");
+    const indicator = screen.getByTestId("save-indicator");
+    expect(indicator).toBeInTheDocument();
+    expect(indicator).toHaveTextContent("Offline");
+    expect(indicator.className).toContain("text-amber-500");
+  });
+
+  it("offline indicator persists (no auto-hide)", () => {
+    renderHeader("offline");
+    expect(screen.getByTestId("save-indicator")).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(screen.getByTestId("save-indicator")).toBeInTheDocument();
+    expect(screen.getByTestId("save-indicator")).toHaveTextContent("Offline");
+  });
+
+  it("renders CloudUpload + 'Syncing...' indicator when syncing", () => {
+    renderHeader("syncing");
+    const indicator = screen.getByTestId("save-indicator");
+    expect(indicator).toBeInTheDocument();
+    expect(indicator).toHaveTextContent("Syncing...");
+    expect(indicator.className).toContain("text-blue-600");
+  });
+
+  it("syncing indicator persists (no auto-hide)", () => {
+    renderHeader("syncing");
+    expect(screen.getByTestId("save-indicator")).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(screen.getByTestId("save-indicator")).toBeInTheDocument();
+    expect(screen.getByTestId("save-indicator")).toHaveTextContent("Syncing...");
+  });
+
   it("transitions from saving to saved to idle", () => {
     const { rerender } = render(
       <MemoryRouter initialEntries={["/c1/assignments/a1/submit"]}>

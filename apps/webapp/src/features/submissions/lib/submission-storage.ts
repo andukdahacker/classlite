@@ -56,3 +56,28 @@ export async function clearAnswersLocal(
   const key = getStorageKey(centerId, assignmentId);
   await del(key);
 }
+
+// Submit-pending persistence for offline submit recovery
+const SUBMIT_PENDING_PREFIX = "classlite:submit-pending:";
+
+export async function persistSubmitPending(
+  centerId: string,
+  assignmentId: string,
+): Promise<void> {
+  await set(`${SUBMIT_PENDING_PREFIX}${centerId}:${assignmentId}`, true);
+}
+
+export async function loadSubmitPending(
+  centerId: string,
+  assignmentId: string,
+): Promise<boolean> {
+  const val = await get<boolean>(`${SUBMIT_PENDING_PREFIX}${centerId}:${assignmentId}`);
+  return val === true;
+}
+
+export async function clearSubmitPending(
+  centerId: string,
+  assignmentId: string,
+): Promise<void> {
+  await del(`${SUBMIT_PENDING_PREFIX}${centerId}:${assignmentId}`);
+}

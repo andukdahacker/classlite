@@ -6,6 +6,7 @@ export function useSubmitSubmission() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    networkMode: "offlineFirst",
     mutationFn: async ({
       submissionId,
       timeSpentSec,

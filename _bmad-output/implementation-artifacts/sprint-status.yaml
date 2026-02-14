@@ -38,6 +38,10 @@
 #   - Epic 9: Added (Billing & Subscription via Polar.sh)
 #   - Epic 9 stories: 4 stories created (9.1-9.4), all backlog
 #   - Payment provider: Polar.sh (no VN business registration required)
+# 2026-02-14: Epic 10 created (Public Website) — credibility landing page
+#   - Epic 10: Added (Public Website — single-page credibility site)
+#   - Story 10.1: Credibility Landing Page (ready-for-dev)
+#   - Scope: Astro static page, brand-consistent, classlite.app domain
 # 2026-02-10: Epic 3 retrospective completed + Epic 3.5 stories created
 #   - Epic 3: Marked as done (16/16 stories complete)
 #   - epic-3-retrospective: marked done
@@ -124,7 +128,7 @@ development_status:
   epic-4: in-progress
   4-1-mobile-submission-interface: done
   4-2-local-auto-save-persistent-storage: done
-  4-3-offline-safeguards-sync: backlog
+  4-3-offline-safeguards-sync: done
   epic-4-retrospective: optional
 
   # Epic 5: AI Grading Workbench
@@ -171,3 +175,10 @@ development_status:
   8-4-language-preference-i18n: backlog # NEW (NFR8)
   8-5-golden-sample-management-interface: backlog # NEW
   epic-8-retrospective: optional
+
+  # Epic 10: Public Website
+  # Status: BACKLOG (created 2026-02-14 — credibility landing page for pilot outreach)
+  # Scope: Single-page Astro site at classlite.app with brand-consistent credibility content
+  epic-10: in-progress
+  10-1-credibility-landing-page: review
+  epic-10-retrospective: optional

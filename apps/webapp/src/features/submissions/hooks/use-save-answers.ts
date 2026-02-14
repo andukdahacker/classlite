@@ -6,6 +6,7 @@ export function useSaveAnswers() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    networkMode: "offlineFirst",
     mutationFn: async ({
       submissionId,
       answers,

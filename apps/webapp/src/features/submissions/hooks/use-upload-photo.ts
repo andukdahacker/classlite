@@ -3,6 +3,7 @@ import { firebaseAuth } from "@/core/firebase";
 
 export function useUploadPhoto() {
   return useMutation({
+    networkMode: "offlineFirst",
     mutationFn: async ({
       submissionId,
       questionId,

@@ -13,6 +13,9 @@ import {
   saveAnswersLocal,
   loadAnswersLocal,
   clearAnswersLocal,
+  persistSubmitPending,
+  loadSubmitPending,
+  clearSubmitPending,
 } from "./submission-storage";
 
 const mockSet = vi.mocked(set);
@@ -122,5 +125,40 @@ describe("clearAnswersLocal", () => {
   it("deletes entry with correct key", async () => {
     await clearAnswersLocal("c1", "a1");
     expect(mockDel).toHaveBeenCalledWith("classlite:answers:c1:a1");
+  });
+});
+
+describe("persistSubmitPending", () => {
+  it("saves true with correct key", async () => {
+    await persistSubmitPending("c1", "a1");
+    expect(mockSet).toHaveBeenCalledWith("classlite:submit-pending:c1:a1", true);
+  });
+});
+
+describe("loadSubmitPending", () => {
+  it("returns true when value is stored as true", async () => {
+    mockGet.mockResolvedValue(true);
+    const result = await loadSubmitPending("c1", "a1");
+    expect(result).toBe(true);
+    expect(mockGet).toHaveBeenCalledWith("classlite:submit-pending:c1:a1");
+  });
+
+  it("returns false when no value stored", async () => {
+    mockGet.mockResolvedValue(undefined);
+    const result = await loadSubmitPending("c1", "a1");
+    expect(result).toBe(false);
+  });
+
+  it("returns false when value is not true", async () => {
+    mockGet.mockResolvedValue(null);
+    const result = await loadSubmitPending("c1", "a1");
+    expect(result).toBe(false);
+  });
+});
+
+describe("clearSubmitPending", () => {
+  it("deletes entry with correct key", async () => {
+    await clearSubmitPending("c1", "a1");
+    expect(mockDel).toHaveBeenCalledWith("classlite:submit-pending:c1:a1");
   });
 });

@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, LoaderCircle, Check, CircleAlert } from "lucide-react";
+import { ArrowLeft, Clock, LoaderCircle, Check, CircleAlert, CloudOff, CloudUpload } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { useNavigate, useParams } from "react-router";
 import { useState, useEffect, useRef } from "react";
@@ -42,6 +42,16 @@ const SAVE_INDICATOR_CONFIG: Record<
     icon: <CircleAlert className="size-3.5" />,
     text: "Save failed",
     className: "text-destructive",
+  },
+  offline: {
+    icon: <CloudOff className="size-3.5 text-amber-500" />,
+    text: "Offline",
+    className: "text-amber-500",
+  },
+  syncing: {
+    icon: <CloudUpload className="size-3.5 text-blue-600 animate-pulse" />,
+    text: "Syncing...",
+    className: "text-blue-600",
   },
 };
 

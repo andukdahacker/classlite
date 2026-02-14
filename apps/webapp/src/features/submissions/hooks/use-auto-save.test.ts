@@ -8,7 +8,7 @@ vi.mock("idb-keyval", () => ({
 }));
 
 vi.mock("sonner", () => ({
-  toast: { error: vi.fn() },
+  toast: { error: vi.fn(), success: vi.fn() },
 }));
 
 const mockMutate = vi.fn();
@@ -20,6 +20,22 @@ vi.mock("../lib/submission-storage", () => ({
   saveAnswersLocal: vi.fn().mockResolvedValue(undefined),
   clearAnswersLocal: vi.fn().mockResolvedValue(undefined),
   isStorageAvailable: vi.fn().mockResolvedValue(true),
+}));
+
+// Mock onlineManager
+let onlineSubscriber: ((isOnline: boolean) => void) | null = null;
+let mockIsOnline = true;
+
+vi.mock("@tanstack/react-query", () => ({
+  onlineManager: {
+    isOnline: () => mockIsOnline,
+    subscribe: (callback: (isOnline: boolean) => void) => {
+      onlineSubscriber = callback;
+      return () => {
+        onlineSubscriber = null;
+      };
+    },
+  },
 }));
 
 import { toast } from "sonner";
@@ -36,6 +52,8 @@ beforeEach(() => {
   mockSaveLocal.mockResolvedValue(undefined);
   mockClearLocal.mockResolvedValue(undefined);
   mockIsAvailable.mockResolvedValue(true);
+  mockIsOnline = true;
+  onlineSubscriber = null;
 });
 
 afterEach(() => {
@@ -56,6 +74,7 @@ describe("useAutoSave", () => {
     expect(result.current.saveStatus).toBe("idle");
     expect(result.current.lastSavedAt).toBeNull();
     expect(result.current.storageAvailable).toBe(true);
+    expect(result.current.isOnline).toBe(true);
   });
 
   it("saves to IndexedDB every 3 seconds when answers change", async () => {
@@ -245,5 +264,167 @@ describe("useAutoSave", () => {
     expect(mockMutate).toHaveBeenCalledTimes(1);
     const firstCall = mockMutate.mock.calls[0];
     expect(firstCall[0].answers).toHaveLength(2);
+  });
+
+  // --- Offline/Online tests (Story 4.3) ---
+
+  it("transitions to 'offline' status when onlineManager reports offline", async () => {
+    const { result } = renderHook(() => useAutoSave(defaultOptions));
+
+    expect(result.current.isOnline).toBe(true);
+    expect(result.current.saveStatus).toBe("idle");
+
+    // Simulate going offline
+    mockIsOnline = false;
+    await act(async () => {
+      onlineSubscriber?.(false);
+    });
+
+    expect(result.current.isOnline).toBe(false);
+    expect(result.current.saveStatus).toBe("offline");
+  });
+
+  it("IndexedDB saves continue every 3s while offline (server saves paused)", async () => {
+    const answers = { q1: { text: "hello" } };
+    const { result } = renderHook(() =>
+      useAutoSave({ ...defaultOptions, answers }),
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    // Go offline
+    mockIsOnline = false;
+    await act(async () => {
+      onlineSubscriber?.(false);
+    });
+
+    expect(result.current.saveStatus).toBe("offline");
+
+    // Advance 3s — IndexedDB save should happen
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+
+    expect(mockSaveLocal).toHaveBeenCalledWith("c1", "a1", "sub-1", answers);
+
+    // Server save should NOT have been called (debounce skipped while offline)
+    // Only the initial calls from the subscribe callback may exist, but the
+    // interval's server debounce should be skipped
+    const serverCallsBeforeOnline = mockMutate.mock.calls.length;
+
+    // Advance another 3s — more IndexedDB saves, still no new server saves
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3500);
+    });
+
+    // No additional server save calls while offline
+    expect(mockMutate.mock.calls.length).toBe(serverCallsBeforeOnline);
+  });
+
+  it("on reconnect with pending changes, transitions to syncing → saved and shows toast", async () => {
+    const answers = { q1: { text: "hello" } };
+    const { result } = renderHook(() =>
+      useAutoSave({ ...defaultOptions, answers }),
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    // Go offline
+    mockIsOnline = false;
+    await act(async () => {
+      onlineSubscriber?.(false);
+    });
+
+    expect(result.current.saveStatus).toBe("offline");
+
+    // Come back online (pending changes exist: answers differ from lastServerSavedAnswers)
+    mockIsOnline = true;
+    await act(async () => {
+      onlineSubscriber?.(true);
+    });
+
+    expect(result.current.saveStatus).toBe("syncing");
+    expect(result.current.isOnline).toBe(true);
+
+    // The sync mutation was called — simulate its onSuccess
+    const syncCall = mockMutate.mock.calls[mockMutate.mock.calls.length - 1];
+    expect(syncCall[0].submissionId).toBe("sub-1");
+
+    await act(async () => {
+      syncCall[1].onSuccess();
+    });
+
+    expect(result.current.saveStatus).toBe("saved");
+    expect(toast.success).toHaveBeenCalledWith("Changes synced");
+  });
+
+  it("on reconnect with no pending changes, transitions to idle", async () => {
+    // Start with no answers (empty object matches lastServerSavedAnswers which is also empty)
+    const { result } = renderHook(() => useAutoSave(defaultOptions));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    // Go offline
+    mockIsOnline = false;
+    await act(async () => {
+      onlineSubscriber?.(false);
+    });
+
+    expect(result.current.saveStatus).toBe("offline");
+
+    // Come back online — no pending changes
+    mockIsOnline = true;
+    await act(async () => {
+      onlineSubscriber?.(true);
+    });
+
+    expect(result.current.saveStatus).toBe("idle");
+  });
+
+  it("exposes isOnline in return value", () => {
+    const { result } = renderHook(() => useAutoSave(defaultOptions));
+    expect(result.current.isOnline).toBe(true);
+  });
+
+  it("on reconnect with pending changes, transitions to error and shows toast on server sync failure", async () => {
+    const answers = { q1: { text: "hello" } };
+    const { result } = renderHook(() =>
+      useAutoSave({ ...defaultOptions, answers }),
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    // Go offline
+    mockIsOnline = false;
+    await act(async () => {
+      onlineSubscriber?.(false);
+    });
+
+    expect(result.current.saveStatus).toBe("offline");
+
+    // Come back online
+    mockIsOnline = true;
+    await act(async () => {
+      onlineSubscriber?.(true);
+    });
+
+    expect(result.current.saveStatus).toBe("syncing");
+
+    // Simulate server sync failure via onError callback
+    const syncCall = mockMutate.mock.calls[mockMutate.mock.calls.length - 1];
+    await act(async () => {
+      syncCall[1].onError(new Error("Server error"));
+    });
+
+    expect(result.current.saveStatus).toBe("error");
+    expect(toast.error).toHaveBeenCalledWith("Failed to sync changes — please check your connection");
   });
 });

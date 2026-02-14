@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
+import { onlineManager } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import type { IeltsQuestionType } from "@workspace/types";
@@ -10,7 +11,13 @@ import { useSubmitSubmission } from "../hooks/use-submit-submission";
 import { useAssignmentDetail } from "../hooks/use-assignment-detail";
 import { useUploadPhoto } from "../hooks/use-upload-photo";
 import { useAutoSave } from "../hooks/use-auto-save";
-import { loadAnswersLocal, clearAnswersLocal } from "../lib/submission-storage";
+import {
+  loadAnswersLocal,
+  clearAnswersLocal,
+  persistSubmitPending,
+  loadSubmitPending,
+  clearSubmitPending,
+} from "../lib/submission-storage";
 
 import { SubmissionHeader } from "./SubmissionHeader";
 import { QuestionNumberPills } from "./QuestionNumberPills";
@@ -20,6 +27,7 @@ import { SubmissionCompletePage } from "./SubmissionCompletePage";
 import { QuestionInputFactory } from "./question-inputs/QuestionInputFactory";
 import { PassagePanel } from "./PassagePanel";
 import { AudioPlayerPanel } from "./AudioPlayerPanel";
+import { OfflineBanner } from "./OfflineBanner";
 
 interface FlatQuestion {
   id: string;
@@ -51,12 +59,16 @@ export function SubmissionPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitPending, setIsSubmitPending] = useState(false);
+  const [localAnswersRestored, setLocalAnswersRestored] = useState(false);
   const prevIndexRef = useRef(currentIndex);
   const elapsedRef = useRef(0);
   const pendingPhotos = useRef<Map<string, File>>(new Map());
+  const submitRetryRef = useRef(false);
+  const isRecoverySubmitRef = useRef(false);
 
   // Auto-save hook
-  const { saveStatus, lastServerSaveTimestamp } = useAutoSave({
+  const { saveStatus, lastServerSaveTimestamp, isOnline } = useAutoSave({
     centerId,
     assignmentId,
     submissionId,
@@ -75,6 +87,9 @@ export function SubmissionPage() {
       })
       .catch(() => {
         // IndexedDB unavailable — server answers already seeded
+      })
+      .finally(() => {
+        setLocalAnswersRestored(true);
       });
   }, [centerId, assignmentId, submissionId]);
 
@@ -239,19 +254,70 @@ export function SubmissionPage() {
         timeSpentSec: elapsedRef.current,
       });
 
-      // Clean up IndexedDB after successful submit
+      // Server confirmed — clear IndexedDB and celebrate
       if (centerId && assignmentId) {
         await clearAnswersLocal(centerId, assignmentId);
+        await clearSubmitPending(centerId, assignmentId);
       }
 
       setIsSubmitted(true);
+      setIsSubmitPending(false);
       setShowConfirm(false);
+      if (isRecoverySubmitRef.current) {
+        toast.success("You're back online! Submission received.");
+        isRecoverySubmitRef.current = false;
+      } else {
+        toast.success("Submission received.");
+      }
     } catch (err) {
-      toast.error((err as Error).message || "Submission failed");
+      // Distinguish network errors from server errors
+      if (!onlineManager.isOnline()) {
+        // Offline — persist submit-pending flag for tab-killed recovery
+        setIsSubmitPending(true);
+        if (centerId && assignmentId) {
+          persistSubmitPending(centerId, assignmentId).catch(() => {
+            toast.warning("Unable to save offline state — avoid closing this tab.");
+          });
+        }
+        toast.warning(
+          "You're offline. Your answers are saved locally and will submit automatically when you reconnect.",
+        );
+      } else {
+        // Actual server error (not network)
+        setIsSubmitPending(false);
+        toast.error((err as Error).message || "Submission failed. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
   }, [submissionId, answers, saveAnswers, uploadPhoto, submitSubmission, assignmentId, centerId]);
+
+  // Auto-retry submit on reconnect while isSubmitPending is set
+  useEffect(() => {
+    if (!isSubmitPending || !isOnline || submitRetryRef.current) return;
+    submitRetryRef.current = true;
+    isRecoverySubmitRef.current = true;
+    handleSubmit().finally(() => {
+      submitRetryRef.current = false;
+    });
+  }, [isOnline, isSubmitPending, handleSubmit]);
+
+  // Check for persisted submit-pending flag on mount (tab-killed recovery)
+  // Gated on localAnswersRestored to prevent race with IndexedDB answer restore
+  useEffect(() => {
+    if (!centerId || !assignmentId || !submissionId || !localAnswersRestored) return;
+    loadSubmitPending(centerId, assignmentId).then((pending) => {
+      if (pending && isOnline) {
+        isRecoverySubmitRef.current = true;
+        handleSubmit();
+      } else if (pending) {
+        setIsSubmitPending(true);
+      }
+    }).catch(() => {
+      // IndexedDB unavailable — cannot check persisted pending state
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerId, assignmentId, submissionId, localAnswersRestored]);
 
   // Loading states
   if (isLoadingAssignment) {
@@ -315,6 +381,8 @@ export function SubmissionPage() {
         onTimerExpired={handleSubmit}
         saveStatus={saveStatus}
       />
+
+      <OfflineBanner isOnline={isOnline} isSubmitted={isSubmitted} />
 
       {isListening && audioUrl && <AudioPlayerPanel audioUrl={audioUrl} />}
 
