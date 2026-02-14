@@ -7,6 +7,7 @@ import globals from "globals"
 import tseslint from "typescript-eslint"
 
 import { config as baseConfig } from "./base.js"
+import requireOnblurWithOnchange from "./rules/require-onblur-with-onchange.js"
 
 /**
  * A custom ESLint configuration for libraries that use React.
@@ -46,6 +47,19 @@ export const config = [
     },
     rules: {
       ...pluginJsxA11y.configs.recommended.rules,
+    },
+  },
+  // Custom classlite rules - catches recurring code review findings
+  {
+    plugins: {
+      classlite: {
+        rules: {
+          "require-onblur-with-onchange": requireOnblurWithOnchange,
+        },
+      },
+    },
+    rules: {
+      "classlite/require-onblur-with-onchange": "warn",
     },
   },
 ]

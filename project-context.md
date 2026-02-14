@@ -78,7 +78,13 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **Pattern:** Use TanStack Query `useMutation` with `networkMode: 'offlineFirst'`.
 - **Reason:** Students must be able to submit work without internet.
 
-### 5. Layered Architecture (Route-Controller-Service)
+### 5. Prisma `$transaction` + Multi-Tenancy
+
+- **Rule:** NEVER call `getTenantedClient(centerId)` inside a `$transaction` callback.
+- **Pattern:** Use the `tx` client provided by `$transaction` directly, adding explicit `where: { centerId }` filters on every query inside the transaction.
+- **Reason:** `$transaction` provides a raw transaction client that does not support `$extends`. Calling `getTenantedClient()` (which uses `$extends` to inject tenant filtering) on a transaction client will throw. This has caused friction in every epic.
+
+### 6. Layered Architecture (Route-Controller-Service)
 
 - **Rule:** Controllers must be "pure" (decoupled from Fastify).
 - **Pattern:**
