@@ -61,8 +61,8 @@ test.describe("Owner Dashboard", () => {
     await expect(page.getByText("Active Students")).toBeVisible();
     await expect(page.getByText("Teacher Utilization")).toBeVisible();
 
-    // Verify each stat card renders a numeric value (not hardcoded to specific seed data)
-    const statCards = page.locator("[data-slot='card']");
+    // Verify each stat card renders (OwnerDashboard uses plain divs with bg-card, not Card component)
+    const statCards = page.locator(".bg-card");
     const cardCount = await statCards.count();
     expect(cardCount).toBeGreaterThanOrEqual(3);
   });
@@ -228,7 +228,7 @@ test.describe("Student Dashboard — Assignment Cards", () => {
 
     await expect(page.getByRole("heading", { name: "Your Tasks" })).toBeVisible();
     await expect(page.getByText(exerciseTitle)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("Not Started").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /Start/ }).first()).toBeVisible();
   });
 
   test("assignment cards show urgency section headings", async ({ page }) => {

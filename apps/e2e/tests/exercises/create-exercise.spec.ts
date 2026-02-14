@@ -108,11 +108,19 @@ test.describe("Exercise Builder Flow (AC1)", () => {
       .first()
       .click();
 
-    // Add answer options — option inputs must be visible after adding a question
+    // Expand the question (questions are collapsed by default after adding)
+    const questionRow = page.locator('[role="button"]').filter({ hasText: /Q1/ }).first();
+    await questionRow.click();
+
+    // New questions have no options — click "Add Option" to create them
     const optionInputs = page.locator(
       'input[placeholder*="Option"], input[placeholder*="option"], input[placeholder*="Answer"], input[placeholder*="answer"]'
     );
+    await page.getByRole("button", { name: /Add Option/i }).click();
     await expect(optionInputs.first()).toBeVisible({ timeout: 10000 });
+    // Click again after first option renders to avoid stale reference
+    await page.getByRole("button", { name: /Add Option/i }).click();
+    await expect(optionInputs.nth(1)).toBeVisible({ timeout: 10000 });
     const optionCount = await optionInputs.count();
     expect(optionCount).toBeGreaterThanOrEqual(2);
 

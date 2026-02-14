@@ -27,6 +27,7 @@ import { assignmentsRoutes } from "./modules/assignments/assignments.routes.js";
 import { studentAssignmentsRoutes } from "./modules/assignments/student-assignments.routes.js";
 import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
 import { usersRoutes } from "./modules/users/users.routes.js";
+import { submissionsRoutes } from "./modules/submissions/submissions.routes.js";
 import { inngestRoutes } from "./modules/inngest/inngest.routes.js";
 import { healthRoutes } from "./modules/health/health.routes.js";
 import firebasePlugin from "./plugins/firebase.plugin.js";
@@ -206,7 +207,7 @@ export const buildApp = async () => {
 
   app.register(multipart, {
     limits: {
-      fileSize: 2 * 1024 * 1024, // 2MB
+      fileSize: 5 * 1024 * 1024, // 5MB — matches photo upload limit
     },
   });
 
@@ -232,6 +233,7 @@ export const buildApp = async () => {
   await app.register(mockTestRoutes, { prefix: "/api/v1/mock-tests" });
   await app.register(assignmentsRoutes, { prefix: "/api/v1/assignments" });
   await app.register(studentAssignmentsRoutes, { prefix: "/api/v1/student/assignments" });
+  await app.register(submissionsRoutes, { prefix: "/api/v1/student/submissions" });
   await app.register(notificationsRoutes, { prefix: "/api/v1/notifications" });
   await app.register(usersRoutes, { prefix: "/api/v1/users" });
 

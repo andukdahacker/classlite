@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { MemoryRouter } from "react-router";
 import StudentDashboard from "./StudentDashboard";
 import { useAuth } from "@/features/auth/auth-context";
 import { useStudentAssignments } from "../hooks/use-student-assignments";
@@ -44,7 +45,7 @@ describe("StudentDashboard", () => {
       isError: false,
     });
 
-    render(<StudentDashboard />);
+    render(<MemoryRouter><StudentDashboard /></MemoryRouter>);
 
     // Skeleton elements should be present (no heading visible yet)
     expect(screen.queryByText("Your Tasks")).not.toBeInTheDocument();
@@ -57,7 +58,7 @@ describe("StudentDashboard", () => {
       isError: true,
     });
 
-    render(<StudentDashboard />);
+    render(<MemoryRouter><StudentDashboard /></MemoryRouter>);
 
     expect(screen.getByText("Failed to load assignments")).toBeInTheDocument();
     expect(screen.getByText(/Something went wrong/)).toBeInTheDocument();
@@ -70,7 +71,7 @@ describe("StudentDashboard", () => {
       isError: false,
     });
 
-    render(<StudentDashboard />);
+    render(<MemoryRouter><StudentDashboard /></MemoryRouter>);
 
     expect(screen.getByText("Your Tasks")).toBeInTheDocument();
     expect(screen.getByText("No assignments")).toBeInTheDocument();
@@ -102,7 +103,7 @@ describe("StudentDashboard", () => {
       isError: false,
     });
 
-    render(<StudentDashboard />);
+    render(<MemoryRouter><StudentDashboard /></MemoryRouter>);
 
     // Section headings include count
     const overdueHeading = screen.getByText(/Overdue \(1\)/);
@@ -122,7 +123,7 @@ describe("StudentDashboard", () => {
       isError: false,
     });
 
-    render(<StudentDashboard />);
+    render(<MemoryRouter><StudentDashboard /></MemoryRouter>);
 
     expect(screen.getByText("Reading Test 1")).toBeInTheDocument();
   });
@@ -139,7 +140,7 @@ describe("StudentDashboard", () => {
       isError: false,
     });
 
-    render(<StudentDashboard />);
+    render(<MemoryRouter><StudentDashboard /></MemoryRouter>);
 
     expect(screen.getByText(/Upcoming \(1\)/)).toBeInTheDocument();
     expect(screen.queryByText(/Overdue \(/)).not.toBeInTheDocument();
@@ -154,7 +155,7 @@ describe("StudentDashboard", () => {
       isError: false,
     });
 
-    render(<StudentDashboard />);
+    render(<MemoryRouter><StudentDashboard /></MemoryRouter>);
 
     // Default filters: status OPEN
     expect(useStudentAssignments).toHaveBeenCalledWith(

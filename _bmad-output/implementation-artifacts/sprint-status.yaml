@@ -109,7 +109,7 @@ development_status:
   epic-3-retrospective: done # Completed 2026-02-10 - Full epic review. Epic 3.5 (Deployment) created.
 
   # Epic 3.5: Deployment & Infrastructure (Railway)
-  # Status: IN-PROGRESS (created during Epic 3 retro 2026-02-10)
+  # Status: DONE (retrospective completed 2026-02-13)
   # Scope: CI/CD, staging, production, a11y, error boundaries, Epic 3 E2E tests
   # Stories created: 2026-02-10
   epic-3.5: done
@@ -118,11 +118,11 @@ development_status:
   3.5-3-production-environment-deployment-workflow: done
   3.5-4-error-boundaries-accessibility-enforcement: done
   3.5-5-epic-3-e2e-tests: done
-  epic-3.5-retrospective: optional
+  epic-3.5-retrospective: done # Completed 2026-02-13 - Full epic review. Outstanding action items consolidated.
 
   # Epic 4: Student Submission & Offline-Proofing
-  epic-4: backlog
-  4-1-mobile-submission-interface: backlog
+  epic-4: in-progress
+  4-1-mobile-submission-interface: done
   4-2-local-auto-save-persistent-storage: backlog
   4-3-offline-safeguards-sync: backlog
   epic-4-retrospective: optional

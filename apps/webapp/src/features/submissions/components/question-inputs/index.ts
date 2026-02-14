@@ -1,0 +1,10 @@
+export { QuestionInputFactory } from "./QuestionInputFactory";
+export { MCQInput } from "./MCQInput";
+export { TextAnswerInput } from "./TextAnswerInput";
+export { WordBankInput } from "./WordBankInput";
+export { MatchingInput } from "./MatchingInput";
+export { NoteTableFlowchartInput } from "./NoteTableFlowchartInput";
+export { DiagramLabellingInput } from "./DiagramLabellingInput";
+export { WritingInput } from "./WritingInput";
+export { SpeakingInput } from "./SpeakingInput";
+export { PhotoCaptureInput } from "./PhotoCaptureInput";

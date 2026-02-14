@@ -28,6 +28,7 @@ import { MockTestsPage } from "./features/mock-tests/mock-tests-page";
 import { MockTestEditor } from "./features/mock-tests/components/MockTestEditor";
 import AssignmentsPage from "./features/assignments/assignments-page";
 import { StudentsPage } from "./features/students/StudentsPage";
+import { SubmissionPage } from "./features/submissions/components/SubmissionPage";
 import { SettingsLayout } from "./features/settings/components/SettingsLayout";
 import { GeneralSettingsPage } from "./features/settings/pages/GeneralSettingsPage";
 import { IntegrationsPage } from "./features/settings/pages/IntegrationsPage";
@@ -314,6 +315,18 @@ function App() {
                       }
                     />
                   </Route>
+
+                  {/* Student Submission — full-screen, no nav rail */}
+                  <Route
+                    path="/:centerId/assignments/:assignmentId/take"
+                    element={
+                      <ErrorBoundary>
+                        <ProtectedRoute allowedRoles={["STUDENT"]}>
+                          <SubmissionPage />
+                        </ProtectedRoute>
+                      </ErrorBoundary>
+                    }
+                  />
 
                   <Route path="/dashboard" element={<RoleRedirect />} />
 

@@ -6,7 +6,7 @@ const ASSIGNMENT_INCLUDE = {
   exercise: { select: { id: true, title: true, skill: true, status: true } },
   class: { select: { id: true, name: true } },
   createdBy: { select: { id: true, name: true } },
-  _count: { select: { studentAssignments: true } },
+  _count: { select: { studentAssignments: true, submissions: true } },
 };
 
 const ASSIGNMENT_DETAIL_INCLUDE = {
@@ -276,8 +276,13 @@ export class AssignmentsService {
     const db = getTenantedClient(this.prisma, centerId);
     const existing = await db.assignment.findUnique({ where: { id } });
     if (!existing) throw AppError.notFound("Assignment not found");
-    // TODO: Story 4.x — check for submissions here. If submissions exist, reject delete.
-    // For now, all assignments can be deleted (no submission system yet).
+    // Guard: reject delete if submissions exist
+    const submissionCount = await db.submission.count({ where: { assignmentId: id } });
+    if (submissionCount > 0) {
+      throw AppError.badRequest(
+        `Cannot delete assignment with ${submissionCount} submission(s). Archive it instead.`,
+      );
+    }
     await db.assignment.delete({ where: { id } });
   }
 
@@ -327,13 +332,25 @@ export class AssignmentsService {
             exercise: { select: { id: true, title: true, skill: true, status: true } },
             class: { select: { id: true, name: true } },
             createdBy: { select: { id: true, name: true } },
+            submissions: {
+              where: { studentId: studentUserId },
+              select: { id: true, status: true },
+              take: 1,
+            },
           },
         },
       },
       orderBy: { assignment: { dueDate: "asc" } },
     });
 
-    return studentAssignments.map((sa) => sa.assignment);
+    return studentAssignments.map((sa) => {
+      const { submissions, ...assignment } = sa.assignment;
+      return {
+        ...assignment,
+        submissionStatus: submissions[0]?.status ?? null,
+        submissionId: submissions[0]?.id ?? null,
+      };
+    });
   }
 
   async getStudentAssignment(centerId: string, assignmentId: string, firebaseUid: string) {
@@ -355,12 +372,22 @@ export class AssignmentsService {
             exercise: { select: { id: true, title: true, skill: true, status: true } },
             class: { select: { id: true, name: true } },
             createdBy: { select: { id: true, name: true } },
+            submissions: {
+              where: { studentId: authAccount.userId },
+              select: { id: true, status: true },
+              take: 1,
+            },
           },
         },
       },
     });
     if (!studentAssignment) throw AppError.notFound("Assignment not found");
-    return studentAssignment.assignment;
+    const { submissions, ...assignment } = studentAssignment.assignment;
+    return {
+      ...assignment,
+      submissionStatus: submissions[0]?.status ?? null,
+      submissionId: submissions[0]?.id ?? null,
+    };
   }
 
   async getAssignmentCountsByExercise(

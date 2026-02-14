@@ -409,8 +409,7 @@ export default function AssignmentsPage() {
                     </TableCell>
                     <TableCell>{formatTimeLimit(assignment.timeLimit)}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {/* TODO: Epic 4 — Replace 0 with actual submission count */}
-                      0/{assignment._count?.studentAssignments ?? 0}
+                      {assignment._count?.submissions ?? 0}/{assignment._count?.studentAssignments ?? 0}
                     </TableCell>
                     <TableCell>
                       <Badge className={cn("text-xs", STATUS_VARIANTS[assignment.status])}>

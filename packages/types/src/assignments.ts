@@ -45,6 +45,7 @@ export const AssignmentSchema = z.object({
   studentAssignments: z.array(AssignmentStudentSchema).optional(),
   _count: z.object({
     studentAssignments: z.number(),
+    submissions: z.number().optional(),
   }).optional(),
 });
 export type Assignment = z.infer<typeof AssignmentSchema>;
@@ -108,6 +109,8 @@ export const StudentAssignmentSchema = z.object({
     id: z.string(),
     name: z.string().nullable(),
   }),
+  submissionStatus: z.enum(["IN_PROGRESS", "SUBMITTED", "GRADED"]).nullable().optional(),
+  submissionId: z.string().nullable().optional(),
 });
 export type StudentAssignment = z.infer<typeof StudentAssignmentSchema>;
 

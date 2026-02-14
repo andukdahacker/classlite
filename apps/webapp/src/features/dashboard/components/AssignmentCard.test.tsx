@@ -1,7 +1,12 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router";
 import { AssignmentCard, formatRelativeDue, formatTimeLimit } from "./AssignmentCard";
 import type { StudentAssignment } from "@workspace/types";
+
+vi.mock("@/features/auth/auth-context", () => ({
+  useAuth: () => ({ user: { centerId: "center-1", role: "STUDENT" } }),
+}));
 
 const baseAssignment: StudentAssignment = {
   id: "assign-1",
@@ -17,46 +22,79 @@ const baseAssignment: StudentAssignment = {
   createdBy: { id: "user-1", name: "Ms. Smith" },
 };
 
+function renderCard(assignment: StudentAssignment = baseAssignment) {
+  return render(
+    <MemoryRouter>
+      <AssignmentCard assignment={assignment} />
+    </MemoryRouter>,
+  );
+}
+
 describe("AssignmentCard", () => {
   it("renders exercise title", () => {
-    render(<AssignmentCard assignment={baseAssignment} />);
+    renderCard();
     expect(screen.getByText("Reading Comprehension Test")).toBeInTheDocument();
   });
 
   it("shows class name when class-based assignment", () => {
-    render(<AssignmentCard assignment={baseAssignment} />);
+    renderCard();
     expect(screen.getByText("Class 10A")).toBeInTheDocument();
   });
 
   it("shows instructions when present", () => {
-    render(<AssignmentCard assignment={baseAssignment} />);
+    renderCard();
     expect(screen.getByText("Complete all reading questions carefully")).toBeInTheDocument();
   });
 
   it("does not show instructions when absent", () => {
-    render(<AssignmentCard assignment={{ ...baseAssignment, instructions: null }} />);
+    renderCard({ ...baseAssignment, instructions: null });
     expect(screen.queryByText("Complete all reading questions carefully")).not.toBeInTheDocument();
   });
 
   it("does not show class name when individual assignment", () => {
-    render(<AssignmentCard assignment={{ ...baseAssignment, class: null, classId: null }} />);
+    renderCard({ ...baseAssignment, class: null, classId: null });
     expect(screen.queryByText("Class 10A")).not.toBeInTheDocument();
   });
 
-  it("Start button is disabled", () => {
-    render(<AssignmentCard assignment={baseAssignment} />);
+  it("Start button is enabled when no submission", () => {
+    renderCard();
     const startButton = screen.getByRole("button", { name: /Start/i });
-    expect(startButton).toBeDisabled();
+    expect(startButton).not.toBeDisabled();
   });
 
-  it("status badge shows Not Started", () => {
-    render(<AssignmentCard assignment={baseAssignment} />);
-    expect(screen.getByText(/Not Started/)).toBeInTheDocument();
+  it("shows Continue button when submission is IN_PROGRESS", () => {
+    renderCard({ ...baseAssignment, submissionStatus: "IN_PROGRESS", submissionId: "sub-1" } as StudentAssignment);
+    expect(screen.getByRole("button", { name: /Continue/i })).toBeInTheDocument();
+  });
+
+  it("shows View Results button when submission is SUBMITTED", () => {
+    renderCard({ ...baseAssignment, submissionStatus: "SUBMITTED", submissionId: "sub-1" } as StudentAssignment);
+    expect(screen.getByRole("button", { name: /View Results/i })).toBeInTheDocument();
+  });
+
+  it("shows Submitted badge when submission is SUBMITTED", () => {
+    renderCard({ ...baseAssignment, submissionStatus: "SUBMITTED", submissionId: "sub-1" } as StudentAssignment);
+    expect(screen.getByText("Submitted")).toBeInTheDocument();
+  });
+
+  it("shows In Progress badge when submission is IN_PROGRESS", () => {
+    renderCard({ ...baseAssignment, submissionStatus: "IN_PROGRESS", submissionId: "sub-1" } as StudentAssignment);
+    expect(screen.getByText("In Progress")).toBeInTheDocument();
+  });
+
+  it("shows status badge", () => {
+    renderCard();
+    expect(screen.getByText("Open")).toBeInTheDocument();
   });
 
   it("shows time limit formatted", () => {
-    render(<AssignmentCard assignment={baseAssignment} />);
+    renderCard();
     expect(screen.getByText("1h")).toBeInTheDocument();
+  });
+
+  it("shows Closed badge for closed assignment", () => {
+    renderCard({ ...baseAssignment, status: "CLOSED" });
+    expect(screen.getByText("Closed")).toBeInTheDocument();
   });
 });
 

@@ -1,9 +1,10 @@
-import { Book, Headphones, Mic, Pen, Clock, CalendarDays, Play } from "lucide-react";
+import { Book, Headphones, Mic, Pen, Clock, CalendarDays, Play, RotateCw, Eye } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
+import { useNavigate } from "react-router";
 import type { StudentAssignment } from "@workspace/types";
+import { useAuth } from "@/features/auth/auth-context";
 
 const SKILL_ICONS: Record<string, React.ReactNode> = {
   READING: <Book className="size-4" />,
@@ -52,6 +53,33 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
   const skill = assignment.exercise.skill;
   const formattedDue = formatRelativeDue(assignment.dueDate);
   const formattedTime = formatTimeLimit(assignment.timeLimit);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const centerId = user?.centerId;
+
+  const subStatus = (assignment as StudentAssignment & { submissionStatus?: string | null }).submissionStatus ?? null;
+
+  const handleAction = () => {
+    if (!centerId) return;
+    if (subStatus === "SUBMITTED" || subStatus === "GRADED") {
+      // View results — navigate to submission view (read-only)
+      navigate(`/${centerId}/assignments/${assignment.id}/take`);
+    } else {
+      // Start or Continue
+      navigate(`/${centerId}/assignments/${assignment.id}/take`);
+    }
+  };
+
+  const buttonLabel = !subStatus ? "Start" : subStatus === "IN_PROGRESS" ? "Continue" : "View Results";
+  const ButtonIcon = !subStatus ? Play : subStatus === "IN_PROGRESS" ? RotateCw : Eye;
+
+  const statusBadge = subStatus === "SUBMITTED"
+    ? { text: "Submitted", variant: "default" as const }
+    : subStatus === "GRADED"
+      ? { text: "Graded", variant: "default" as const }
+      : subStatus === "IN_PROGRESS"
+        ? { text: "In Progress", variant: "secondary" as const }
+        : null;
 
   return (
     <div className="rounded-lg border bg-card p-4 shadow-sm hover:shadow-md transition-shadow">
@@ -62,10 +90,16 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
           </span>
           <h3 className="font-medium truncate">{assignment.exercise.title}</h3>
         </div>
-        <Badge variant="outline" className="shrink-0 text-xs">
-          Not Started
-          {/* TODO: Epic 4 — Replace stub with actual submission status */}
-        </Badge>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {statusBadge && (
+            <Badge variant={statusBadge.variant} className="text-xs">
+              {statusBadge.text}
+            </Badge>
+          )}
+          <Badge variant="outline" className="text-xs">
+            {assignment.status === "OPEN" ? "Open" : "Closed"}
+          </Badge>
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -93,18 +127,10 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
       )}
 
       <div className="mt-3 flex justify-end">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span>
-              <Button size="sm" disabled>
-                <Play className="size-3.5 mr-1" />
-                Start
-              </Button>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>Coming in Epic 4</TooltipContent>
-        </Tooltip>
-        {/* TODO: Epic 4 — Enable Start button, add Continue and View Results based on submission status */}
+        <Button size="sm" onClick={handleAction}>
+          <ButtonIcon className="size-3.5 mr-1" />
+          {buttonLabel}
+        </Button>
       </div>
     </div>
   );

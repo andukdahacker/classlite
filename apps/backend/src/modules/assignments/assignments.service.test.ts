@@ -50,7 +50,7 @@ describe("AssignmentsService", () => {
     exercise: { id: exerciseId, title: "Reading Test 1", skill: "READING", status: "PUBLISHED" },
     class: { id: classId, name: "Class 10A" },
     createdBy: { id: userId, name: "Teacher" },
-    _count: { studentAssignments: 2 },
+    _count: { studentAssignments: 2, submissions: 0 },
   };
 
   beforeEach(() => {
@@ -83,6 +83,9 @@ describe("AssignmentsService", () => {
       },
       centerMembership: {
         findFirst: vi.fn(),
+      },
+      submission: {
+        count: vi.fn().mockResolvedValue(0),
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       $transaction: vi.fn((fn: (tx: typeof mockDb) => Promise<unknown>) => fn(mockDb)),
@@ -465,6 +468,15 @@ describe("AssignmentsService", () => {
 
       await expect(service.deleteAssignment(centerId, "invalid-id")).rejects.toThrow("Assignment not found");
     });
+
+    it("should reject delete when submissions exist", async () => {
+      mockDb.assignment.findUnique.mockResolvedValue(mockAssignment);
+      mockDb.submission.count.mockResolvedValue(2);
+
+      await expect(service.deleteAssignment(centerId, assignmentId)).rejects.toThrow(
+        "Cannot delete assignment with 2 submission(s)",
+      );
+    });
   });
 
   describe("archiveAssignment", () => {
@@ -515,6 +527,7 @@ describe("AssignmentsService", () => {
         exercise: { id: exerciseId, title: "Reading Test 1", skill: "READING", status: "PUBLISHED" },
         class: { id: classId, name: "Class 10A" },
         createdBy: { id: userId, name: "Teacher" },
+        submissions: [],
       },
     };
 
@@ -527,7 +540,8 @@ describe("AssignmentsService", () => {
 
       const result = await service.listStudentAssignments(centerId, studentFirebaseUid);
 
-      expect(result).toEqual([mockStudentAssignment.assignment]);
+      const { submissions, ...expectedAssignment } = mockStudentAssignment.assignment;
+      expect(result).toEqual([{ ...expectedAssignment, submissionStatus: null, submissionId: null }]);
       expect(mockDb.assignmentStudent.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
@@ -638,6 +652,7 @@ describe("AssignmentsService", () => {
         exercise: { id: exerciseId, title: "Reading Test 1", skill: "READING", status: "PUBLISHED" },
         class: { id: classId, name: "Class 10A" },
         createdBy: { id: userId, name: "Teacher" },
+        submissions: [],
       },
     };
 
@@ -650,7 +665,8 @@ describe("AssignmentsService", () => {
 
       const result = await service.getStudentAssignment(centerId, assignmentId, studentFirebaseUid);
 
-      expect(result).toEqual(mockStudentAssignmentRecord.assignment);
+      const { submissions, ...expectedAssignment } = mockStudentAssignmentRecord.assignment;
+      expect(result).toEqual({ ...expectedAssignment, submissionStatus: null, submissionId: null });
     });
 
     it("should throw NotFound when student is NOT assigned", async () => {
