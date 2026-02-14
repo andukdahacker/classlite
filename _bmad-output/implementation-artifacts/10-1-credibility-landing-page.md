@@ -151,16 +151,68 @@ The project already deploys backend and webapp to Railway (Story 3.5.1). The web
 - Webapp regression suite: 620/620 tests passing, zero regressions.
 - Brand refactor: Extracted `brand.css` from `globals.css` per stakeholder request (single source of truth). Both webapp and website import shared tokens. Webapp build + tests verified.
 
+### Redesign: "Serene Depth" Aesthetic + Dark Mode (2026-02-14)
+
+Stakeholder requested a visual redesign using the `/frontend-design` skill and dark mode support. AC9 originally said "no dark mode toggle" — overridden by stakeholder direction.
+
+**Dark Mode:**
+- Toggle button (sun/moon icons) added to Nav, between logo and Sign In link.
+- `@custom-variant dark (&:is(.dark *))` added to `global.css` — enables Tailwind `dark:` utilities.
+- Inline `<script>` in `<head>` applies `.dark` class before paint (prevents flash of wrong theme).
+- Reads `localStorage('theme')`, falls back to `prefers-color-scheme` system preference.
+- Toggle persists choice to `localStorage`.
+- All brand tokens in `brand.css` already had `.dark` class overrides — colors auto-switch via CSS vars.
+
+**Hero — Atmospheric gradient orbs:**
+- Three blurred gradient circles (primary blue + accent gold) float behind the headline with CSS `drift`/`drift-reverse` keyframe animations (18s/22s infinite, ease-in-out).
+- "the clutter." highlighted in `text-primary` (royal blue) with a `<br>` break on desktop.
+- CTA button has blue-tinted `box-shadow`, arrow icon with `group-hover:translate-x-1` micro-interaction.
+
+**Value Cards — Golden accent icons:**
+- Icon containers use `oklch(0.762 0.174 74.34 / 0.12)` (golden yellow tint) instead of primary blue background.
+- Cards have `hover:-translate-y-1`, `hover:shadow-lg`, `hover:border-primary/20` transitions.
+- Staggered scroll-reveal entry (data-delay 1/2/3).
+
+**How It Works — Editorial watermarks:**
+- Large `text-[7rem]` watermark numbers (01, 02, 03) behind each step at `text-primary/[0.04]` opacity.
+- Gradient connecting line between steps: `oklch(primary/0.15) → oklch(accent/0.25) → oklch(primary/0.15)`.
+- Step circles have `ring-4 ring-background` and blue-tinted box-shadow for a floating effect.
+
+**Footer — Gradient accent separator:**
+- Top border replaced with gradient: `transparent → primary/0.3 → accent/0.3 → primary/0.3 → transparent`.
+- Small feather shield logo mark (h-5 w-5, opacity-40) alongside copyright text.
+
+**Scroll Reveal System:**
+- Intersection Observer (threshold 0.08, rootMargin -40px) adds `.revealed` class to `[data-reveal]` elements.
+- CSS transition: `opacity 0.8s + translateY(24px→0)` with `cubic-bezier(0.16, 1, 0.3, 1)` easing.
+- Stagger delays via `[data-delay]` attribute (120ms increments).
+
+**Nav refinements:**
+- Dark mode toggle button: `h-9 w-9`, rounded-lg, `hover:bg-secondary`.
+- Logo hover: `group-hover:scale-105` with 300ms transition.
+- All links have `no-underline` to prevent default underline styling.
+
+### Reusable Logo Component (2026-02-14)
+
+Stakeholder requested extracting the Feather Shield logo into a reusable shared component for webapp usage.
+
+- Created `packages/ui/src/components/logo.tsx` following existing `@workspace/ui` export pattern (kebab-case file, named exports).
+- **`LogoMark`**: SVG-only component. Props: `size` (default 40), extends `React.SVGProps<SVGSVGElement>`.
+- **`Logo`**: LogoMark + "ClassLite" wordmark. Props: `size` (default 36), `showWordmark` (default true), extends `React.HTMLAttributes<HTMLDivElement>`.
+- Import: `import { Logo, LogoMark } from "@workspace/ui/components/logo"`.
+- Website keeps inline SVG in Astro components (static — no React hydration overhead for a logo).
+
 ## File List
 
 ### New Files
 - `packages/ui/src/styles/brand.css` — Shared brand tokens (single source of truth for all apps)
-- `apps/website/src/layouts/Layout.astro` — Main layout with SEO meta, fonts, favicon
-- `apps/website/src/components/astro/Nav.astro` — Sticky nav with logo + Sign In
-- `apps/website/src/components/astro/Hero.astro` — Hero section (headline, CTA)
-- `apps/website/src/components/astro/ValueCards.astro` — 3 value proposition cards
-- `apps/website/src/components/astro/HowItWorks.astro` — 3-step visual flow
-- `apps/website/src/components/astro/Footer.astro` — Copyright footer
+- `packages/ui/src/components/logo.tsx` — Reusable Logo + LogoMark React components for webapp usage
+- `apps/website/src/layouts/Layout.astro` — Main layout with SEO meta, fonts, favicon, dark mode script, scroll reveal observer
+- `apps/website/src/components/astro/Nav.astro` — Sticky nav with logo, dark mode toggle (sun/moon), Sign In link
+- `apps/website/src/components/astro/Hero.astro` — Hero section with atmospheric gradient orbs, animated CTA
+- `apps/website/src/components/astro/ValueCards.astro` — 3 value cards with golden accent icons, hover lift
+- `apps/website/src/components/astro/HowItWorks.astro` — 3-step flow with watermark numbers, gradient connecting line
+- `apps/website/src/components/astro/Footer.astro` — Copyright footer with gradient accent separator, logo mark
 - `apps/website/public/favicon.svg` — SVG favicon (Feather Shield mark)
 - `apps/website/public/og-image.svg` — Open Graph social card (1200x630)
 - `apps/website/Dockerfile` — Multi-stage Docker build (Node 20 Alpine → nginx)
@@ -169,7 +221,7 @@ The project already deploys backend and webapp to Railway (Story 3.5.1). The web
 
 ### Modified Files
 - `apps/website/src/pages/index.astro` — Replaced "Hello world" with full landing page
-- `apps/website/src/styles/global.css` — Imports shared brand.css from @workspace/ui
+- `apps/website/src/styles/global.css` — Imports shared brand.css, `@custom-variant dark`, scroll reveal CSS, drift animations
 - `packages/ui/src/styles/globals.css` — Refactored to import brand.css (tokens extracted)
 - `.github/workflows/ci.yml` — Added `build-website` CI job
 
@@ -177,3 +229,5 @@ The project already deploys backend and webapp to Railway (Story 3.5.1). The web
 
 - 2026-02-14: Story 10.1 implemented — credibility landing page with Feather Shield logo, all page sections, Dockerfile, and CI pipeline
 - 2026-02-14: Extracted brand.css from globals.css — single source of truth for brand tokens across webapp and website
+- 2026-02-14: Redesigned with "Serene Depth" aesthetic — dark mode toggle, atmospheric gradient orbs, scroll-triggered reveals, golden accent icons, editorial watermark numbers
+- 2026-02-14: Created reusable Logo/LogoMark React components in `packages/ui/src/components/logo.tsx` for cross-app usage
