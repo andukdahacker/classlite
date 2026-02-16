@@ -11706,7 +11706,21 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            data: unknown;
+                            data: {
+                                items: {
+                                    submissionId: string;
+                                    studentName: string | null;
+                                    assignmentTitle: string | null;
+                                    exerciseSkill: string;
+                                    submittedAt: string | null;
+                                    /** @enum {string} */
+                                    analysisStatus: "not_applicable" | "analyzing" | "ready" | "failed";
+                                    failureReason?: string | null;
+                                }[];
+                                total: number;
+                                page: number;
+                                limit: number;
+                            } | null;
                             message: string;
                         };
                     };
@@ -11794,7 +11808,73 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            data: unknown;
+                            data: {
+                                submission: {
+                                    id: string;
+                                    centerId: string;
+                                    assignmentId: string;
+                                    studentId: string;
+                                    status: string;
+                                    submittedAt: string | null;
+                                    answers: {
+                                        id: string;
+                                        questionId?: string;
+                                        answer?: {
+                                            [key: string]: unknown;
+                                        } | null;
+                                        score?: number | null;
+                                    }[];
+                                };
+                                /** @enum {string} */
+                                analysisStatus: "not_applicable" | "analyzing" | "ready" | "failed";
+                                feedback?: {
+                                    id: string;
+                                    centerId: string;
+                                    submissionId: string;
+                                    overallScore?: number | null;
+                                    criteriaScores?: {
+                                        taskAchievement?: number;
+                                        coherence?: number;
+                                        lexicalResource?: number;
+                                        grammaticalRange?: number;
+                                        fluency?: number;
+                                        pronunciation?: number;
+                                    } | null;
+                                    generalFeedback?: string | null;
+                                    teacherFinalScore?: number | null;
+                                    teacherCriteriaScores?: {
+                                        taskAchievement?: number;
+                                        coherence?: number;
+                                        lexicalResource?: number;
+                                        grammaticalRange?: number;
+                                        fluency?: number;
+                                        pronunciation?: number;
+                                    } | null;
+                                    teacherGeneralFeedback?: string | null;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    items?: {
+                                        id: string;
+                                        centerId: string;
+                                        submissionFeedbackId: string;
+                                        questionId?: string | null;
+                                        /** @enum {string} */
+                                        type: "grammar" | "vocabulary" | "coherence" | "score_suggestion" | "general";
+                                        content: string;
+                                        startOffset?: number | null;
+                                        endOffset?: number | null;
+                                        originalContextSnippet?: string | null;
+                                        suggestedFix?: string | null;
+                                        /** @enum {string|null} */
+                                        severity?: "error" | "warning" | "suggestion" | null;
+                                        confidence?: number | null;
+                                        isApproved?: boolean | null;
+                                        approvedAt?: (string) | null;
+                                        teacherOverrideText?: string | null;
+                                        createdAt: string;
+                                    }[];
+                                } | null;
+                            } | null;
                             message: string;
                         };
                     };
@@ -11894,7 +11974,53 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            data: unknown;
+                            data: {
+                                id: string;
+                                centerId: string;
+                                submissionId: string;
+                                overallScore?: number | null;
+                                criteriaScores?: {
+                                    taskAchievement?: number;
+                                    coherence?: number;
+                                    lexicalResource?: number;
+                                    grammaticalRange?: number;
+                                    fluency?: number;
+                                    pronunciation?: number;
+                                } | null;
+                                generalFeedback?: string | null;
+                                teacherFinalScore?: number | null;
+                                teacherCriteriaScores?: {
+                                    taskAchievement?: number;
+                                    coherence?: number;
+                                    lexicalResource?: number;
+                                    grammaticalRange?: number;
+                                    fluency?: number;
+                                    pronunciation?: number;
+                                } | null;
+                                teacherGeneralFeedback?: string | null;
+                                createdAt: string;
+                                updatedAt: string;
+                                items?: {
+                                    id: string;
+                                    centerId: string;
+                                    submissionFeedbackId: string;
+                                    questionId?: string | null;
+                                    /** @enum {string} */
+                                    type: "grammar" | "vocabulary" | "coherence" | "score_suggestion" | "general";
+                                    content: string;
+                                    startOffset?: number | null;
+                                    endOffset?: number | null;
+                                    originalContextSnippet?: string | null;
+                                    suggestedFix?: string | null;
+                                    /** @enum {string|null} */
+                                    severity?: "error" | "warning" | "suggestion" | null;
+                                    confidence?: number | null;
+                                    isApproved?: boolean | null;
+                                    approvedAt?: (string) | null;
+                                    teacherOverrideText?: string | null;
+                                    createdAt: string;
+                                }[];
+                            } | null;
                             message: string;
                         };
                     };
@@ -11996,7 +12122,18 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            data: unknown;
+                            data: {
+                                id: string;
+                                centerId: string;
+                                submissionId: string;
+                                /** @enum {string} */
+                                status: "pending" | "processing" | "completed" | "failed";
+                                error?: string | null;
+                                /** @enum {string|null} */
+                                errorCategory?: "api_timeout" | "rate_limit" | "invalid_response" | "validation_error" | "other" | null;
+                                createdAt: string;
+                                updatedAt: string;
+                            } | null;
                             message: string;
                         };
                     };

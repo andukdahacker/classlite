@@ -269,6 +269,18 @@ function App() {
                       }
                     />
                     <Route
+                      path="grading/:submissionId"
+                      element={
+                        <ErrorBoundary>
+                          <ProtectedRoute
+                            allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
+                          >
+                            <GradingQueuePage />
+                          </ProtectedRoute>
+                        </ErrorBoundary>
+                      }
+                    />
+                    <Route
                       path="students"
                       element={
                         <ErrorBoundary>

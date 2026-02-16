@@ -169,6 +169,13 @@ export const GradingQueueResponseSchema = createResponseSchema(
 );
 export type GradingQueueResponse = z.infer<typeof GradingQueueResponseSchema>;
 
+export const SubmissionAnswerSchema = z.object({
+  id: z.string(),
+  questionId: z.string().optional(),
+  answer: z.record(z.string(), z.unknown()).nullable().optional(),
+  score: z.number().nullable().optional(),
+});
+
 export const SubmissionDetailSchema = z.object({
   submission: z.object({
     id: z.string(),
@@ -177,7 +184,7 @@ export const SubmissionDetailSchema = z.object({
     studentId: z.string(),
     status: z.string(),
     submittedAt: z.string().nullable(),
-    answers: z.array(z.unknown()),
+    answers: z.array(SubmissionAnswerSchema),
   }),
   analysisStatus: AnalysisStatusSchema,
   feedback: SubmissionFeedbackSchema.nullable().optional(),

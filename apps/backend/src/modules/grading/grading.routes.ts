@@ -1,5 +1,9 @@
 import {
   GradingQueueFiltersSchema,
+  GradingQueueResponseSchema,
+  SubmissionDetailResponseSchema,
+  SubmissionFeedbackResponseSchema,
+  GradingJobResponseSchema,
   ErrorResponseSchema,
 } from "@workspace/types";
 import { FastifyInstance, FastifyReply } from "fastify";
@@ -42,7 +46,7 @@ export async function gradingRoutes(fastify: FastifyInstance) {
     schema: {
       querystring: GradingQueueFiltersSchema,
       response: {
-        200: z.object({ data: z.unknown(), message: z.string() }),
+        200: GradingQueueResponseSchema,
         400: ErrorResponseSchema,
         401: ErrorResponseSchema,
         403: ErrorResponseSchema,
@@ -73,7 +77,7 @@ export async function gradingRoutes(fastify: FastifyInstance) {
     schema: {
       params: z.object({ submissionId: z.string() }),
       response: {
-        200: z.object({ data: z.unknown(), message: z.string() }),
+        200: SubmissionDetailResponseSchema,
         400: ErrorResponseSchema,
         401: ErrorResponseSchema,
         403: ErrorResponseSchema,
@@ -105,7 +109,7 @@ export async function gradingRoutes(fastify: FastifyInstance) {
     schema: {
       params: z.object({ submissionId: z.string() }),
       response: {
-        200: z.object({ data: z.unknown(), message: z.string() }),
+        200: SubmissionFeedbackResponseSchema,
         400: ErrorResponseSchema,
         401: ErrorResponseSchema,
         403: ErrorResponseSchema,
@@ -137,7 +141,7 @@ export async function gradingRoutes(fastify: FastifyInstance) {
     schema: {
       params: z.object({ submissionId: z.string() }),
       response: {
-        200: z.object({ data: z.unknown(), message: z.string() }),
+        200: GradingJobResponseSchema,
         400: ErrorResponseSchema,
         401: ErrorResponseSchema,
         403: ErrorResponseSchema,
