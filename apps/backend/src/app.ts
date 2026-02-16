@@ -124,6 +124,7 @@ export const buildApp = async () => {
             "http://127.0.0.1:4321",
           ],
     credentials: true,
+    maxAge: 86400,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
@@ -139,6 +140,7 @@ export const buildApp = async () => {
   await app.register(rateLimit, {
     max: env.NODE_ENV === "production" ? 100 : 10000,
     timeWindow: "1 minute",
+    allowList: (request: { method: string }) => request.method === "OPTIONS",
   });
 
   app.register(swagger, {
