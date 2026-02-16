@@ -14,6 +14,7 @@ import {
 export const SubmissionStatusSchema = z.enum([
   "IN_PROGRESS",
   "SUBMITTED",
+  "AI_PROCESSING",
   "GRADED",
 ]);
 export type SubmissionStatus = z.infer<typeof SubmissionStatusSchema>;

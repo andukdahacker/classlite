@@ -685,6 +685,7 @@ model AssignmentStudent {
 enum SubmissionStatus {
   IN_PROGRESS
   SUBMITTED
+  AI_PROCESSING
   GRADED
 }
 
@@ -703,6 +704,8 @@ model Submission {
   assignment Assignment      @relation(fields: [assignmentId], references: [id])
   student    User            @relation(fields: [studentId], references: [id])
   answers    StudentAnswer[]
+  gradingJob GradingJob?
+  feedback   SubmissionFeedback?
 
   @@unique([id, centerId])
   @@unique([assignmentId, studentId])
@@ -732,6 +735,70 @@ model StudentAnswer {
   @@index([centerId])
   @@index([centerId, submissionId])
   @@map("student_answer")
+}
+
+// ─── AI Grading (Story 5.1) ────────────────────────────────────────
+
+model GradingJob {
+  id            String   @id @default(cuid())
+  centerId      String   @map("center_id")
+  submissionId  String   @unique @map("submission_id")
+  status        String   @default("pending") // pending | processing | completed | failed
+  error         String?
+  errorCategory String?  @map("error_category") // "api_timeout" | "rate_limit" | "invalid_response" | "validation_error" | "other"
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([centerId])
+  @@index([submissionId])
+  @@map("grading_job")
+}
+
+model SubmissionFeedback {
+  id                      String   @id @default(cuid())
+  centerId                String   @map("center_id")
+  submissionId            String   @unique @map("submission_id")
+  overallScore            Float?   @map("overall_score")
+  criteriaScores          Json?    @map("criteria_scores")
+  generalFeedback         String?  @map("general_feedback")
+  teacherFinalScore       Float?   @map("teacher_final_score")
+  teacherCriteriaScores   Json?    @map("teacher_criteria_scores")
+  teacherGeneralFeedback  String?  @map("teacher_general_feedback")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  submission Submission       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  items      AIFeedbackItem[]
+
+  @@index([centerId])
+  @@map("submission_feedback")
+}
+
+model AIFeedbackItem {
+  id                     String    @id @default(cuid())
+  centerId               String    @map("center_id")
+  submissionFeedbackId   String    @map("submission_feedback_id")
+  questionId             String?   @map("question_id")
+  type                   String    // "grammar" | "vocabulary" | "coherence" | "score_suggestion" | "general"
+  content                String
+  startOffset            Int?      @map("start_offset")
+  endOffset              Int?      @map("end_offset")
+  originalContextSnippet String?   @map("original_context_snippet")
+  suggestedFix           String?   @map("suggested_fix")
+  severity               String?   // "error" | "warning" | "suggestion"
+  confidence             Float?
+  isApproved             Boolean?  @map("is_approved")
+  approvedAt             DateTime? @map("approved_at")
+  teacherOverrideText    String?   @map("teacher_override_text")
+  createdAt              DateTime  @default(now()) @map("created_at")
+
+  submissionFeedback SubmissionFeedback @relation(fields: [submissionFeedbackId], references: [id], onDelete: Cascade)
+
+  @@index([centerId])
+  @@index([submissionFeedbackId])
+  @@map("ai_feedback_item")
 }
 
 // ─── Email Logging ──────────────────────────────────────────────────

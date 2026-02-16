@@ -90,6 +90,9 @@ function LazyDataTable<TData, TValue>({
             onChange={(event) => {
               onSearchInput(event.target.value);
             }}
+            onBlur={(event) => {
+              onSearchInput(event.target.value);
+            }}
             className="max-w-sm"
           />
         )}

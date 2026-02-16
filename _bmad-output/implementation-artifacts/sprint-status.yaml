@@ -133,8 +133,8 @@ development_status:
   epic-4-retrospective: optional
 
   # Epic 5: AI Grading Workbench
-  epic-5: backlog
-  5-1-automated-submission-analysis: backlog
+  epic-5: in-progress
+  5-1-automated-submission-analysis: done
   5-2-split-screen-grading-interface: backlog
   5-3-evidence-anchoring: backlog
   5-4-one-click-approval-loop: backlog

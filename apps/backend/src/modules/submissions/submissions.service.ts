@@ -1,6 +1,7 @@
 import { Prisma, PrismaClient, getTenantedClient } from "@workspace/db";
 import { Storage } from "firebase-admin/storage";
 import { AppError } from "../../errors/app-error.js";
+import { inngest } from "../inngest/client.js";
 
 /** Question types that can be auto-graded by comparing student answer to correctAnswer */
 const AUTO_GRADABLE_TYPES = new Set([
@@ -236,6 +237,23 @@ export class SubmissionsService {
       },
       include: SUBMISSION_INCLUDE,
     });
+
+    // Trigger AI analysis for Writing/Speaking submissions (fire-and-forget)
+    const exerciseSkill = exercise.skill;
+    if (exerciseSkill === "WRITING" || exerciseSkill === "SPEAKING") {
+      try {
+        const gradingJob = await db.gradingJob.create({
+          data: { centerId, submissionId },
+        });
+        await inngest.send({
+          name: "grading/analyze-submission",
+          data: { jobId: gradingJob.id, submissionId, centerId },
+        });
+      } catch {
+        // Graceful degradation: if AI trigger fails, submission still succeeds
+        // Teacher can manually trigger analysis later
+      }
+    }
 
     return updated;
   }

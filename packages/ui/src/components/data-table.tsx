@@ -88,6 +88,9 @@ export function DataTable<TData, TValue>({
           onChange={(event) =>
             table.setGlobalFilter(String(event.target.value))
           }
+          onBlur={(event) =>
+            table.setGlobalFilter(String(event.target.value))
+          }
           className="max-w-sm"
         />
         <DropdownMenu>

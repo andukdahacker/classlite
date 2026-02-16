@@ -11,3 +11,4 @@ export * from "./ai-generation.js";
 export * from "./mock-tests.js";
 export * from "./assignments.js";
 export * from "./submissions.js";
+export * from "./grading.js";
