@@ -135,7 +135,7 @@ development_status:
   # Epic 5: AI Grading Workbench
   epic-5: in-progress
   5-1-automated-submission-analysis: done
-  5-2-split-screen-grading-interface: backlog
+  5-2-split-screen-grading-interface: done
   5-3-evidence-anchoring: backlog
   5-4-one-click-approval-loop: backlog
   5-5-grading-queue-management: backlog # NEW
@@ -181,5 +181,5 @@ development_status:
   # Status: BACKLOG (created 2026-02-14 — credibility landing page for pilot outreach)
   # Scope: Single-page Astro site at classlite.app with brand-consistent credibility content
   epic-10: in-progress
-  10-1-credibility-landing-page: review
+  10-1-credibility-landing-page: done
   epic-10-retrospective: optional

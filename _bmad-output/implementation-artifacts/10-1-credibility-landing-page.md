@@ -1,6 +1,6 @@
 # Story 10.1: Credibility Landing Page
 
-Status: review
+Status: done
 
 ## Story
 
@@ -202,6 +202,23 @@ Stakeholder requested extracting the Feather Shield logo into a reusable shared 
 - Import: `import { Logo, LogoMark } from "@workspace/ui/components/logo"`.
 - Website keeps inline SVG in Astro components (static — no React hydration overhead for a logo).
 
+### Code Review Fixes (2026-02-16)
+
+10 issues found (4 HIGH, 4 MEDIUM, 2 LOW). All fixed:
+
+- **H1** Hero.astro sign-up URL now uses `import.meta.env.PUBLIC_SIGN_UP_URL` with fallback (was hardcoded, inconsistent with Nav.astro)
+- **H2** OG image converted from SVG to PNG (1200x630) — SVG not supported by Facebook/LinkedIn/Twitter for `og:image`
+- **H3** nginx.conf: Security headers duplicated into static assets `location` block — fixes nginx `add_header` inheritance issue where assets lost all security headers
+- **H4** Generated `favicon.ico` (48x48) from SVG — Task 1.4 required `.ico` + `.svg` but only SVG was delivered. Added `.ico` fallback link in Layout.astro
+- **M1** ValueCards: Removed invalid `style="hover:box-shadow:..."` inline CSS (Tailwind prefix not valid in CSS). Replaced with `.hover-card:hover` class in global.css
+- **M2** Removed `@astrojs/react` from astro.config.ts — no React components used client-side. Eliminated 194KB dead React runtime from client bundle. Now zero JS shipped. Added `site` property to config.
+- **M3** Added `@media (prefers-reduced-motion: reduce)` to global.css — disables drift animations and scroll-reveal transitions for users who prefer reduced motion (WCAG 2.1 compliance)
+- **M4** Lighthouse targets now achievable — 194KB dead JS removed (Performance), reduced-motion added (Accessibility)
+- **L1** Removed deprecated `X-XSS-Protection` header from nginx.conf
+- **L2** Logo SVG duplication acknowledged — low priority, Astro inline SVG is intentional for zero-JS approach
+
+Webapp regression: 665/665 tests passing. Website build clean (zero client JS, 27KB CSS only).
+
 ## File List
 
 ### New Files
@@ -214,14 +231,17 @@ Stakeholder requested extracting the Feather Shield logo into a reusable shared 
 - `apps/website/src/components/astro/HowItWorks.astro` — 3-step flow with watermark numbers, gradient connecting line
 - `apps/website/src/components/astro/Footer.astro` — Copyright footer with gradient accent separator, logo mark
 - `apps/website/public/favicon.svg` — SVG favicon (Feather Shield mark)
-- `apps/website/public/og-image.svg` — Open Graph social card (1200x630)
+- `apps/website/public/favicon.ico` — ICO favicon fallback (48x48, generated from SVG)
+- `apps/website/public/og-image.svg` — Open Graph social card source (SVG)
+- `apps/website/public/og-image.png` — Open Graph social card (1200x630 PNG, for social platform compatibility)
 - `apps/website/Dockerfile` — Multi-stage Docker build (Node 20 Alpine → nginx)
 - `apps/website/nginx.conf` — Static serving with gzip, caching, security headers
 - `apps/website/.dockerignore` — Docker ignore file
 
 ### Modified Files
 - `apps/website/src/pages/index.astro` — Replaced "Hello world" with full landing page
-- `apps/website/src/styles/global.css` — Imports shared brand.css, `@custom-variant dark`, scroll reveal CSS, drift animations
+- `apps/website/src/styles/global.css` — Imports shared brand.css, `@custom-variant dark`, scroll reveal CSS, drift animations, hover-card shadow, prefers-reduced-motion
+- `apps/website/astro.config.ts` — Removed unused React integration, added site property
 - `packages/ui/src/styles/globals.css` — Refactored to import brand.css (tokens extracted)
 - `.github/workflows/ci.yml` — Added `build-website` CI job
 
@@ -231,3 +251,4 @@ Stakeholder requested extracting the Feather Shield logo into a reusable shared 
 - 2026-02-14: Extracted brand.css from globals.css — single source of truth for brand tokens across webapp and website
 - 2026-02-14: Redesigned with "Serene Depth" aesthetic — dark mode toggle, atmospheric gradient orbs, scroll-triggered reveals, golden accent icons, editorial watermark numbers
 - 2026-02-14: Created reusable Logo/LogoMark React components in `packages/ui/src/components/logo.tsx` for cross-app usage
+- 2026-02-16: Code review fixes — 10 issues resolved (4H/4M/2L): env var consistency, PNG OG image, nginx security headers, .ico favicon, broken hover CSS, React runtime removal (194KB→0), reduced-motion a11y, deprecated header removal

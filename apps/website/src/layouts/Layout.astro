@@ -9,7 +9,7 @@ const {
   description = "A lightweight LMS for IELTS centers — grading, scheduling, and student progress in one calm place.",
 } = Astro.props;
 
-const ogImageUrl = new URL("/og-image.svg", Astro.site ?? "https://classlite.app").href;
+const ogImageUrl = new URL("/og-image.png", Astro.site ?? "https://classlite.app").href;
 ---
 
 <!doctype html>
@@ -38,6 +38,7 @@ const ogImageUrl = new URL("/og-image.svg", Astro.site ?? "https://classlite.app
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="48x48" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -73,3 +73,22 @@
 .animate-drift-reverse {
   animation: drift-reverse 22s ease-in-out infinite;
 }
+
+/* Value card hover shadow */
+.hover-card:hover {
+  box-shadow: 0 12px 40px oklch(0.541 0.225 259.02 / 0.08);
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .animate-drift,
+  .animate-drift-reverse {
+    animation: none;
+  }
+}
