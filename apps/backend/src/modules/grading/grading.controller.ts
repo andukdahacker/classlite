@@ -214,6 +214,70 @@ export class GradingController {
     };
   }
 
+  async getStudentFeedback(
+    submissionId: string,
+    user: { uid: string; centerId: string },
+  ) {
+    const result = await this.service.getStudentFeedback(
+      user.centerId,
+      submissionId,
+      user.uid,
+    );
+
+    const serializedSubmission = {
+      ...result.submission,
+      submittedAt: result.submission.submittedAt
+        ? result.submission.submittedAt instanceof Date
+          ? result.submission.submittedAt.toISOString()
+          : result.submission.submittedAt
+        : null,
+      answers: result.submission.answers.map((a) =>
+        serializeDates(a as unknown as Record<string, unknown>),
+      ),
+    };
+
+    return {
+      data: {
+        submission: serializedSubmission,
+        feedback: result.feedback
+          ? {
+              ...result.feedback,
+              items: result.feedback.items.map((item) =>
+                serializeDates(item as unknown as Record<string, unknown>),
+              ),
+            }
+          : null,
+        teacherComments: result.teacherComments.map((c) =>
+          serializeDates(c as unknown as Record<string, unknown>),
+        ),
+      },
+      message: "Student feedback retrieved",
+    };
+  }
+
+  async getSubmissionHistory(
+    submissionId: string,
+    user: { uid: string; centerId: string },
+  ) {
+    const result = await this.service.getSubmissionHistory(
+      user.centerId,
+      submissionId,
+      user.uid,
+    );
+
+    return {
+      data: result.map((item) => ({
+        ...item,
+        submittedAt: item.submittedAt
+          ? item.submittedAt instanceof Date
+            ? item.submittedAt.toISOString()
+            : item.submittedAt
+          : null,
+      })),
+      message: "Submission history retrieved",
+    };
+  }
+
   async finalizeGrading(
     centerId: string,
     submissionId: string,

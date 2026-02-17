@@ -58,17 +58,34 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
   const centerId = user?.centerId;
 
   const subStatus = (assignment as StudentAssignment & { submissionStatus?: string | null }).submissionStatus ?? null;
+  const submissionId = (assignment as StudentAssignment & { submissionId?: string | null }).submissionId ?? null;
 
   const handleAction = () => {
     if (!centerId) return;
-    if (subStatus === "SUBMITTED" || subStatus === "GRADED") {
-      // View results — navigate to submission view (read-only)
-      navigate(`/${centerId}/assignments/${assignment.id}/take`);
+    if (subStatus === "GRADED" && submissionId) {
+      navigate(`/${centerId}/dashboard/feedback/${submissionId}`);
     } else {
-      // Start or Continue
       navigate(`/${centerId}/assignments/${assignment.id}/take`);
     }
   };
+
+  // Check if recently graded for "New" badge (not yet viewed OR graded within last 24h)
+  const isRecentlyGraded = (() => {
+    if (subStatus !== "GRADED" || !submissionId || !centerId) return false;
+    try {
+      const key = `lastViewedGrades_${centerId}`;
+      const viewed = JSON.parse(localStorage.getItem(key) || "{}");
+      const neverViewed = !viewed[submissionId];
+      // Also show "New" if graded within last 24 hours (even if previously viewed)
+      const gradedAt = (assignment as StudentAssignment & { gradedAt?: string | null }).gradedAt;
+      const gradedRecently = gradedAt
+        ? Date.now() - new Date(gradedAt).getTime() < 24 * 60 * 60 * 1000
+        : false;
+      return neverViewed || gradedRecently;
+    } catch {
+      return false;
+    }
+  })();
 
   const buttonLabel = !subStatus ? "Start" : subStatus === "IN_PROGRESS" ? "Continue" : "View Results";
   const ButtonIcon = !subStatus ? Play : subStatus === "IN_PROGRESS" ? RotateCw : Eye;
@@ -91,6 +108,9 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
           <h3 className="font-medium truncate">{assignment.exercise.title}</h3>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          {isRecentlyGraded && (
+            <Badge className="bg-green-600 text-xs text-white">New</Badge>
+          )}
           {statusBadge && (
             <Badge variant={statusBadge.variant} className="text-xs">
               {statusBadge.text}

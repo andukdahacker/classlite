@@ -13043,6 +13043,281 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/grading/student/submissions/{submissionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    submissionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                submission: {
+                                    id: string;
+                                    assignmentId: string;
+                                    studentId: string;
+                                    status: string;
+                                    submittedAt: string | null;
+                                    answers: {
+                                        id: string;
+                                        questionId?: string;
+                                        answer?: {
+                                            [key: string]: unknown;
+                                        } | null;
+                                        score?: number | null;
+                                    }[];
+                                };
+                                feedback: {
+                                    overallScore: number | null;
+                                    criteriaScores: {
+                                        taskAchievement?: number;
+                                        coherence?: number;
+                                        lexicalResource?: number;
+                                        grammaticalRange?: number;
+                                        fluency?: number;
+                                        pronunciation?: number;
+                                    } | null;
+                                    generalFeedback: string | null;
+                                    items: {
+                                        id: string;
+                                        centerId: string;
+                                        submissionFeedbackId: string;
+                                        questionId?: string | null;
+                                        /** @enum {string} */
+                                        type: "grammar" | "vocabulary" | "coherence" | "score_suggestion" | "general";
+                                        content: string;
+                                        startOffset?: number | null;
+                                        endOffset?: number | null;
+                                        originalContextSnippet?: string | null;
+                                        suggestedFix?: string | null;
+                                        /** @enum {string|null} */
+                                        severity?: "error" | "warning" | "suggestion" | null;
+                                        confidence?: number | null;
+                                        isApproved?: boolean | null;
+                                        approvedAt?: (string) | null;
+                                        teacherOverrideText?: string | null;
+                                        createdAt: string;
+                                    }[];
+                                } | null;
+                                teacherComments: {
+                                    id: string;
+                                    centerId: string;
+                                    submissionId: string;
+                                    authorId: string;
+                                    authorName: string;
+                                    authorAvatarUrl: string | null;
+                                    content: string;
+                                    startOffset: number | null;
+                                    endOffset: number | null;
+                                    originalContextSnippet: string | null;
+                                    /** @enum {string} */
+                                    visibility: "private" | "student_facing";
+                                    createdAt: string;
+                                    updatedAt: string;
+                                }[];
+                                history: {
+                                    id: string;
+                                    submittedAt: string | null;
+                                    score: number | null;
+                                    status: string;
+                                }[];
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/grading/student/submissions/{submissionId}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    submissionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                id: string;
+                                submittedAt: string | null;
+                                score: number | null;
+                                status: string;
+                            }[] | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/grading/submissions/{submissionId}/analyze": {
         parameters: {
             query?: never;

@@ -28,6 +28,7 @@ import { MockTestsPage } from "./features/mock-tests/mock-tests-page";
 import { MockTestEditor } from "./features/mock-tests/components/MockTestEditor";
 import AssignmentsPage from "./features/assignments/assignments-page";
 import { StudentsPage } from "./features/students/StudentsPage";
+import { StudentFeedbackPage } from "./features/grading/student/StudentFeedbackPage";
 import { SubmissionPage } from "./features/submissions/components/SubmissionPage";
 import { SettingsLayout } from "./features/settings/components/SettingsLayout";
 import { GeneralSettingsPage } from "./features/settings/pages/GeneralSettingsPage";
@@ -276,6 +277,23 @@ function App() {
                             allowedRoles={["OWNER", "ADMIN", "TEACHER"]}
                           >
                             <GradingQueuePage />
+                          </ProtectedRoute>
+                        </ErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path="feedback/:submissionId"
+                      element={
+                        <ErrorBoundary>
+                          <ProtectedRoute
+                            allowedRoles={[
+                              "STUDENT",
+                              "TEACHER",
+                              "ADMIN",
+                              "OWNER",
+                            ]}
+                          >
+                            <StudentFeedbackPage />
                           </ProtectedRoute>
                         </ErrorBoundary>
                       }

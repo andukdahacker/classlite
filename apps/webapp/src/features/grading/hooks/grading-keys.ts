@@ -6,4 +6,8 @@ export const gradingKeys = {
   feedback: (id: string) => [...gradingKeys.all, "feedback", id] as const,
   comments: (submissionId: string) =>
     [...gradingKeys.all, "comments", submissionId] as const,
+  studentFeedback: (id: string) =>
+    [...gradingKeys.all, "student-feedback", id] as const,
+  submissionHistory: (id: string) =>
+    [...gradingKeys.all, "submission-history", id] as const,
 };

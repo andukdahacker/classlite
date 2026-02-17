@@ -301,6 +301,52 @@ export type SubmissionFeedbackResponse = z.infer<typeof SubmissionFeedbackRespon
 export const GradingJobResponseSchema = createResponseSchema(GradingJobSchema);
 export type GradingJobResponse = z.infer<typeof GradingJobResponseSchema>;
 
+// --- Student Feedback Schemas (Story 5.6) ---
+
+export const SubmissionHistoryItemSchema = z.object({
+  id: z.string(),
+  submittedAt: z.string().nullable(),
+  score: z.number().nullable(),
+  status: z.string(),
+});
+export type SubmissionHistoryItem = z.infer<typeof SubmissionHistoryItemSchema>;
+
+export const StudentFeedbackDataSchema = z.object({
+  submission: z.object({
+    id: z.string(),
+    assignmentId: z.string(),
+    studentId: z.string(),
+    status: z.string(),
+    submittedAt: z.string().nullable(),
+    answers: z.array(SubmissionAnswerSchema),
+    exerciseSkill: z.string(),
+  }),
+  feedback: z
+    .object({
+      overallScore: z.number().nullable(),
+      criteriaScores: CriteriaScoresSchema.nullable(),
+      generalFeedback: z.string().nullable(),
+      items: z.array(AIFeedbackItemSchema),
+    })
+    .nullable(),
+  teacherComments: z.array(TeacherCommentSchema),
+});
+export type StudentFeedbackData = z.infer<typeof StudentFeedbackDataSchema>;
+
+export const StudentFeedbackResponseSchema = createResponseSchema(
+  StudentFeedbackDataSchema,
+);
+export type StudentFeedbackResponse = z.infer<
+  typeof StudentFeedbackResponseSchema
+>;
+
+export const SubmissionHistoryResponseSchema = createResponseSchema(
+  z.array(SubmissionHistoryItemSchema),
+);
+export type SubmissionHistoryResponse = z.infer<
+  typeof SubmissionHistoryResponseSchema
+>;
+
 // --- Feedback Approval Schemas (Story 5.4) ---
 
 export const ApproveFeedbackItemSchema = z.object({

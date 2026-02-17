@@ -16,6 +16,8 @@ import {
   FinalizeGradingResponseSchema,
   AIFeedbackItemSchema,
   TogglePrioritySchema,
+  StudentFeedbackResponseSchema,
+  SubmissionHistoryResponseSchema,
 } from "@workspace/types";
 import { FastifyInstance, FastifyReply } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -420,6 +422,73 @@ export async function gradingRoutes(fastify: FastifyInstance) {
           submissionId,
           payload.uid,
           request.body as z.infer<typeof FinalizeGradingSchema>,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        return handleRouteError(error, request, reply);
+      }
+    },
+  });
+
+  // --- Student Feedback Routes (Story 5.6) ---
+  // These routes allow STUDENT role access (ownership enforced in service)
+
+  // GET /student/submissions/:submissionId — Get student feedback view
+  api.get("/student/submissions/:submissionId", {
+    schema: {
+      params: z.object({ submissionId: z.string() }),
+      response: {
+        200: StudentFeedbackResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["STUDENT", "TEACHER", "ADMIN", "OWNER"])],
+    handler: async (request, reply) => {
+      try {
+        const payload = request.jwtPayload!;
+        if (!payload.centerId) {
+          return reply.status(400).send({ message: "User does not belong to a center" });
+        }
+        const { submissionId } = request.params as { submissionId: string };
+        const result = await controller.getStudentFeedback(
+          submissionId,
+          { uid: payload.uid, centerId: payload.centerId },
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        return handleRouteError(error, request, reply);
+      }
+    },
+  });
+
+  // GET /student/submissions/:submissionId/history — Get submission history
+  api.get("/student/submissions/:submissionId/history", {
+    schema: {
+      params: z.object({ submissionId: z.string() }),
+      response: {
+        200: SubmissionHistoryResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["STUDENT", "TEACHER", "ADMIN", "OWNER"])],
+    handler: async (request, reply) => {
+      try {
+        const payload = request.jwtPayload!;
+        if (!payload.centerId) {
+          return reply.status(400).send({ message: "User does not belong to a center" });
+        }
+        const { submissionId } = request.params as { submissionId: string };
+        const result = await controller.getSubmissionHistory(
+          submissionId,
+          { uid: payload.uid, centerId: payload.centerId },
         );
         return reply.send(result);
       } catch (error: unknown) {

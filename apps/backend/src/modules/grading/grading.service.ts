@@ -45,6 +45,133 @@ export class GradingService {
     return userId;
   }
 
+  /**
+   * Resolve Firebase UID to internal user ID and role. No RBAC enforcement.
+   */
+  private async resolveUser(
+    db: ReturnType<typeof getTenantedClient>,
+    firebaseUid: string,
+  ): Promise<{ userId: string; role: string }> {
+    const authAccount = await db.authAccount.findUniqueOrThrow({
+      where: { provider_providerUserId: { provider: "FIREBASE", providerUserId: firebaseUid } },
+    });
+    const membership = await db.centerMembership.findFirst({
+      where: { userId: authAccount.userId },
+      select: { role: true },
+    });
+    if (!membership) {
+      throw AppError.forbidden("User has no membership in this center");
+    }
+    return { userId: authAccount.userId, role: membership.role };
+  }
+
+  async getStudentFeedback(centerId: string, submissionId: string, firebaseUid: string): Promise<{
+    submission: { id: string; assignmentId: string; studentId: string; status: string; submittedAt: Date | null; answers: Array<Record<string, unknown>>; exerciseSkill: string };
+    feedback: { overallScore: number | null; criteriaScores: Record<string, number> | null; generalFeedback: string | null; items: Array<Record<string, unknown>> } | null;
+    teacherComments: Array<Record<string, unknown>>;
+  }> {
+    const db = getTenantedClient(this.prisma, centerId);
+    const { userId, role } = await this.resolveUser(db, firebaseUid);
+
+    const submission = await db.submission.findUnique({
+      where: { id: submissionId },
+      include: {
+        answers: true,
+        assignment: {
+          include: {
+            exercise: { select: { skill: true } },
+          },
+        },
+        feedback: { include: { items: true } },
+        teacherComments: {
+          include: { author: { select: { name: true, avatarUrl: true } } },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
+    if (!submission) throw AppError.notFound("Submission not found");
+
+    // Only return feedback for graded submissions
+    if (submission.status !== "GRADED") {
+      throw AppError.badRequest("Feedback not yet available");
+    }
+
+    // STUDENT role: verify ownership
+    if (role === "STUDENT" && submission.studentId !== userId) {
+      throw AppError.forbidden("Not authorized to view this submission");
+    }
+
+    // Filter feedback items: only approved
+    const approvedItems = submission.feedback?.items.filter(
+      (item) => item.isApproved === true,
+    ) ?? [];
+
+    // Filter teacher comments: only student_facing
+    const studentFacingComments = submission.teacherComments
+      .filter((c) => c.visibility === "student_facing")
+      .map(mapCommentWithAuthor);
+
+    // Build response with teacher override scores preferred
+    const feedback = submission.feedback
+      ? {
+          overallScore: submission.feedback.teacherFinalScore ?? submission.feedback.overallScore,
+          criteriaScores: (submission.feedback.teacherCriteriaScores ?? submission.feedback.criteriaScores) as Record<string, number> | null,
+          generalFeedback: submission.feedback.teacherGeneralFeedback ?? submission.feedback.generalFeedback,
+          items: approvedItems,
+        }
+      : null;
+
+    return {
+      submission: {
+        id: submission.id,
+        assignmentId: submission.assignmentId,
+        studentId: submission.studentId,
+        status: submission.status,
+        submittedAt: submission.submittedAt,
+        answers: submission.answers,
+        exerciseSkill: submission.assignment.exercise.skill,
+      },
+      feedback,
+      teacherComments: studentFacingComments,
+    };
+  }
+
+  async getSubmissionHistory(centerId: string, submissionId: string, firebaseUid: string) {
+    const db = getTenantedClient(this.prisma, centerId);
+    const { userId, role } = await this.resolveUser(db, firebaseUid);
+
+    // First get the submission to find assignmentId + studentId
+    const submission = await db.submission.findUnique({
+      where: { id: submissionId },
+      select: { assignmentId: true, studentId: true },
+    });
+    if (!submission) throw AppError.notFound("Submission not found");
+
+    // STUDENT role: verify ownership
+    if (role === "STUDENT" && submission.studentId !== userId) {
+      throw AppError.forbidden("Not authorized to view this submission");
+    }
+
+    const submissions = await db.submission.findMany({
+      where: {
+        assignmentId: submission.assignmentId,
+        studentId: submission.studentId,
+        status: "GRADED",
+      },
+      include: {
+        feedback: { select: { teacherFinalScore: true, overallScore: true } },
+      },
+      orderBy: { submittedAt: "desc" },
+    });
+
+    return submissions.map((s) => ({
+      id: s.id,
+      submittedAt: s.submittedAt,
+      score: s.feedback?.teacherFinalScore ?? s.feedback?.overallScore ?? null,
+      status: s.status,
+    }));
+  }
+
   async triggerAnalysis(centerId: string, submissionId: string, firebaseUid: string) {
     const db = getTenantedClient(this.prisma, centerId);
 

@@ -12,6 +12,7 @@ import { HighlightedText } from "./HighlightedText";
 import { CommentPopover } from "./CommentPopover";
 import type { AnchorStatus } from "../hooks/use-anchor-validation";
 import { useTextSelection } from "../hooks/use-text-selection";
+import { ANSWER_SEPARATOR, computeAnswerRanges, findAnswerIndex } from "../utils/offset-utils";
 
 interface Answer {
   id: string;
@@ -70,8 +71,6 @@ function getMinWordCount(skill: string, sectionType?: string): number | null {
   return 250;
 }
 
-const ANSWER_SEPARATOR = "\n\n";
-
 export function StudentWorkPane({
   exerciseTitle,
   exerciseSkill,
@@ -127,31 +126,12 @@ export function StudentWorkPane({
       anchorStatus: AnchorStatus;
     }>>();
 
-    // Compute global start offset for each answer
-    const answerRanges: Array<{ globalStart: number; globalEnd: number }> = [];
-    let offset = 0;
-    for (const text of answerTexts) {
-      answerRanges.push({ globalStart: offset, globalEnd: offset + text.length });
-      offset += text.length + ANSWER_SEPARATOR.length;
-    }
+    const answerRanges = computeAnswerRanges(answerTexts);
 
     for (const item of allHighlightItems) {
       if (item.startOffset == null || item.endOffset == null) continue;
 
-      // Find which answer this item belongs to
-      let answerIdx = -1;
-      for (let i = 0; i < answerRanges.length; i++) {
-        const range = answerRanges[i];
-        if (
-          item.startOffset >= range.globalStart &&
-          item.endOffset <= range.globalEnd
-        ) {
-          answerIdx = i;
-          break;
-        }
-      }
-
-      // Skip items spanning answer boundaries
+      const answerIdx = findAnswerIndex(item.startOffset, item.endOffset, answerRanges);
       if (answerIdx === -1) continue;
 
       const range = answerRanges[answerIdx];
