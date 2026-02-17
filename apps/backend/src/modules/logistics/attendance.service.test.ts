@@ -18,7 +18,7 @@ describe("AttendanceService", () => {
         count: vi.fn(),
       },
       classStudent: {
-        findUnique: vi.fn(),
+        findFirst: vi.fn(),
         findMany: vi.fn(),
         count: vi.fn(),
       },
@@ -52,7 +52,7 @@ describe("AttendanceService", () => {
       };
 
       mockTenantedClient.classSession.findUnique.mockResolvedValue(mockSession);
-      mockTenantedClient.classStudent.findUnique.mockResolvedValue({
+      mockTenantedClient.classStudent.findFirst.mockResolvedValue({
         classId: "class-1",
         studentId,
       });
@@ -99,7 +99,7 @@ describe("AttendanceService", () => {
       };
 
       mockTenantedClient.classSession.findUnique.mockResolvedValue(mockSession);
-      mockTenantedClient.classStudent.findUnique.mockResolvedValue({
+      mockTenantedClient.classStudent.findFirst.mockResolvedValue({
         classId: "class-1",
         studentId,
       });
@@ -130,7 +130,7 @@ describe("AttendanceService", () => {
       };
 
       mockTenantedClient.classSession.findUnique.mockResolvedValue(mockSession);
-      mockTenantedClient.classStudent.findUnique.mockResolvedValue(null); // Not enrolled
+      mockTenantedClient.classStudent.findFirst.mockResolvedValue(null); // Not enrolled
 
       await expect(
         attendanceService.markAttendance(

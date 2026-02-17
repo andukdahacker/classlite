@@ -37,8 +37,8 @@ export class AttendanceService {
       return { valid: false, error: "Cannot mark attendance for cancelled sessions" };
     }
 
-    const enrollment = await db.classStudent.findUnique({
-      where: { classId_studentId: { classId: session.classId, studentId } },
+    const enrollment = await db.classStudent.findFirst({
+      where: { classId: session.classId, studentId },
     });
 
     if (!enrollment) {
