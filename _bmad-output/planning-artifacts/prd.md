@@ -27,7 +27,7 @@ classification:
   domain: edtech
   complexity: medium
   projectContext: brownfield
-lastEdited: "2026-02-11"
+lastEdited: "2026-02-17"
 editHistory:
   - date: "2026-01-17"
     changes: "Updated Executive Summary, User Journeys, Functional Requirements, and NFRs based on UX Design Specification (High-Velocity Pedagogy, Offline-Proofing, Grading Workbench details)."
@@ -37,6 +37,8 @@ editHistory:
     changes: "Added comprehensive IELTS Exercise Type Taxonomy (Section 3.1) with 13 Reading types, 6 Listening types, Writing tasks, and Speaking format. Added FRs for audio support, timers, mock tests, rubrics, skill tagging, and answer key management. Updated Journey 5 for realistic IELTS workflow."
   - date: "2026-02-11"
     changes: "Removed Zalo integration entirely (business registration blocker, poor docs, no validated demand). Replaced parent communication with email-based notifications. Added Parent Portal to Phase 2. Added Section 9: Billing & Subscription with per-active-student pricing model, Polar.sh self-serve billing, and billing FRs (FR43-FR48). Updated integrations and RBAC matrix."
+  - date: "2026-02-17"
+    changes: "Added free-form teacher commenting (FR49-FR53). Teachers can add text-anchored and general comments with private/student-facing visibility toggle, mixed into AI feedback feed. Updated Executive Summary, Journey 1 (new Annotate step), and RBAC matrix."
 ---
 
 # Product Requirements Document - classlite
@@ -48,7 +50,7 @@ editHistory:
 
 **ClassLite** is a B2B SaaS Learning Management System tailored for small to medium-sized IELTS centers in Vietnam. It streamlines operations by unifying administrative logistics (scheduling, rosters) and pedagogical delivery (AI-assisted grading, exercise building) into a single "Lite" platform.
 
-The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the grading drudgery through an AI-assisted workbench ("Review -> Adjust -> Approve"), ClassLite empowers expert teachers to double their feedback speed without sacrificing quality. For owners, it offers **"Glanceable Intelligence"**—immediate visibility into center health ("Done by 5 PM" philosophy) without complex reporting tools.
+The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the grading drudgery through an AI-assisted workbench ("Review -> Annotate -> Approve"), ClassLite empowers expert teachers to double their feedback speed without sacrificing quality. Teachers retain full editorial control — they can add their own free-form comments anchored to specific text, alongside AI-generated feedback, with per-comment visibility control (private notes vs student-facing). For owners, it offers **"Glanceable Intelligence"**—immediate visibility into center health ("Done by 5 PM" philosophy) without complex reporting tools.
 
 ### Target Users
 
@@ -137,6 +139,7 @@ The core vision is **"High-Velocity Pedagogy"**. By automating 80% of the gradin
 - **Step 1 (Auto-Load):** System auto-loads the first "Ready" submission in < 500ms.
 - **Step 2 (Review):** Teacher sees split-screen view: Student Essay (Left) vs AI Analysis (Right). AI highlights grammar errors and suggests band scores.
 - **Step 3 (Verify):** Teacher hovers over AI comments; "Evidence Anchors" visually connect comments to text. Teacher swipes to reject bad suggestions or clicks to accept/edit.
+- **Step 3b (Annotate):** Teacher selects a passage in the student's text and adds a custom comment (e.g., "Good use of cohesive devices here"). Teacher toggles visibility to "Student-Facing". Comment appears in the feedback feed alongside AI items.
 - **Step 4 (Completion):** Teacher clicks "Approve & Next". "Stamp" animation plays. Next submission slides in automatically.
 - **Validation:** Teacher feels in "Flow". No manual file opening/closing.
 
@@ -251,6 +254,11 @@ _Traces to: Journey 1_
 - **FR24**: [System] can [maintain comment anchors if < 20% of text is modified; it shall orphan the comment if modified by > 50%].
 - **FR25**: [Teacher] can [reject AI suggestions, removing them from the final feedback].
 - **FR26**: [System] can [auto-advance to the next submission upon approval (with an optional "Breather" pause after 5 items)].
+- **FR49**: [Teacher] can [add text-anchored comments by selecting a text range in the student's submission and typing a free-form comment, creating a visual anchor identical to AI-generated anchors].
+- **FR50**: [Teacher] can [add general (unanchored) comments to a submission without selecting text].
+- **FR51**: [Teacher] can [toggle each comment's visibility between "Private" (visible only to the teacher) and "Student-Facing" (visible to both teacher and student)].
+- **FR52**: [System] can [display teacher-authored comments mixed with AI feedback items in the same feed, visually distinguished by a "Teacher" badge and author attribution].
+- **FR53**: [Student] can [view student-facing teacher comments alongside AI feedback when reviewing graded submissions].
 
 ### 5. Student Success
 
@@ -407,6 +415,7 @@ Teachers can combine exercises into a **Mock Test** that simulates full IELTS te
 | Assignment               | CRUD  | CRUD  |       CRUD       |    -    |
 | Submission               |   -   |   -   |        -         |  CRUD   |
 | AI Grading Workbench     | CRUD  | CRUD  |       CRUD       |    -    |
+| Teacher Comments         | CRUD  | CRUD  |       CRUD       | R (student-facing only) |
 | Band Rubric Config       | CRUD  | CRUD  |        R         |    -    |
 | Student Health Dashboard |   R   |   R   | R (Own Students) |    -    |
 | Billing & Subscription   | CRUD  |   R   |        -         |    -    |

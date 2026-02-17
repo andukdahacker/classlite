@@ -17,7 +17,7 @@ stepsCompleted:
     step-14-stories-refinement,
     step-15-completeness-review,
   ]
-lastEdited: "2026-02-11"
+lastEdited: "2026-02-17"
 editHistory:
   - date: "2026-01-29"
     changes: "Added 15 new stories and updated 5 existing stories to close gaps: Login/Auth (1.6-1.7), User Management (1.8-1.10), Navigation (1.11), Session CRUD (2.5), Email Notifications (2.6), Exercise Library (3.4-3.5), Grading Queue (5.5), Student Feedback View (5.6), Teacher Health View (6.4), Zalo Linking (7.3), i18n (8.4), Golden Sample UI (8.5)."
@@ -25,6 +25,8 @@ editHistory:
     changes: "Major Epic 3 expansion for IELTS Exercise Builder: Added FR37-FR42 to inventory. Expanded from 5 to 16 stories covering all IELTS question types (Reading R1-R14, Listening L1-L6, Writing W1-W3, Speaking S1-S3), audio upload/playback, timer functionality, answer key variants, skill/band tagging, AI content generation, and mock test assembly."
   - date: "2026-02-11"
     changes: "Course correction: Removed Zalo integration. Rewrote Epic 7 from 'Zalo Integration' to 'Email Notifications & Parent Communication' with new stories (7.1-7.3). Rewrote Story 6.3 from Zalo to email intervention. Updated FR29-FR31. Added FR43-FR48 for billing. Added Epic 9 (Billing & Subscription) with 4 stories (9.1-9.4) using Polar.sh. Updated FR Coverage Map."
+  - date: "2026-02-17"
+    changes: "Course correction: Added FR49-FR53 to inventory (teacher commenting). Added Story 5.7 (Free-Form Teacher Commenting) to Epic 5. Updated Epic 5 summary and FR Coverage Map."
 inputDocuments:
   [
     "_bmad-output/planning-artifacts/prd.md",
@@ -93,6 +95,11 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 | **FR46** | System             | Shall  | Send billing reminders via email 7 days before renewal.                       |
 | **FR47** | System             | Shall  | Enforce grace period on payment lapse, restricting new enrollments.           |
 | **FR48** | Center Owner       | Can    | Upgrade/downgrade subscription tier from Billing Dashboard.                   |
+| **FR49** | Teacher            | Can    | Add text-anchored comments by selecting text in student work and typing a free-form comment. |
+| **FR50** | Teacher            | Can    | Add general (unanchored) comments to a submission without selecting text.     |
+| **FR51** | Teacher            | Can    | Toggle each comment's visibility between "Private" and "Student-Facing".      |
+| **FR52** | System             | Shall  | Display teacher comments mixed with AI feedback, distinguished by a "Teacher" badge. |
+| **FR53** | Student            | Can    | View student-facing teacher comments alongside AI feedback in graded submissions. |
 
 ### 1.2 Non-Functional Requirements (NFR)
 
@@ -120,7 +127,7 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 | **Epic 2** | Logistics & Scheduling                | FR7, FR8, FR9, FR10, FR11, FR12                    |
 | **Epic 3** | IELTS Exercise Builder & Content      | FR13, FR14, FR15, FR16, FR17, FR37, FR38, FR39, FR40, FR41, FR42 |
 | **Epic 4** | Student Submission & Offline-Proofing | FR18, FR19, FR34, FR35                             |
-| **Epic 5** | AI Grading Workbench                  | FR20, FR21, FR22, FR23, FR24, FR25, FR26           |
+| **Epic 5** | AI Grading Workbench                  | FR20, FR21, FR22, FR23, FR24, FR25, FR26, FR49, FR50, FR51, FR52, FR53 |
 | **Epic 6** | Student Health & Intervention         | FR27, FR28, FR29                                   |
 | **Epic 7** | Email Notifications & Parent Comms    | FR30, FR31                                         |
 | **Epic 8** | Platform Compliance & Methodology     | FR32, FR33, FR36                                   |
@@ -149,7 +156,7 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 
 ### Epic 5: AI Grading Workbench
 
-**Summary:** The core "High-Velocity Pedagogy" feature. A specialized interface for rapid-fire grading where AI drafts feedback and teachers validate it through a highly optimized "Review -> Adjust -> Approve" loop.
+**Summary:** The core "High-Velocity Pedagogy" feature. A specialized interface for rapid-fire grading where AI drafts feedback and teachers annotate and validate it through a highly optimized "Review -> Annotate -> Approve" loop. Teachers can add their own text-anchored and general comments with private/student-facing visibility, mixed into the same feed as AI-generated feedback.
 
 ### Epic 6: Student Health & Intervention
 
@@ -758,6 +765,22 @@ This document defines the high-level Epics and granular User Stories for ClassLi
 - **AC6: Score Breakdown:** For multi-criteria rubrics (e.g., IELTS Writing: Task Achievement, Coherence, Lexical Resource, Grammar), show individual scores.
 - **AC7: Submission History:** If resubmission is allowed, display version history with previous scores.
 - **AC8: Mobile Optimized:** Feedback view must work well on mobile (tap to expand comments, scrollable sections).
+
+#### Story 5.7: Free-Form Teacher Commenting (FR49, FR50, FR51, FR52, FR53)
+
+**As a** Teacher,
+**I want to** add my own comments to student work — both anchored to specific text and general — with control over visibility,
+**So that** I can provide personalized feedback beyond what the AI generates.
+
+- **AC1: Text-Anchored Comment Creation:** Teacher can select a text range in the student's work (left pane) and a comment input popover appears. Teacher types a free-form comment and submits it. The comment creates a visual anchor identical to AI-generated anchors (highlight + tether line from Story 5.3).
+- **AC2: General Comment Creation:** Teacher can add unanchored comments via an "Add Comment" button in the feedback pane (right pane). These appear in the feed without a text anchor.
+- **AC3: Visibility Toggle:** Each teacher comment has a visibility toggle: "Private" (visible only to the teacher, not shown to students) or "Student-Facing" (visible to both teacher and student). Default: Student-Facing.
+- **AC4: Mixed Feed Display:** Teacher comments appear in the same feed as AI feedback items, visually distinguished by a "Teacher" badge and author attribution (teacher name/avatar). Feed is ordered chronologically by creation time, with AI items grouped first.
+- **AC5: Comment Persistence:** Teacher comments are persisted to the backend immediately on creation. Comments survive page refresh and are associated with the specific submission.
+- **AC6: Edit & Delete:** Teacher can edit or delete their own comments. Edits are saved immediately. Deleted comments are permanently removed.
+- **AC7: During & After Grading:** Comments can be added both during the active grading session (before approval) and after grading is complete (teacher can revisit a graded submission to add more comments).
+- **AC8: Student View Integration:** Student-facing teacher comments appear in the Student Feedback View (Story 5.6) alongside approved AI comments, with clear "Teacher" attribution.
+- **AC9: Keyboard Accessibility:** Comment creation supports keyboard workflow: Ctrl+Enter to submit, Escape to cancel. Tab order follows logical flow.
 
 ---
 
