@@ -83,6 +83,7 @@ export function CommentPopover({
             placeholder="Add your comment..."
             maxLength={5000}
             rows={3}
+            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
           />
 

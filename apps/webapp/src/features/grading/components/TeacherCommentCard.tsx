@@ -82,7 +82,7 @@ function TeacherCommentCardInner({
   }, [hasAnchor, onHighlight]);
 
   const handleTouchStart = useCallback(
-    (_e: React.TouchEvent) => {
+    () => {
       if (!hasAnchor || !onHighlight) return;
       touchActiveRef.current = !touchActiveRef.current;
       onHighlight(touchActiveRef.current ? comment.id : null, false);
@@ -228,6 +228,7 @@ function TeacherCommentCardInner({
                 onKeyDown={handleEditKeyDown}
                 maxLength={5000}
                 rows={3}
+                // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus
               />
               <div className="flex gap-2">

@@ -62,6 +62,7 @@ export function AddCommentInput({ onSubmit, isSubmitting }: AddCommentInputProps
         placeholder="Type your comment..."
         maxLength={5000}
         rows={3}
+        // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus
       />
       <div className="flex items-center justify-between">

@@ -97,7 +97,7 @@ function FeedbackItemCardInner({
   }, [hasAnchor, onHighlight]);
 
   const handleTouchStart = useCallback(
-    (_e: React.TouchEvent) => {
+    () => {
       if (!hasAnchor || !onHighlight) return;
       touchActiveRef.current = !touchActiveRef.current;
       onHighlight(touchActiveRef.current ? item.id : null, false);
