@@ -112,6 +112,13 @@ describe("GradingService", () => {
       centerMembership: {
         findFirst: vi.fn().mockResolvedValue(mockTeacherMembership),
       },
+      teacherComment: {
+        create: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
+        findFirst: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -393,6 +400,276 @@ describe("GradingService", () => {
       await expect(
         service.getSubmissionFeedback(centerId, submissionId, firebaseUid),
       ).rejects.toThrow("You can only access submissions from your classes");
+    });
+  });
+
+  describe("createComment", () => {
+    const createData = {
+      content: "Great use of vocabulary here!",
+      startOffset: 10,
+      endOffset: 30,
+      originalContextSnippet: "the students were",
+      visibility: "student_facing" as const,
+    };
+
+    const mockCreatedComment = {
+      id: "comment-1",
+      centerId,
+      submissionId,
+      authorId: "teacher-1",
+      content: createData.content,
+      startOffset: createData.startOffset,
+      endOffset: createData.endOffset,
+      originalContextSnippet: createData.originalContextSnippet,
+      visibility: createData.visibility,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      author: { name: "Teacher One", avatarUrl: null },
+    };
+
+    it("should create a comment with anchor offsets", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.create.mockResolvedValue(mockCreatedComment);
+
+      const result = await service.createComment(centerId, submissionId, firebaseUid, createData);
+
+      expect(mockDb.teacherComment.create).toHaveBeenCalledWith({
+        data: {
+          centerId,
+          submissionId,
+          authorId: "teacher-1",
+          content: createData.content,
+          startOffset: createData.startOffset,
+          endOffset: createData.endOffset,
+          originalContextSnippet: createData.originalContextSnippet,
+          visibility: createData.visibility,
+        },
+        include: { author: { select: { name: true, avatarUrl: true } } },
+      });
+      expect(result.authorName).toBe("Teacher One");
+    });
+
+    it("should create a general comment (no offsets)", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.create.mockResolvedValue({
+        ...mockCreatedComment,
+        startOffset: null,
+        endOffset: null,
+        originalContextSnippet: null,
+      });
+
+      const result = await service.createComment(centerId, submissionId, firebaseUid, {
+        content: "General comment",
+        startOffset: null,
+        endOffset: null,
+        visibility: "student_facing",
+      });
+
+      expect(result).toBeTruthy();
+      expect(mockDb.teacherComment.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            startOffset: null,
+            endOffset: null,
+          }),
+        }),
+      );
+    });
+
+    it("should throw if submission not found", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.createComment(centerId, submissionId, firebaseUid, createData),
+      ).rejects.toThrow("Submission not found");
+    });
+
+    it("should throw for negative offsets", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+
+      await expect(
+        service.createComment(centerId, submissionId, firebaseUid, {
+          ...createData,
+          startOffset: -1,
+        }),
+      ).rejects.toThrow("Offsets must be non-negative");
+    });
+
+    it("should throw if endOffset <= startOffset", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+
+      await expect(
+        service.createComment(centerId, submissionId, firebaseUid, {
+          ...createData,
+          startOffset: 20,
+          endOffset: 10,
+        }),
+      ).rejects.toThrow("endOffset must be greater than startOffset");
+    });
+  });
+
+  describe("getComments", () => {
+    const mockComments = [
+      {
+        id: "c1",
+        submissionId,
+        content: "Comment 1",
+        visibility: "student_facing",
+        createdAt: new Date("2026-01-01"),
+        author: { name: "Teacher", avatarUrl: null },
+      },
+    ];
+
+    it("should return comments ordered by createdAt", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findMany.mockResolvedValue(mockComments);
+
+      const result = await service.getComments(centerId, submissionId, firebaseUid);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.authorName).toBe("Teacher");
+      expect(mockDb.teacherComment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { createdAt: "asc" },
+        }),
+      );
+    });
+
+    it("should filter by visibility when provided", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findMany.mockResolvedValue(mockComments);
+
+      await service.getComments(centerId, submissionId, firebaseUid, "private");
+
+      expect(mockDb.teacherComment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { submissionId, visibility: "private" },
+        }),
+      );
+    });
+
+    it("should throw if submission not found", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.getComments(centerId, submissionId, firebaseUid),
+      ).rejects.toThrow("Submission not found");
+    });
+  });
+
+  describe("updateComment", () => {
+    const commentId = "comment-1";
+    const mockComment = {
+      id: commentId,
+      submissionId,
+      authorId: "teacher-1",
+      content: "Original",
+      visibility: "student_facing",
+    };
+
+    it("should update comment content", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findFirst.mockResolvedValue(mockComment);
+      mockDb.teacherComment.update.mockResolvedValue({
+        ...mockComment,
+        content: "Updated",
+        author: { name: "Teacher", avatarUrl: null },
+      });
+
+      const result = await service.updateComment(
+        centerId, submissionId, commentId, firebaseUid, { content: "Updated" },
+      );
+
+      expect(result.authorName).toBe("Teacher");
+      expect(mockDb.teacherComment.update).toHaveBeenCalledWith({
+        where: { id: commentId },
+        data: { content: "Updated" },
+        include: { author: { select: { name: true, avatarUrl: true } } },
+      });
+    });
+
+    it("should throw if comment not found", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateComment(centerId, submissionId, commentId, firebaseUid, { content: "X" }),
+      ).rejects.toThrow("Comment not found");
+    });
+
+    it("should throw if teacher is not the author", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findFirst.mockResolvedValue({
+        ...mockComment,
+        authorId: "other-teacher",
+      });
+
+      await expect(
+        service.updateComment(centerId, submissionId, commentId, firebaseUid, { content: "X" }),
+      ).rejects.toThrow("You can only edit your own comments");
+    });
+  });
+
+  describe("deleteComment", () => {
+    const commentId = "comment-1";
+    const mockComment = {
+      id: commentId,
+      submissionId,
+      authorId: "teacher-1",
+    };
+
+    it("should delete the comment", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findFirst.mockResolvedValue(mockComment);
+      mockDb.teacherComment.delete.mockResolvedValue(mockComment);
+
+      await service.deleteComment(centerId, submissionId, commentId, firebaseUid);
+
+      expect(mockDb.teacherComment.delete).toHaveBeenCalledWith({
+        where: { id: commentId },
+      });
+    });
+
+    it("should throw if comment not found", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.deleteComment(centerId, submissionId, commentId, firebaseUid),
+      ).rejects.toThrow("Comment not found");
+    });
+
+    it("should throw if teacher is not the author", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findFirst.mockResolvedValue({
+        ...mockComment,
+        authorId: "other-teacher",
+      });
+
+      await expect(
+        service.deleteComment(centerId, submissionId, commentId, firebaseUid),
+      ).rejects.toThrow("You can only delete your own comments");
+    });
+  });
+
+  describe("getAnalysisResults - teacherComments", () => {
+    it("should include teacherComments in result", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.gradingJob.findUnique.mockResolvedValue({ ...mockGradingJob, status: "completed" });
+      mockDb.submissionFeedback.findUnique.mockResolvedValue(mockFeedback);
+      mockDb.teacherComment.findMany.mockResolvedValue([
+        {
+          id: "tc-1",
+          content: "Nice work",
+          submissionId,
+          author: { name: "Teacher A", avatarUrl: "http://img.png" },
+        },
+      ]);
+
+      const result = await service.getAnalysisResults(centerId, submissionId, firebaseUid);
+
+      expect(result.teacherComments).toHaveLength(1);
+      expect((result.teacherComments[0] as { authorName: string }).authorName).toBe("Teacher A");
     });
   });
 });

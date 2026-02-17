@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import type { TeacherComment } from "@workspace/types";
+import { useAuth } from "@/features/auth/auth-context";
 import { AIFeedbackPane } from "./components/AIFeedbackPane";
 import { ConnectionLineOverlay } from "./components/ConnectionLineOverlay";
 import { StudentWorkPane } from "./components/StudentWorkPane";
@@ -21,6 +23,9 @@ import {
   useHighlightState,
 } from "./hooks/use-highlight-context";
 import { useGradingQueue } from "./hooks/use-grading-queue";
+import { useCreateComment } from "./hooks/use-create-comment";
+import { useUpdateComment } from "./hooks/use-update-comment";
+import { useDeleteComment } from "./hooks/use-delete-comment";
 import { useMediaQuery } from "./hooks/use-media-query";
 import { usePrefetchSubmission } from "./hooks/use-prefetch-submission";
 import { useRetriggerAnalysis } from "./hooks/use-retrigger-analysis";
@@ -106,6 +111,12 @@ function GradingQueuePageInner() {
   // Re-trigger analysis mutation
   const retriggerMutation = useRetriggerAnalysis(activeSubmissionId ?? "");
 
+  // Teacher comment mutations
+  const { user } = useAuth();
+  const createComment = useCreateComment(activeSubmissionId ?? "");
+  const updateComment = useUpdateComment(activeSubmissionId ?? "");
+  const deleteComment = useDeleteComment(activeSubmissionId ?? "");
+
   // Navigation handlers
   const navigateTo = useCallback(
     (idx: number) => {
@@ -168,7 +179,13 @@ function GradingQueuePageInner() {
     [feedback?.items],
   );
 
-  // Compute anchor statuses per feedback item
+  // Teacher comments from detail
+  const teacherComments = useMemo(
+    () => (detail?.teacherComments ?? []) as TeacherComment[],
+    [detail?.teacherComments],
+  );
+
+  // Compute anchor statuses per feedback item AND teacher comment
   const anchorStatuses = useMemo(() => {
     const map = new Map<string, AnchorStatus>();
     for (const item of feedbackItems) {
@@ -180,8 +197,19 @@ function GradingQueuePageInner() {
       );
       map.set(item.id, result.anchorStatus);
     }
+    for (const comment of teacherComments) {
+      if (comment.startOffset != null && comment.endOffset != null) {
+        const result = validateAnchor(
+          comment.startOffset,
+          comment.endOffset,
+          comment.originalContextSnippet,
+          concatenatedStudentText,
+        );
+        map.set(comment.id, result.anchorStatus);
+      }
+    }
     return map;
-  }, [feedbackItems, concatenatedStudentText]);
+  }, [feedbackItems, teacherComments, concatenatedStudentText]);
 
   // Stable highlight callback — debounce param passed through from card
   const handleHighlight = useCallback(
@@ -195,8 +223,12 @@ function GradingQueuePageInner() {
   const highlightedSeverity = useMemo(() => {
     if (!highlightedItemId) return null;
     const item = feedbackItems.find((i) => i.id === highlightedItemId);
-    return (item?.severity as "error" | "warning" | "suggestion") ?? null;
-  }, [highlightedItemId, feedbackItems]);
+    if (item) return (item.severity as "error" | "warning" | "suggestion") ?? null;
+    // Check if it's a teacher comment — return null severity (emerald)
+    const isTeacherComment = teacherComments.some((c) => c.id === highlightedItemId);
+    if (isTeacherComment) return null;
+    return null;
+  }, [highlightedItemId, feedbackItems, teacherComments]);
 
   // Loading state
   if (isQueueLoading) {
@@ -332,7 +364,17 @@ function GradingQueuePageInner() {
               sections={[]}
               answers={answers}
               feedbackItems={feedbackItems}
+              teacherComments={teacherComments}
               anchorStatuses={anchorStatuses}
+              onCreateComment={(data) =>
+                createComment.mutate({
+                  content: data.content,
+                  startOffset: data.startOffset,
+                  endOffset: data.endOffset,
+                  originalContextSnippet: data.originalContextSnippet,
+                  visibility: data.visibility,
+                })
+              }
             />
           }
           rightPane={
@@ -356,6 +398,14 @@ function GradingQueuePageInner() {
               anchorStatuses={anchorStatuses}
               highlightedItemId={highlightedItemId}
               onHighlight={handleHighlight}
+              teacherComments={teacherComments}
+              currentUserId={user?.id}
+              onCreateComment={(data) => createComment.mutate(data)}
+              onUpdateComment={(commentId, data) =>
+                updateComment.mutate({ commentId, data })
+              }
+              onDeleteComment={(commentId) => deleteComment.mutate(commentId)}
+              isCreatingComment={createComment.isPending}
             />
           }
         />

@@ -5,6 +5,11 @@ import {
   SubmissionFeedbackResponseSchema,
   GradingJobResponseSchema,
   ErrorResponseSchema,
+  CreateTeacherCommentSchema,
+  UpdateTeacherCommentSchema,
+  TeacherCommentResponseSchema,
+  TeacherCommentListResponseSchema,
+  CommentVisibilitySchema,
 } from "@workspace/types";
 import { FastifyInstance, FastifyReply } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -127,6 +132,143 @@ export async function gradingRoutes(fastify: FastifyInstance) {
         const { submissionId } = request.params as { submissionId: string };
         const result = await controller.getSubmissionFeedback(
           submissionId,
+          { uid: payload.uid, centerId: payload.centerId },
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        return handleRouteError(error, request, reply);
+      }
+    },
+  });
+
+  // POST /submissions/:submissionId/comments — Create teacher comment
+  api.post("/submissions/:submissionId/comments", {
+    schema: {
+      params: z.object({ submissionId: z.string() }),
+      body: CreateTeacherCommentSchema,
+      response: {
+        200: TeacherCommentResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["TEACHER", "ADMIN", "OWNER"])],
+    handler: async (request, reply) => {
+      try {
+        const payload = request.jwtPayload!;
+        if (!payload.centerId) {
+          return reply.status(400).send({ message: "User does not belong to a center" });
+        }
+        const { submissionId } = request.params as { submissionId: string };
+        const result = await controller.createComment(
+          submissionId,
+          { uid: payload.uid, centerId: payload.centerId },
+          request.body as z.infer<typeof CreateTeacherCommentSchema>,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        return handleRouteError(error, request, reply);
+      }
+    },
+  });
+
+  // GET /submissions/:submissionId/comments — List teacher comments
+  api.get("/submissions/:submissionId/comments", {
+    schema: {
+      params: z.object({ submissionId: z.string() }),
+      querystring: z.object({ visibility: CommentVisibilitySchema.optional() }),
+      response: {
+        200: TeacherCommentListResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["TEACHER", "ADMIN", "OWNER"])],
+    handler: async (request, reply) => {
+      try {
+        const payload = request.jwtPayload!;
+        if (!payload.centerId) {
+          return reply.status(400).send({ message: "User does not belong to a center" });
+        }
+        const { submissionId } = request.params as { submissionId: string };
+        const query = request.query as { visibility?: z.infer<typeof CommentVisibilitySchema> };
+        const result = await controller.getComments(
+          submissionId,
+          { uid: payload.uid, centerId: payload.centerId },
+          query.visibility,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        return handleRouteError(error, request, reply);
+      }
+    },
+  });
+
+  // PATCH /submissions/:submissionId/comments/:commentId — Update teacher comment
+  api.patch("/submissions/:submissionId/comments/:commentId", {
+    schema: {
+      params: z.object({ submissionId: z.string(), commentId: z.string() }),
+      body: UpdateTeacherCommentSchema,
+      response: {
+        200: TeacherCommentResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["TEACHER", "ADMIN", "OWNER"])],
+    handler: async (request, reply) => {
+      try {
+        const payload = request.jwtPayload!;
+        if (!payload.centerId) {
+          return reply.status(400).send({ message: "User does not belong to a center" });
+        }
+        const { submissionId, commentId } = request.params as { submissionId: string; commentId: string };
+        const result = await controller.updateComment(
+          submissionId,
+          commentId,
+          { uid: payload.uid, centerId: payload.centerId },
+          request.body as z.infer<typeof UpdateTeacherCommentSchema>,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        return handleRouteError(error, request, reply);
+      }
+    },
+  });
+
+  // DELETE /submissions/:submissionId/comments/:commentId — Delete teacher comment
+  api.delete("/submissions/:submissionId/comments/:commentId", {
+    schema: {
+      params: z.object({ submissionId: z.string(), commentId: z.string() }),
+      response: {
+        200: z.object({ data: z.null(), message: z.string() }),
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["TEACHER", "ADMIN", "OWNER"])],
+    handler: async (request, reply) => {
+      try {
+        const payload = request.jwtPayload!;
+        if (!payload.centerId) {
+          return reply.status(400).send({ message: "User does not belong to a center" });
+        }
+        const { submissionId, commentId } = request.params as { submissionId: string; commentId: string };
+        const result = await controller.deleteComment(
+          submissionId,
+          commentId,
           { uid: payload.uid, centerId: payload.centerId },
         );
         return reply.send(result);

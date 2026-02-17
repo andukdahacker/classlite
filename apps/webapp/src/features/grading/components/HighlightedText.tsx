@@ -17,16 +17,18 @@ interface HighlightedTextProps {
 
 type Severity = "error" | "warning" | "suggestion";
 
-const SEVERITY_PRIORITY: Record<Severity, number> = {
+const SEVERITY_PRIORITY: Record<string, number> = {
   error: 3,
   warning: 2,
   suggestion: 1,
+  teacher: 0, // teacher comments are lowest priority for overlapping ranges
 };
 
-const ACTIVE_BG: Record<Severity, string> = {
+const ACTIVE_BG: Record<string, string> = {
   error: "bg-red-100 dark:bg-red-900/30",
   warning: "bg-amber-100 dark:bg-amber-900/30",
   suggestion: "bg-blue-100 dark:bg-blue-900/30",
+  teacher: "bg-emerald-100 dark:bg-emerald-900/30",
 };
 
 interface TextSegment {
@@ -110,8 +112,8 @@ function getHighestSeverityItem(
   let best: HighlightFeedbackItem | null = null;
   let bestPriority = -1;
   for (const item of items) {
-    const sev = (item.severity ?? "suggestion") as Severity;
-    const priority = SEVERITY_PRIORITY[sev] ?? 0;
+    const sevKey = item.severity === null ? "teacher" : (item.severity ?? "suggestion");
+    const priority = SEVERITY_PRIORITY[sevKey] ?? 0;
     if (priority > bestPriority) {
       bestPriority = priority;
       best = item;
@@ -196,22 +198,25 @@ export function HighlightedText({ text, feedbackItems }: HighlightedTextProps) {
           ) : (
             lineSegs.map((seg) => {
               if (!seg.feedbackId) {
-                return <span key={`t-${seg.charOffset}`}>{seg.text || "\u00A0"}</span>;
+                return <span key={`t-${seg.charOffset}`} data-char-start={seg.charOffset}>{seg.text || "\u00A0"}</span>;
               }
 
               const isActive = highlightedItemId === seg.feedbackId;
-              const severity = seg.severity ?? "suggestion";
+              const severity = seg.severity === null ? "teacher" : (seg.severity ?? "suggestion");
 
               return (
                 <span
                   key={`fb-${seg.feedbackId}-${seg.charOffset}`}
                   ref={isActive ? scrollRef : undefined}
                   data-feedback-id={seg.feedbackId}
+                  data-char-start={seg.charOffset}
                   id={`anchor-${seg.feedbackId}`}
                   className={
                     isActive
                       ? `${ACTIVE_BG[severity]} rounded-sm transition-colors duration-200`
-                      : "underline decoration-dotted decoration-muted-foreground/40"
+                      : severity === "teacher"
+                        ? "underline decoration-dotted decoration-emerald-400/40"
+                        : "underline decoration-dotted decoration-muted-foreground/40"
                   }
                 >
                   {seg.text}

@@ -6,9 +6,12 @@ import {
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { Separator } from "@workspace/ui/components/separator";
 import { ChevronDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import type { CommentVisibility, TeacherComment } from "@workspace/types";
 import { HighlightedText } from "./HighlightedText";
+import { CommentPopover } from "./CommentPopover";
 import type { AnchorStatus } from "../hooks/use-anchor-validation";
+import { useTextSelection } from "../hooks/use-text-selection";
 
 interface Answer {
   id: string;
@@ -36,13 +39,23 @@ interface StudentWorkFeedbackItem {
   severity?: "error" | "warning" | "suggestion" | null;
 }
 
+interface CreateCommentData {
+  content: string;
+  startOffset: number;
+  endOffset: number;
+  originalContextSnippet: string;
+  visibility: CommentVisibility;
+}
+
 interface StudentWorkPaneProps {
   exerciseTitle: string;
   exerciseSkill: "WRITING" | "SPEAKING";
   sections: Section[];
   answers: Answer[];
   feedbackItems?: StudentWorkFeedbackItem[];
+  teacherComments?: TeacherComment[];
   anchorStatuses?: Map<string, AnchorStatus>;
+  onCreateComment?: (data: CreateCommentData) => void;
 }
 
 function getWordCount(text: string): number {
@@ -65,9 +78,12 @@ export function StudentWorkPane({
   sections,
   answers,
   feedbackItems,
+  teacherComments,
   anchorStatuses,
+  onCreateComment,
 }: StudentWorkPaneProps) {
   const [promptOpen, setPromptOpen] = useState(true);
+  const answerContainerRef = useRef<HTMLDivElement>(null);
 
   const answerMap = new Map(answers.map((a) => [a.questionId, a]));
 
@@ -78,9 +94,24 @@ export function StudentWorkPane({
     );
   }, [answers, exerciseSkill]);
 
+  // Merge teacher comments that have anchors into feedbackItems for highlighting
+  const allHighlightItems = useMemo(() => {
+    const base = feedbackItems ?? [];
+    const teacherAnchored = (teacherComments ?? [])
+      .filter((c) => c.startOffset != null && c.endOffset != null)
+      .map((c) => ({
+        id: c.id,
+        startOffset: c.startOffset,
+        endOffset: c.endOffset,
+        originalContextSnippet: c.originalContextSnippet,
+        severity: null as "error" | "warning" | "suggestion" | null,
+      }));
+    return [...base, ...teacherAnchored];
+  }, [feedbackItems, teacherComments]);
+
   // Compute per-answer feedback items with local offsets
   const answerFeedbackMap = useMemo(() => {
-    if (!feedbackItems || feedbackItems.length === 0) return new Map<number, Array<{
+    if (allHighlightItems.length === 0) return new Map<number, Array<{
       id: string;
       startOffset: number;
       endOffset: number;
@@ -104,7 +135,7 @@ export function StudentWorkPane({
       offset += text.length + ANSWER_SEPARATOR.length;
     }
 
-    for (const item of feedbackItems) {
+    for (const item of allHighlightItems) {
       if (item.startOffset == null || item.endOffset == null) continue;
 
       // Find which answer this item belongs to
@@ -139,7 +170,44 @@ export function StudentWorkPane({
     }
 
     return map;
-  }, [feedbackItems, answerTexts, anchorStatuses]);
+  }, [allHighlightItems, answerTexts, anchorStatuses]);
+
+  // Compute per-answer global offsets for text selection
+  const answerOffsets = useMemo(() => {
+    let offset = 0;
+    return answerTexts.map((text) => {
+      const globalStartOffset = offset;
+      offset += text.length + ANSWER_SEPARATOR.length;
+      return { globalStartOffset };
+    });
+  }, [answerTexts]);
+
+  // Text selection for anchored commenting
+  const { selectionState, clearSelection } = useTextSelection(
+    answerContainerRef,
+    answerOffsets,
+  );
+
+  const handleCommentSubmit = useCallback(
+    (content: string, visibility: CommentVisibility) => {
+      if (!selectionState || !onCreateComment) return;
+      onCreateComment({
+        content,
+        startOffset: selectionState.startOffset,
+        endOffset: selectionState.endOffset,
+        originalContextSnippet: selectionState.text,
+        visibility,
+      });
+      clearSelection();
+      window.getSelection()?.removeAllRanges();
+    },
+    [selectionState, onCreateComment, clearSelection],
+  );
+
+  const handleCommentCancel = useCallback(() => {
+    clearSelection();
+    window.getSelection()?.removeAllRanges();
+  }, [clearSelection]);
 
   // Determine whether to render from sections or directly from answers
   const hasSections = sections.length > 0;
@@ -179,6 +247,7 @@ export function StudentWorkPane({
           </CollapsibleContent>
         </Collapsible>
 
+        <div ref={answerContainerRef} className="relative">
         {hasSections
           ? sections.map((section, sIdx) =>
               section.questions.map((question, qIdx) => {
@@ -235,7 +304,7 @@ export function StudentWorkPane({
               const itemFeedback = answerFeedbackMap.get(aIdx) ?? [];
 
               return (
-                <div key={answer.id}>
+                <div key={answer.id} data-answer-index={aIdx}>
                   {answers.length > 1 && (
                     <h3 className="mb-2 text-sm font-medium text-muted-foreground">
                       Answer {aIdx + 1}
@@ -264,6 +333,17 @@ export function StudentWorkPane({
                 </div>
               );
             })}
+
+          {/* Comment popover for text selection */}
+          {selectionState && onCreateComment && (
+            <CommentPopover
+              position={selectionState.containerRelativePos}
+              onSubmit={handleCommentSubmit}
+              onCancel={handleCommentCancel}
+              selectedText={selectionState.text}
+            />
+          )}
+        </div>
       </div>
     </ScrollArea>
   );

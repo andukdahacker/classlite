@@ -170,7 +170,9 @@ export function ConnectionLineOverlay({
 
   if (isMobile || !highlightedItemId || !coords) return null;
 
-  const strokeColor = STROKE_COLORS[(severity ?? "suggestion") as Severity];
+  const strokeColor = severity === null
+    ? "#10B981" // emerald-500 for teacher comments
+    : STROKE_COLORS[(severity ?? "suggestion") as Severity];
   const cpOffset = Math.abs(coords.endX - coords.startX) * 0.4;
   const pathD = `M ${coords.startX} ${coords.startY} C ${coords.startX + cpOffset} ${coords.startY}, ${coords.endX - cpOffset} ${coords.endY}, ${coords.endX} ${coords.endY}`;
 

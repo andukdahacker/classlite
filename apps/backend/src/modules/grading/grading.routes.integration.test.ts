@@ -78,6 +78,13 @@ describe("Grading Routes Integration", () => {
     centerMembership: {
       findFirst: vi.fn().mockResolvedValue({ role: "TEACHER" }),
     },
+    teacherComment: {
+      create: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
   };
 
   const mockFirebaseAuth = {
@@ -231,6 +238,233 @@ describe("Grading Routes Integration", () => {
       const response = await app.inject({
         method: "GET",
         url: "/api/v1/grading/submissions/sub-1/feedback",
+        headers: { authorization: "Bearer valid-token" },
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+  });
+
+  describe("POST /submissions/:submissionId/comments", () => {
+    const mockCreatedComment = {
+      id: "comment-1",
+      centerId: "center-1",
+      submissionId: "sub-1",
+      authorId: "teacher-1",
+      content: "Nice vocabulary!",
+      startOffset: 10,
+      endOffset: 25,
+      originalContextSnippet: "the students were",
+      visibility: "student_facing",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      author: { name: "Teacher One", avatarUrl: null },
+    };
+
+    it("should return 200 when creating a comment", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.create.mockResolvedValue(mockCreatedComment);
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/v1/grading/submissions/sub-1/comments",
+        headers: { authorization: "Bearer valid-token" },
+        payload: {
+          content: "Nice vocabulary!",
+          startOffset: 10,
+          endOffset: 25,
+          originalContextSnippet: "the students were",
+          visibility: "student_facing",
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.message).toBe("Comment created");
+      expect(body.data.authorName).toBe("Teacher One");
+    });
+
+    it("should return 400 for empty content", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/v1/grading/submissions/sub-1/comments",
+        headers: { authorization: "Bearer valid-token" },
+        payload: { content: "", visibility: "student_facing" },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it("should return 404 when submission not found", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(null);
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/v1/grading/submissions/nonexistent/comments",
+        headers: { authorization: "Bearer valid-token" },
+        payload: { content: "Test comment", visibility: "student_facing" },
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    it("should return 401 without auth", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/v1/grading/submissions/sub-1/comments",
+        payload: { content: "Test", visibility: "student_facing" },
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+  });
+
+  describe("GET /submissions/:submissionId/comments", () => {
+    it("should return 200 with comments list", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findMany.mockResolvedValue([
+        {
+          id: "c1",
+          centerId: "center-1",
+          submissionId: "sub-1",
+          authorId: "teacher-1",
+          content: "Good work",
+          startOffset: null,
+          endOffset: null,
+          originalContextSnippet: null,
+          visibility: "student_facing",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          author: { name: "Teacher", avatarUrl: null },
+        },
+      ]);
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/grading/submissions/sub-1/comments",
+        headers: { authorization: "Bearer valid-token" },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.message).toBe("Comments retrieved");
+      expect(body.data).toHaveLength(1);
+    });
+
+    it("should accept visibility query param", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findMany.mockResolvedValue([]);
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/grading/submissions/sub-1/comments?visibility=student_facing",
+        headers: { authorization: "Bearer valid-token" },
+      });
+
+      expect(response.statusCode).toBe(200);
+    });
+  });
+
+  describe("PATCH /submissions/:submissionId/comments/:commentId", () => {
+    it("should return 200 when updating a comment", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findFirst.mockResolvedValue({
+        id: "c1",
+        centerId: "center-1",
+        submissionId: "sub-1",
+        authorId: "teacher-1",
+        content: "Original",
+        startOffset: null,
+        endOffset: null,
+        originalContextSnippet: null,
+        visibility: "student_facing",
+      });
+      mockDb.teacherComment.update.mockResolvedValue({
+        id: "c1",
+        centerId: "center-1",
+        submissionId: "sub-1",
+        authorId: "teacher-1",
+        content: "Updated",
+        startOffset: null,
+        endOffset: null,
+        originalContextSnippet: null,
+        visibility: "student_facing",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        author: { name: "Teacher", avatarUrl: null },
+      });
+
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/api/v1/grading/submissions/sub-1/comments/c1",
+        headers: { authorization: "Bearer valid-token" },
+        payload: { content: "Updated" },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.message).toBe("Comment updated");
+    });
+
+    it("should return 403 when editing someone else's comment", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findFirst.mockResolvedValue({
+        id: "c1",
+        centerId: "center-1",
+        submissionId: "sub-1",
+        authorId: "other-teacher",
+        content: "Original",
+        startOffset: null,
+        endOffset: null,
+        originalContextSnippet: null,
+        visibility: "student_facing",
+      });
+
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/api/v1/grading/submissions/sub-1/comments/c1",
+        headers: { authorization: "Bearer valid-token" },
+        payload: { content: "Hijacked" },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+  });
+
+  describe("DELETE /submissions/:submissionId/comments/:commentId", () => {
+    it("should return 200 when deleting own comment", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findFirst.mockResolvedValue({
+        id: "c1",
+        centerId: "center-1",
+        submissionId: "sub-1",
+        authorId: "teacher-1",
+        content: "To delete",
+        startOffset: null,
+        endOffset: null,
+        originalContextSnippet: null,
+        visibility: "student_facing",
+      });
+      mockDb.teacherComment.delete.mockResolvedValue({});
+
+      const response = await app.inject({
+        method: "DELETE",
+        url: "/api/v1/grading/submissions/sub-1/comments/c1",
+        headers: { authorization: "Bearer valid-token" },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.message).toBe("Comment deleted");
+    });
+
+    it("should return 404 when comment not found", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.teacherComment.findFirst.mockResolvedValue(null);
+
+      const response = await app.inject({
+        method: "DELETE",
+        url: "/api/v1/grading/submissions/sub-1/comments/nonexistent",
         headers: { authorization: "Bearer valid-token" },
       });
 

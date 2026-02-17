@@ -1,0 +1,279 @@
+import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@workspace/ui/components/button";
+import { Card, CardContent } from "@workspace/ui/components/card";
+import { Textarea } from "@workspace/ui/components/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@workspace/ui/components/alert-dialog";
+import {
+  Eye,
+  EyeOff,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  User,
+} from "lucide-react";
+import React, { useCallback, useRef, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
+import type { CommentVisibility, TeacherComment } from "@workspace/types";
+import type { AnchorStatus } from "../hooks/use-anchor-validation";
+import { AnchorStatusIndicator } from "./AnchorStatusIndicator";
+
+interface TeacherCommentCardProps {
+  comment: TeacherComment;
+  isAuthor: boolean;
+  isHighlighted?: boolean;
+  onHighlight?: (id: string | null, debounce?: boolean) => void;
+  onEdit: (commentId: string, content: string) => void;
+  onDelete: (commentId: string) => void;
+  onVisibilityChange: (commentId: string, visibility: CommentVisibility) => void;
+  anchorStatus?: AnchorStatus;
+}
+
+function TeacherCommentCardInner({
+  comment,
+  isAuthor,
+  isHighlighted = false,
+  onHighlight,
+  onEdit,
+  onDelete,
+  onVisibilityChange,
+  anchorStatus = "no-anchor",
+}: TeacherCommentCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const touchActiveRef = useRef(false);
+  const suppressMouseRef = useRef(false);
+
+  const hasAnchor = anchorStatus === "valid" || anchorStatus === "drifted";
+  const isOrphaned = anchorStatus === "orphaned";
+  const isPrivate = comment.visibility === "private";
+
+  const handleMouseEnter = useCallback(() => {
+    if (suppressMouseRef.current) return;
+    if (hasAnchor && onHighlight) onHighlight(comment.id, true);
+  }, [hasAnchor, onHighlight, comment.id]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (suppressMouseRef.current) return;
+    if (hasAnchor && onHighlight) onHighlight(null, true);
+  }, [hasAnchor, onHighlight]);
+
+  const handleFocus = useCallback(() => {
+    if (hasAnchor && onHighlight) onHighlight(comment.id, false);
+  }, [hasAnchor, onHighlight, comment.id]);
+
+  const handleBlur = useCallback(() => {
+    if (hasAnchor && onHighlight) onHighlight(null, false);
+  }, [hasAnchor, onHighlight]);
+
+  const handleTouchStart = useCallback(
+    (_e: React.TouchEvent) => {
+      if (!hasAnchor || !onHighlight) return;
+      touchActiveRef.current = !touchActiveRef.current;
+      onHighlight(touchActiveRef.current ? comment.id : null, false);
+      suppressMouseRef.current = true;
+      setTimeout(() => { suppressMouseRef.current = false; }, 400);
+    },
+    [hasAnchor, onHighlight, comment.id],
+  );
+
+  const handleEditSave = useCallback(() => {
+    if (editContent.trim() && editContent !== comment.content) {
+      onEdit(comment.id, editContent.trim());
+    }
+    setIsEditing(false);
+  }, [editContent, comment.content, comment.id, onEdit]);
+
+  const handleEditCancel = useCallback(() => {
+    setEditContent(comment.content);
+    setIsEditing(false);
+  }, [comment.content]);
+
+  const handleEditKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleEditSave();
+      } else if (e.key === "Escape") {
+        handleEditCancel();
+      }
+    },
+    [handleEditSave, handleEditCancel],
+  );
+
+  const toggleVisibility = useCallback(() => {
+    const newVisibility: CommentVisibility =
+      comment.visibility === "private" ? "student_facing" : "private";
+    onVisibilityChange(comment.id, newVisibility);
+  }, [comment.id, comment.visibility, onVisibilityChange]);
+
+  const highlightRing = isHighlighted ? "ring-2 ring-emerald-500" : "";
+  const orphanedOpacity = isOrphaned ? "opacity-75" : "";
+  const privateStyle = isPrivate ? "bg-muted/50 border-dashed" : "";
+  const editingStyle = isEditing ? "ring-2 ring-primary" : "";
+
+  const timestamp = formatDistanceToNow(new Date(comment.createdAt), {
+    addSuffix: true,
+  });
+
+  return (
+    <Card
+      className={`border-l-4 border-l-emerald-500 transition-shadow duration-150 ${highlightRing} ${orphanedOpacity} ${privateStyle} ${editingStyle}`}
+      data-card-id={comment.id}
+      tabIndex={0}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onTouchStart={handleTouchStart}
+    >
+      <CardContent className="p-3">
+        <div className="space-y-2">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="relative shrink-0">
+                <Badge variant="secondary" className="gap-1">
+                  <User className="h-3 w-3" />
+                  Teacher
+                </Badge>
+                <AnchorStatusIndicator anchorStatus={anchorStatus} variant="dot" />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 shrink-0"
+                onClick={toggleVisibility}
+                title={
+                  isPrivate
+                    ? "Private — only you can see this"
+                    : "Visible to student"
+                }
+                aria-label={
+                  isPrivate ? "Make visible to student" : "Make private"
+                }
+              >
+                {isPrivate ? (
+                  <EyeOff className="h-3 w-3 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-3 w-3 text-muted-foreground" />
+                )}
+              </Button>
+              <span className="text-xs text-muted-foreground truncate">
+                {comment.authorName}
+              </span>
+              <span className="text-xs text-muted-foreground">{timestamp}</span>
+            </div>
+            {isAuthor && !isEditing && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setEditContent(comment.content);
+                      setIsEditing(true);
+                    }}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+
+          {isPrivate && (
+            <span className="text-xs text-muted-foreground">Private</span>
+          )}
+
+          {/* Quoted context snippet */}
+          {comment.originalContextSnippet && (
+            <blockquote className="border-l-2 border-muted-foreground/30 pl-2 text-xs italic text-muted-foreground">
+              {comment.originalContextSnippet}
+            </blockquote>
+          )}
+
+          {/* Content / Edit mode */}
+          {isEditing ? (
+            <div className="space-y-2">
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onKeyDown={handleEditKeyDown}
+                maxLength={5000}
+                rows={3}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleEditSave}>
+                  Save
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleEditCancel}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+          )}
+
+          {/* Anchor status */}
+          <AnchorStatusIndicator anchorStatus={anchorStatus} variant="label" />
+        </div>
+      </CardContent>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this comment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onDelete(comment.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  );
+}
+
+export const TeacherCommentCard = React.memo(TeacherCommentCardInner);

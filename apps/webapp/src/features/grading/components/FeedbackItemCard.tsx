@@ -6,8 +6,8 @@ import {
   Link,
   Star,
   MessageCircle,
-  Unlink,
 } from "lucide-react";
+import { AnchorStatusIndicator } from "./AnchorStatusIndicator";
 import React, { useCallback, useRef } from "react";
 import type { AnchorStatus } from "../hooks/use-anchor-validation";
 
@@ -138,12 +138,7 @@ function FeedbackItemCardInner({
         <div className="flex items-start gap-3">
           <div className="relative mt-0.5 shrink-0">
             <Icon className="h-4 w-4 text-muted-foreground" />
-            {anchorStatus === "drifted" && (
-              <span
-                className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-amber-400"
-                title="Text has changed slightly since analysis"
-              />
-            )}
+            <AnchorStatusIndicator anchorStatus={anchorStatus} variant="dot" />
           </div>
           <div className="min-w-0 flex-1 space-y-1.5">
             <p className="text-sm leading-relaxed">{item.content}</p>
@@ -176,12 +171,7 @@ function FeedbackItemCardInner({
               )}
             </div>
 
-            {isOrphaned && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Unlink className="h-3 w-3" />
-                <span>Anchor lost — text changed since analysis</span>
-              </div>
-            )}
+            <AnchorStatusIndicator anchorStatus={anchorStatus} variant="label" />
           </div>
         </div>
       </CardContent>

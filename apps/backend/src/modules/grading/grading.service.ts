@@ -1,7 +1,16 @@
 import { PrismaClient, getTenantedClient } from "@workspace/db";
-import type { AnalysisStatus, GradingQueueFilters } from "@workspace/types";
+import type { AnalysisStatus, CommentVisibility, CreateTeacherComment, GradingQueueFilters, UpdateTeacherComment } from "@workspace/types";
 import { AppError } from "../../errors/app-error.js";
 import { inngest } from "../inngest/client.js";
+
+function mapCommentWithAuthor(comment: { author: { name: string | null; avatarUrl: string | null }; [key: string]: unknown }) {
+  const { author, ...rest } = comment;
+  return {
+    ...rest,
+    authorName: author.name ?? "Unknown",
+    authorAvatarUrl: author.avatarUrl,
+  };
+}
 
 export class GradingService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -134,6 +143,7 @@ export class GradingService {
     submission: Record<string, unknown>;
     analysisStatus: AnalysisStatus;
     feedback: Record<string, unknown> | null;
+    teacherComments: Array<Record<string, unknown>>;
   }> {
     const db = getTenantedClient(this.prisma, centerId);
 
@@ -162,6 +172,14 @@ export class GradingService {
       include: { items: true },
     });
 
+    const teacherComments = await db.teacherComment.findMany({
+      where: { submissionId },
+      include: { author: { select: { name: true, avatarUrl: true } } },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const mappedComments = teacherComments.map(mapCommentWithAuthor);
+
     const analysisStatus = deriveAnalysisStatus(
       submission.assignment.exercise.skill,
       gradingJob?.status ?? null,
@@ -171,6 +189,7 @@ export class GradingService {
       submission: submission as unknown as Record<string, unknown>,
       analysisStatus,
       feedback: feedback as unknown as Record<string, unknown> | null,
+      teacherComments: mappedComments as unknown as Array<Record<string, unknown>>,
     };
   }
 
@@ -265,6 +284,161 @@ export class GradingService {
     }));
 
     return { items, total, page, limit };
+  }
+
+  async createComment(
+    centerId: string,
+    submissionId: string,
+    firebaseUid: string,
+    data: CreateTeacherComment,
+  ) {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const submission = await db.submission.findUnique({
+      where: { id: submissionId },
+      include: {
+        assignment: {
+          include: { class: { select: { teacherId: true } } },
+        },
+      },
+    });
+    if (!submission) throw AppError.notFound("Submission not found");
+
+    const authorId = await this.verifyAccess(db, firebaseUid, submission.assignment.class?.teacherId);
+
+    if (
+      data.startOffset !== null &&
+      data.startOffset !== undefined &&
+      data.endOffset !== null &&
+      data.endOffset !== undefined
+    ) {
+      if (data.startOffset < 0 || data.endOffset < 0) {
+        throw AppError.badRequest("Offsets must be non-negative");
+      }
+      if (data.endOffset <= data.startOffset) {
+        throw AppError.badRequest("endOffset must be greater than startOffset");
+      }
+    }
+
+    const comment = await db.teacherComment.create({
+      data: {
+        centerId,
+        submissionId,
+        authorId,
+        content: data.content,
+        startOffset: data.startOffset ?? null,
+        endOffset: data.endOffset ?? null,
+        originalContextSnippet: data.originalContextSnippet ?? null,
+        visibility: data.visibility,
+      },
+      include: { author: { select: { name: true, avatarUrl: true } } },
+    });
+
+    return mapCommentWithAuthor(comment);
+  }
+
+  async getComments(
+    centerId: string,
+    submissionId: string,
+    firebaseUid: string,
+    visibility?: CommentVisibility,
+  ) {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const submission = await db.submission.findUnique({
+      where: { id: submissionId },
+      include: {
+        assignment: {
+          include: { class: { select: { teacherId: true } } },
+        },
+      },
+    });
+    if (!submission) throw AppError.notFound("Submission not found");
+
+    await this.verifyAccess(db, firebaseUid, submission.assignment.class?.teacherId);
+
+    const comments = await db.teacherComment.findMany({
+      where: {
+        submissionId,
+        ...(visibility ? { visibility } : {}),
+      },
+      include: { author: { select: { name: true, avatarUrl: true } } },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return comments.map(mapCommentWithAuthor);
+  }
+
+  async updateComment(
+    centerId: string,
+    submissionId: string,
+    commentId: string,
+    firebaseUid: string,
+    data: UpdateTeacherComment,
+  ) {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const submission = await db.submission.findUnique({
+      where: { id: submissionId },
+      include: {
+        assignment: {
+          include: { class: { select: { teacherId: true } } },
+        },
+      },
+    });
+    if (!submission) throw AppError.notFound("Submission not found");
+
+    const userId = await this.verifyAccess(db, firebaseUid, submission.assignment.class?.teacherId);
+
+    const comment = await db.teacherComment.findFirst({
+      where: { id: commentId, submissionId },
+    });
+    if (!comment) throw AppError.notFound("Comment not found");
+    if (comment.authorId !== userId) {
+      throw AppError.forbidden("You can only edit your own comments");
+    }
+
+    const updated = await db.teacherComment.update({
+      where: { id: commentId },
+      data: {
+        ...(data.content !== undefined ? { content: data.content } : {}),
+        ...(data.visibility !== undefined ? { visibility: data.visibility } : {}),
+      },
+      include: { author: { select: { name: true, avatarUrl: true } } },
+    });
+
+    return mapCommentWithAuthor(updated);
+  }
+
+  async deleteComment(
+    centerId: string,
+    submissionId: string,
+    commentId: string,
+    firebaseUid: string,
+  ) {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const submission = await db.submission.findUnique({
+      where: { id: submissionId },
+      include: {
+        assignment: {
+          include: { class: { select: { teacherId: true } } },
+        },
+      },
+    });
+    if (!submission) throw AppError.notFound("Submission not found");
+
+    const userId = await this.verifyAccess(db, firebaseUid, submission.assignment.class?.teacherId);
+
+    const comment = await db.teacherComment.findFirst({
+      where: { id: commentId, submissionId },
+    });
+    if (!comment) throw AppError.notFound("Comment not found");
+    if (comment.authorId !== userId) {
+      throw AppError.forbidden("You can only delete your own comments");
+    }
+
+    await db.teacherComment.delete({ where: { id: commentId } });
   }
 
   async getSubmissionFeedback(centerId: string, submissionId: string, firebaseUid: string): Promise<Record<string, unknown>> {

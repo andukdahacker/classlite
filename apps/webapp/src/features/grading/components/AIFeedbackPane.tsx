@@ -1,9 +1,19 @@
 import { Button } from "@workspace/ui/components/button";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
+import { Separator } from "@workspace/ui/components/separator";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { useCallback } from "react";
+import type {
+  CommentVisibility,
+  CreateTeacherComment,
+  TeacherComment,
+  UpdateTeacherComment,
+} from "@workspace/types";
 import { BandScoreCard } from "./BandScoreCard";
 import { FeedbackItemCard } from "./FeedbackItemCard";
+import { TeacherCommentCard } from "./TeacherCommentCard";
+import { AddCommentInput } from "./AddCommentInput";
 import type { AnchorStatus } from "../hooks/use-anchor-validation";
 
 type AnalysisStatus = "not_applicable" | "analyzing" | "ready" | "failed";
@@ -53,6 +63,12 @@ interface AIFeedbackPaneProps {
   anchorStatuses?: Map<string, AnchorStatus>;
   highlightedItemId?: string | null;
   onHighlight?: (id: string | null, debounce?: boolean) => void;
+  teacherComments?: TeacherComment[];
+  currentUserId?: string;
+  onCreateComment?: (data: CreateTeacherComment) => void;
+  onUpdateComment?: (commentId: string, data: UpdateTeacherComment) => void;
+  onDeleteComment?: (commentId: string) => void;
+  isCreatingComment?: boolean;
 }
 
 const TYPE_ORDER: FeedbackType[] = [
@@ -135,6 +151,100 @@ function FailedState({
   );
 }
 
+function TeacherCommentsSection({
+  comments,
+  currentUserId,
+  anchorStatuses,
+  highlightedItemId,
+  onHighlight,
+  onUpdateComment,
+  onDeleteComment,
+  onCreateComment,
+  isCreatingComment,
+}: {
+  comments: TeacherComment[];
+  currentUserId?: string;
+  anchorStatuses?: Map<string, AnchorStatus>;
+  highlightedItemId?: string | null;
+  onHighlight?: (id: string | null, debounce?: boolean) => void;
+  onUpdateComment?: (commentId: string, data: UpdateTeacherComment) => void;
+  onDeleteComment?: (commentId: string) => void;
+  onCreateComment?: (data: CreateTeacherComment) => void;
+  isCreatingComment?: boolean;
+}) {
+  const handleEdit = useCallback(
+    (commentId: string, content: string) => {
+      onUpdateComment?.(commentId, { content });
+    },
+    [onUpdateComment],
+  );
+
+  const handleDelete = useCallback(
+    (commentId: string) => {
+      onDeleteComment?.(commentId);
+    },
+    [onDeleteComment],
+  );
+
+  const handleVisibilityChange = useCallback(
+    (commentId: string, visibility: CommentVisibility) => {
+      onUpdateComment?.(commentId, { visibility });
+    },
+    [onUpdateComment],
+  );
+
+  const handleGeneralComment = useCallback(
+    (content: string, visibility: CommentVisibility) => {
+      onCreateComment?.({
+        content,
+        startOffset: null,
+        endOffset: null,
+        visibility,
+      });
+    },
+    [onCreateComment],
+  );
+
+  return (
+    <>
+      {comments.length > 0 && (
+        <>
+          <div className="flex items-center gap-2 my-3">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">
+              Teacher Comments
+            </span>
+            <Separator className="flex-1" />
+          </div>
+
+          <div className="space-y-2">
+            {comments.map((comment) => (
+              <TeacherCommentCard
+                key={comment.id}
+                comment={comment}
+                isAuthor={comment.authorId === currentUserId}
+                isHighlighted={highlightedItemId === comment.id}
+                onHighlight={onHighlight}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onVisibilityChange={handleVisibilityChange}
+                anchorStatus={anchorStatuses?.get(comment.id)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {onCreateComment && (
+        <AddCommentInput
+          onSubmit={handleGeneralComment}
+          isSubmitting={isCreatingComment ?? false}
+        />
+      )}
+    </>
+  );
+}
+
 export function AIFeedbackPane({
   analysisStatus,
   feedback,
@@ -145,11 +255,32 @@ export function AIFeedbackPane({
   anchorStatuses,
   highlightedItemId,
   onHighlight,
+  teacherComments = [],
+  currentUserId,
+  onCreateComment,
+  onUpdateComment,
+  onDeleteComment,
+  isCreatingComment,
 }: AIFeedbackPaneProps) {
+  const teacherSection = (
+    <TeacherCommentsSection
+      comments={teacherComments}
+      currentUserId={currentUserId}
+      anchorStatuses={anchorStatuses}
+      highlightedItemId={highlightedItemId}
+      onHighlight={onHighlight}
+      onUpdateComment={onUpdateComment}
+      onDeleteComment={onDeleteComment}
+      onCreateComment={onCreateComment}
+      isCreatingComment={isCreatingComment}
+    />
+  );
+
   if (analysisStatus === "analyzing") {
     return (
       <ScrollArea className="h-full">
         <LoadingSkeleton />
+        <div className="px-4 pb-4">{teacherSection}</div>
       </ScrollArea>
     );
   }
@@ -162,6 +293,7 @@ export function AIFeedbackPane({
           onRetrigger={onRetrigger}
           isRetriggering={isRetriggering}
         />
+        <div className="px-4 pb-4">{teacherSection}</div>
       </ScrollArea>
     );
   }
@@ -174,6 +306,7 @@ export function AIFeedbackPane({
             AI analysis completed with no feedback items.
           </p>
         </div>
+        <div className="px-4 pb-4">{teacherSection}</div>
       </ScrollArea>
     );
   }
@@ -216,6 +349,8 @@ export function AIFeedbackPane({
             </div>
           </div>
         ))}
+
+        {teacherSection}
       </div>
     </ScrollArea>
   );

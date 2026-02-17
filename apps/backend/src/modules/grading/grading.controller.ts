@@ -1,4 +1,4 @@
-import type { GradingQueueFilters } from "@workspace/types";
+import type { CommentVisibility, CreateTeacherComment, GradingQueueFilters, UpdateTeacherComment } from "@workspace/types";
 import { GradingService } from "./grading.service.js";
 
 function serializeDates<T extends Record<string, unknown>>(obj: T): T {
@@ -55,6 +55,9 @@ export class GradingController {
         feedback: result.feedback
           ? serializeFeedback(result.feedback as unknown as Record<string, unknown>)
           : null,
+        teacherComments: result.teacherComments.map((c) =>
+          serializeDates(c as unknown as Record<string, unknown>),
+        ),
       },
       message: "Submission detail retrieved",
     };
@@ -73,6 +76,75 @@ export class GradingController {
       data: serializeFeedback(feedback as unknown as Record<string, unknown>),
       message: "Feedback retrieved",
     };
+  }
+
+  async createComment(
+    submissionId: string,
+    user: { uid: string; centerId: string },
+    body: CreateTeacherComment,
+  ) {
+    const comment = await this.service.createComment(
+      user.centerId,
+      submissionId,
+      user.uid,
+      body,
+    );
+    return {
+      data: serializeDates(comment as unknown as Record<string, unknown>),
+      message: "Comment created",
+    };
+  }
+
+  async getComments(
+    submissionId: string,
+    user: { uid: string; centerId: string },
+    visibility?: CommentVisibility,
+  ) {
+    const comments = await this.service.getComments(
+      user.centerId,
+      submissionId,
+      user.uid,
+      visibility,
+    );
+    return {
+      data: comments.map((c) =>
+        serializeDates(c as unknown as Record<string, unknown>),
+      ),
+      message: "Comments retrieved",
+    };
+  }
+
+  async updateComment(
+    submissionId: string,
+    commentId: string,
+    user: { uid: string; centerId: string },
+    body: UpdateTeacherComment,
+  ) {
+    const comment = await this.service.updateComment(
+      user.centerId,
+      submissionId,
+      commentId,
+      user.uid,
+      body,
+    );
+    return {
+      data: serializeDates(comment as unknown as Record<string, unknown>),
+      message: "Comment updated",
+    };
+  }
+
+  async deleteComment(
+    submissionId: string,
+    commentId: string,
+    user: { uid: string; centerId: string },
+  ) {
+    await this.service.deleteComment(
+      user.centerId,
+      submissionId,
+      commentId,
+      user.uid,
+    );
+    return { data: null, message: "Comment deleted" };
   }
 
   async triggerAnalysis(

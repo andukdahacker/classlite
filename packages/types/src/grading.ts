@@ -44,6 +44,9 @@ export const FeedbackSeveritySchema = z.enum([
 ]);
 export type FeedbackSeverity = z.infer<typeof FeedbackSeveritySchema>;
 
+export const CommentVisibilitySchema = z.enum(["private", "student_facing"]);
+export type CommentVisibility = z.infer<typeof CommentVisibilitySchema>;
+
 // --- GradingJob ---
 
 export const GradingJobSchema = z.object({
@@ -107,6 +110,71 @@ export const SubmissionFeedbackSchema = z.object({
   items: z.array(AIFeedbackItemSchema).optional(),
 });
 export type SubmissionFeedback = z.infer<typeof SubmissionFeedbackSchema>;
+
+// --- TeacherComment ---
+
+export const TeacherCommentSchema = z.object({
+  id: z.string(),
+  centerId: z.string(),
+  submissionId: z.string(),
+  authorId: z.string(),
+  authorName: z.string(),
+  authorAvatarUrl: z.string().nullable(),
+  content: z.string(),
+  startOffset: z.number().int().nullable(),
+  endOffset: z.number().int().nullable(),
+  originalContextSnippet: z.string().nullable(),
+  visibility: CommentVisibilitySchema,
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type TeacherComment = z.infer<typeof TeacherCommentSchema>;
+
+export const CreateTeacherCommentSchema = z
+  .object({
+    content: z.string().trim().min(1).max(5000),
+    startOffset: z.number().int().nullable().optional(),
+    endOffset: z.number().int().nullable().optional(),
+    originalContextSnippet: z.string().nullable().optional(),
+    visibility: CommentVisibilitySchema.default("student_facing"),
+  })
+  .refine(
+    (data) => {
+      const hasStart =
+        data.startOffset !== null && data.startOffset !== undefined;
+      const hasEnd = data.endOffset !== null && data.endOffset !== undefined;
+      return hasStart === hasEnd;
+    },
+    {
+      message:
+        "Both startOffset and endOffset must be provided together, or both must be null/omitted",
+    },
+  );
+export type CreateTeacherComment = z.infer<typeof CreateTeacherCommentSchema>;
+
+export const UpdateTeacherCommentSchema = z
+  .object({
+    content: z.string().trim().min(1).max(5000).optional(),
+    visibility: CommentVisibilitySchema.optional(),
+  })
+  .refine((data) => data.content !== undefined || data.visibility !== undefined, {
+    message: "At least one field must be provided",
+  });
+export type UpdateTeacherComment = z.infer<typeof UpdateTeacherCommentSchema>;
+
+export const TeacherCommentResponseSchema = createResponseSchema(
+  TeacherCommentSchema,
+);
+export type TeacherCommentResponse = z.infer<
+  typeof TeacherCommentResponseSchema
+>;
+
+export const TeacherCommentListResponseSchema = createResponseSchema(
+  z.array(TeacherCommentSchema),
+);
+export type TeacherCommentListResponse = z.infer<
+  typeof TeacherCommentListResponseSchema
+>;
 
 // --- AI Response Schema (for Gemini structured output) ---
 
@@ -188,6 +256,7 @@ export const SubmissionDetailSchema = z.object({
   }),
   analysisStatus: AnalysisStatusSchema,
   feedback: SubmissionFeedbackSchema.nullable().optional(),
+  teacherComments: z.array(TeacherCommentSchema).optional(),
 });
 export type SubmissionDetail = z.infer<typeof SubmissionDetailSchema>;
 
