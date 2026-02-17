@@ -114,13 +114,26 @@ export class AttendanceService {
   }
 
   /**
+   * Resolve Firebase UID to internal user ID via AuthAccount lookup.
+   */
+  private async resolveUserId(
+    db: ReturnType<typeof getTenantedClient>,
+    firebaseUid: string,
+  ): Promise<string> {
+    const authAccount = await db.authAccount.findUniqueOrThrow({
+      where: { provider_providerUserId: { provider: "FIREBASE", providerUserId: firebaseUid } },
+    });
+    return authAccount.userId;
+  }
+
+  /**
    * Mark attendance for a single student (upsert)
    */
   async markAttendance(
     centerId: string,
     sessionId: string,
     input: CreateAttendanceInput,
-    markedByUserId: string,
+    firebaseUid: string,
   ): Promise<Attendance> {
     const db = getTenantedClient(this.prisma, centerId);
 
@@ -128,6 +141,8 @@ export class AttendanceService {
     if (!validation.valid) {
       throw new Error(validation.error);
     }
+
+    const markedByUserId = await this.resolveUserId(db, firebaseUid);
 
     const attendance = await db.attendance.upsert({
       where: {
@@ -160,9 +175,11 @@ export class AttendanceService {
     centerId: string,
     sessionId: string,
     input: BulkAttendanceInput,
-    markedByUserId: string,
+    firebaseUid: string,
   ): Promise<{ count: number; markedStudents: string[] }> {
     const db = getTenantedClient(this.prisma, centerId);
+
+    const markedByUserId = await this.resolveUserId(db, firebaseUid);
 
     // Validate session
     const session = await db.classSession.findUnique({

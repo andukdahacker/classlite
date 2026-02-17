@@ -28,6 +28,13 @@ describe("AttendanceService", () => {
         upsert: vi.fn(),
         count: vi.fn(),
       },
+      authAccount: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue({
+          userId: "teacher-789",
+          provider: "FIREBASE",
+          providerUserId: "firebase-teacher-789",
+        }),
+      },
       $transaction: vi.fn(),
     };
 
@@ -42,7 +49,8 @@ describe("AttendanceService", () => {
   describe("markAttendance", () => {
     const sessionId = "session-123";
     const studentId = "student-456";
-    const markedByUserId = "teacher-789";
+    const firebaseUid = "firebase-teacher-789";
+    const resolvedUserId = "teacher-789";
 
     it("should create new attendance record for enrolled student", async () => {
       const mockSession = {
@@ -61,7 +69,7 @@ describe("AttendanceService", () => {
         sessionId,
         studentId,
         status: "PRESENT",
-        markedBy: markedByUserId,
+        markedBy: resolvedUserId,
         centerId,
       });
 
@@ -69,7 +77,7 @@ describe("AttendanceService", () => {
         centerId,
         sessionId,
         { studentId, status: "PRESENT" },
-        markedByUserId,
+        firebaseUid,
       );
 
       expect(result.status).toBe("PRESENT");
@@ -80,12 +88,12 @@ describe("AttendanceService", () => {
             sessionId,
             studentId,
             status: "PRESENT",
-            markedBy: markedByUserId,
+            markedBy: resolvedUserId,
             centerId,
           }),
           update: expect.objectContaining({
             status: "PRESENT",
-            markedBy: markedByUserId,
+            markedBy: resolvedUserId,
           }),
         }),
       );
@@ -108,7 +116,7 @@ describe("AttendanceService", () => {
         sessionId,
         studentId,
         status: "LATE",
-        markedBy: markedByUserId,
+        markedBy: resolvedUserId,
         centerId,
       });
 
@@ -116,7 +124,7 @@ describe("AttendanceService", () => {
         centerId,
         sessionId,
         { studentId, status: "LATE" },
-        markedByUserId,
+        firebaseUid,
       );
 
       expect(result.status).toBe("LATE");
@@ -137,7 +145,7 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { studentId, status: "PRESENT" },
-          markedByUserId,
+          firebaseUid,
         ),
       ).rejects.toThrow("Student is not enrolled in this class");
     });
@@ -156,7 +164,7 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { studentId, status: "PRESENT" },
-          markedByUserId,
+          firebaseUid,
         ),
       ).rejects.toThrow("Cannot mark attendance for future sessions");
     });
@@ -175,7 +183,7 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { studentId, status: "PRESENT" },
-          markedByUserId,
+          firebaseUid,
         ),
       ).rejects.toThrow("Cannot mark attendance for cancelled sessions");
     });
@@ -188,7 +196,7 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { studentId, status: "PRESENT" },
-          markedByUserId,
+          firebaseUid,
         ),
       ).rejects.toThrow("Session not found");
     });
@@ -196,7 +204,8 @@ describe("AttendanceService", () => {
 
   describe("markBulkAttendance", () => {
     const sessionId = "session-123";
-    const markedByUserId = "teacher-789";
+    const firebaseUid = "firebase-teacher-789";
+    const resolvedUserId = "teacher-789";
 
     it("should mark all enrolled students atomically", async () => {
       const mockSession = {
@@ -231,7 +240,7 @@ describe("AttendanceService", () => {
         centerId,
         sessionId,
         { status: "PRESENT" },
-        markedByUserId,
+        firebaseUid,
       );
 
       expect(result.count).toBe(3);
@@ -257,7 +266,7 @@ describe("AttendanceService", () => {
         centerId,
         sessionId,
         { status: "PRESENT" },
-        markedByUserId,
+        firebaseUid,
       );
 
       expect(mockTenantedClient.classStudent.findMany).toHaveBeenCalledWith(
@@ -279,7 +288,7 @@ describe("AttendanceService", () => {
         centerId,
         sessionId,
         { status: "PRESENT" },
-        markedByUserId,
+        firebaseUid,
       );
 
       expect(result.count).toBe(0);
@@ -300,7 +309,7 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { status: "PRESENT" },
-          markedByUserId,
+          firebaseUid,
         ),
       ).rejects.toThrow("Cannot mark attendance for future sessions");
     });
@@ -319,7 +328,7 @@ describe("AttendanceService", () => {
           centerId,
           sessionId,
           { status: "PRESENT" },
-          markedByUserId,
+          firebaseUid,
         ),
       ).rejects.toThrow("Cannot mark attendance for cancelled sessions");
     });
