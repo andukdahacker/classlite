@@ -1,14 +1,18 @@
 import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent } from "@workspace/ui/components/card";
+import { Textarea } from "@workspace/ui/components/textarea";
 import {
   SpellCheck,
   BookOpen,
   Link,
   Star,
   MessageCircle,
+  Check,
+  X,
 } from "lucide-react";
 import { AnchorStatusIndicator } from "./AnchorStatusIndicator";
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { AnchorStatus } from "../hooks/use-anchor-validation";
 
 type FeedbackType =
@@ -29,6 +33,9 @@ interface FeedbackItem {
   originalContextSnippet?: string | null;
   startOffset?: number | null;
   endOffset?: number | null;
+  isApproved?: boolean | null;
+  approvedAt?: string | null;
+  teacherOverrideText?: string | null;
 }
 
 const TYPE_ICONS: Record<FeedbackType, React.ElementType> = {
@@ -59,6 +66,9 @@ interface FeedbackItemCardProps {
   anchorStatus?: AnchorStatus;
   isHighlighted?: boolean;
   onHighlight?: (id: string | null, debounce?: boolean) => void;
+  onApprove?: (itemId: string, isApproved: boolean) => void;
+  onOverrideText?: (itemId: string, text: string | null) => void;
+  isFinalized?: boolean;
 }
 
 function FeedbackItemCardInner({
@@ -66,6 +76,9 @@ function FeedbackItemCardInner({
   anchorStatus = "no-anchor",
   isHighlighted = false,
   onHighlight,
+  onApprove,
+  onOverrideText,
+  isFinalized = false,
 }: FeedbackItemCardProps) {
   const Icon = TYPE_ICONS[item.type] ?? MessageCircle;
   const severityStyle = item.severity
@@ -77,6 +90,10 @@ function FeedbackItemCardInner({
   const isOrphaned = anchorStatus === "orphaned";
   const touchActiveRef = useRef(false);
   const suppressMouseRef = useRef(false);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleMouseEnter = useCallback(() => {
     if (suppressMouseRef.current) return;
@@ -101,12 +118,76 @@ function FeedbackItemCardInner({
       if (!hasAnchor || !onHighlight) return;
       touchActiveRef.current = !touchActiveRef.current;
       onHighlight(touchActiveRef.current ? item.id : null, false);
-      // Suppress synthetic mouse events that follow touch
       suppressMouseRef.current = true;
       setTimeout(() => { suppressMouseRef.current = false; }, 400);
     },
     [hasAnchor, onHighlight, item.id],
   );
+
+  const handleApprove = useCallback(() => {
+    onApprove?.(item.id, true);
+  }, [onApprove, item.id]);
+
+  const handleReject = useCallback(() => {
+    onApprove?.(item.id, false);
+  }, [onApprove, item.id]);
+
+  const handleStartEdit = useCallback(() => {
+    setEditText(item.teacherOverrideText ?? item.content);
+    setIsEditing(true);
+  }, [item.teacherOverrideText, item.content]);
+
+  const handleSaveEdit = useCallback(() => {
+    const trimmed = editText.trim();
+    if (trimmed && trimmed !== item.content) {
+      onOverrideText?.(item.id, trimmed);
+    } else if (!trimmed || trimmed === item.content) {
+      onOverrideText?.(item.id, null);
+    }
+    setIsEditing(false);
+  }, [editText, item.content, item.id, onOverrideText]);
+
+  const handleCancelEdit = useCallback(() => {
+    setIsEditing(false);
+  }, []);
+
+  const handleEditKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleSaveEdit();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        handleCancelEdit();
+      }
+    },
+    [handleSaveEdit, handleCancelEdit],
+  );
+
+  // Keyboard shortcuts on card
+  const handleCardKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (isFinalized) return;
+      const tag = (document.activeElement?.tagName ?? "").toLowerCase();
+      if (tag === "textarea" || tag === "input" || document.activeElement?.getAttribute("contenteditable")) return;
+      if (item.type === "score_suggestion") return;
+
+      if (e.key === "a" || e.key === "A") {
+        e.preventDefault();
+        onApprove?.(item.id, true);
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        onApprove?.(item.id, false);
+      }
+    },
+    [isFinalized, item.type, item.id, onApprove],
+  );
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isEditing]);
 
   // Build aria-label
   const confidenceStr =
@@ -116,14 +197,25 @@ function FeedbackItemCardInner({
     : hasAnchor
       ? ", anchored to text"
       : "";
-  const ariaLabel = `${item.type.replace("_", " ")} ${severity}: ${item.content}${confidenceStr}${anchorStr}`;
+  const approvalStr = item.isApproved === true ? ", approved" : item.isApproved === false ? ", rejected" : "";
+  const ariaLabel = `${item.type.replace("_", " ")} ${severity}: ${item.content}${confidenceStr}${anchorStr}${approvalStr}`;
 
   const highlightRing = isHighlighted ? HIGHLIGHT_RING[severity] : "";
   const orphanedOpacity = isOrphaned ? "opacity-75" : "";
 
+  // Approval state styling
+  const approvalBorder =
+    item.isApproved === true
+      ? "border-l-4 border-l-green-500 bg-green-50/50 dark:bg-green-950/20"
+      : item.isApproved === false
+        ? "opacity-50 border-l-4 border-l-red-300"
+        : "border-l-2 border-l-muted-foreground/20";
+
+  const showApprovalButtons = !isFinalized && item.type !== "score_suggestion" && onApprove;
+
   return (
     <Card
-      className={`border-l-2 border-l-muted-foreground/20 transition-shadow duration-150 ${highlightRing} ${orphanedOpacity}`}
+      className={`transition-shadow duration-150 ${approvalBorder} ${highlightRing} ${orphanedOpacity}`}
       data-card-id={item.id}
       tabIndex={0}
       aria-label={ariaLabel}
@@ -133,6 +225,7 @@ function FeedbackItemCardInner({
       onFocus={handleFocus}
       onBlur={handleBlur}
       onTouchStart={handleTouchStart}
+      onKeyDown={handleCardKeyDown}
     >
       <CardContent className="p-3">
         <div className="flex items-start gap-3">
@@ -141,7 +234,19 @@ function FeedbackItemCardInner({
             <AnchorStatusIndicator anchorStatus={anchorStatus} variant="dot" />
           </div>
           <div className="min-w-0 flex-1 space-y-1.5">
-            <p className="text-sm leading-relaxed">{item.content}</p>
+            {item.teacherOverrideText && !isEditing ? (
+              <>
+                <p className="text-xs text-muted-foreground line-through">
+                  {item.content}
+                </p>
+                <p className="text-sm leading-relaxed">{item.teacherOverrideText}</p>
+                <Badge variant="secondary" className="text-xs">Edited</Badge>
+              </>
+            ) : (
+              <p className={`text-sm leading-relaxed ${item.isApproved === false ? "line-through" : ""}`}>
+                {item.content}
+              </p>
+            )}
 
             {item.suggestedFix && item.originalContextSnippet && (
               <p className="text-xs text-muted-foreground">
@@ -153,6 +258,32 @@ function FeedbackItemCardInner({
                   {item.suggestedFix}
                 </ins>
               </p>
+            )}
+
+            {/* Override text editor */}
+            {isEditing && (
+              <div className="space-y-1">
+                <Textarea
+                  ref={textareaRef}
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={handleEditKeyDown}
+                  onBlur={handleSaveEdit}
+                  rows={2}
+                  maxLength={2000}
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Ctrl+Enter to save, Esc to cancel
+                </p>
+              </div>
+            )}
+
+            {/* Edit button for approved items */}
+            {item.isApproved === true && !isEditing && !isFinalized && onOverrideText && (
+              <Button variant="ghost" size="sm" onClick={handleStartEdit} className="h-6 px-2 text-xs">
+                Edit
+              </Button>
             )}
 
             <div className="flex items-center gap-2">
@@ -168,6 +299,38 @@ function FeedbackItemCardInner({
                 <span className="text-xs text-muted-foreground">
                   {Math.round(item.confidence * 100)}%
                 </span>
+              )}
+
+              {/* Approve/Reject buttons */}
+              {showApprovalButtons && (
+                <div className="flex items-center gap-1 ml-auto">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-7 w-7 ${
+                      item.isApproved === true
+                        ? "bg-green-100 text-green-700"
+                        : "text-green-600 hover:bg-green-100 hover:text-green-700"
+                    }`}
+                    onClick={handleApprove}
+                    aria-label="Approve"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-7 w-7 ${
+                      item.isApproved === false
+                        ? "bg-red-100 text-red-600"
+                        : "text-red-500 hover:bg-red-100 hover:text-red-600"
+                    }`}
+                    onClick={handleReject}
+                    aria-label="Reject"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
             </div>
 

@@ -1,9 +1,10 @@
 import { Button } from "@workspace/ui/components/button";
+import { Badge } from "@workspace/ui/components/badge";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { Separator } from "@workspace/ui/components/separator";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { AlertTriangle, RefreshCw } from "lucide-react";
-import { useCallback } from "react";
+import { AlertTriangle, ArrowRight, CheckCheck, RefreshCw } from "lucide-react";
+import { useCallback, useMemo } from "react";
 import type {
   CommentVisibility,
   CreateTeacherComment,
@@ -34,6 +35,9 @@ interface FeedbackItem {
   originalContextSnippet?: string | null;
   startOffset?: number | null;
   endOffset?: number | null;
+  isApproved?: boolean | null;
+  approvedAt?: string | null;
+  teacherOverrideText?: string | null;
 }
 
 interface CriteriaScores {
@@ -51,6 +55,15 @@ interface Feedback {
   criteriaScores: CriteriaScores | null;
   generalFeedback: string | null;
   items: FeedbackItem[];
+  teacherFinalScore?: number | null;
+  teacherCriteriaScores?: CriteriaScores | null;
+  teacherGeneralFeedback?: string | null;
+}
+
+interface FinalizeGradingInput {
+  teacherFinalScore?: number | null;
+  teacherCriteriaScores?: Record<string, number> | null;
+  teacherGeneralFeedback?: string | null;
 }
 
 interface AIFeedbackPaneProps {
@@ -69,6 +82,15 @@ interface AIFeedbackPaneProps {
   onUpdateComment?: (commentId: string, data: UpdateTeacherComment) => void;
   onDeleteComment?: (commentId: string) => void;
   isCreatingComment?: boolean;
+  onApproveFeedbackItem?: (itemId: string, isApproved: boolean) => void;
+  onOverrideFeedbackText?: (itemId: string, text: string | null) => void;
+  onBulkApprove?: (action: "approve_remaining" | "reject_remaining") => void;
+  onFinalize?: (data: FinalizeGradingInput) => void;
+  isFinalized?: boolean;
+  isFinalizing?: boolean;
+  teacherFinalScore?: number | null;
+  teacherCriteriaScores?: CriteriaScores | null;
+  onScoreChange?: (field: string, value: number | null) => void;
 }
 
 const TYPE_ORDER: FeedbackType[] = [
@@ -245,6 +267,73 @@ function TeacherCommentsSection({
   );
 }
 
+function ApprovalToolbar({
+  items,
+  onBulkApprove,
+  onFinalize,
+  isFinalized,
+  isFinalizing,
+  teacherFinalScore,
+  teacherCriteriaScores,
+}: {
+  items: FeedbackItem[];
+  onBulkApprove?: (action: "approve_remaining" | "reject_remaining") => void;
+  onFinalize?: (data: FinalizeGradingInput) => void;
+  isFinalized?: boolean;
+  isFinalizing?: boolean;
+  teacherFinalScore?: number | null;
+  teacherCriteriaScores?: CriteriaScores | null;
+}) {
+  const approvedCount = items.filter((i) => i.isApproved !== null && i.isApproved !== undefined).length;
+  const totalItems = items.length;
+  const hasPending = approvedCount < totalItems;
+
+  const handleFinalize = useCallback(() => {
+    onFinalize?.({
+      teacherFinalScore,
+      teacherCriteriaScores: teacherCriteriaScores as Record<string, number> | null,
+      teacherGeneralFeedback: null,
+    });
+  }, [onFinalize, teacherFinalScore, teacherCriteriaScores]);
+
+  if (isFinalized) {
+    return (
+      <div className="border-t bg-background p-3 flex items-center justify-center shrink-0">
+        <Badge variant="secondary">Graded</Badge>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t bg-background p-3 flex items-center gap-2 shrink-0">
+      <span className="text-xs text-muted-foreground">
+        {approvedCount}/{totalItems} reviewed
+      </span>
+      {onBulkApprove && hasPending && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onBulkApprove("approve_remaining")}
+        >
+          <CheckCheck className="mr-1 h-3.5 w-3.5" />
+          Approve All
+        </Button>
+      )}
+      {onFinalize && (
+        <Button
+          size="sm"
+          className="ml-auto bg-primary"
+          onClick={handleFinalize}
+          disabled={isFinalizing}
+        >
+          Approve & Next
+          <ArrowRight className="ml-1 h-3.5 w-3.5" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export function AIFeedbackPane({
   analysisStatus,
   feedback,
@@ -261,6 +350,15 @@ export function AIFeedbackPane({
   onUpdateComment,
   onDeleteComment,
   isCreatingComment,
+  onApproveFeedbackItem,
+  onOverrideFeedbackText,
+  onBulkApprove,
+  onFinalize,
+  isFinalized = false,
+  isFinalizing = false,
+  teacherFinalScore,
+  teacherCriteriaScores,
+  onScoreChange,
 }: AIFeedbackPaneProps) {
   const teacherSection = (
     <TeacherCommentsSection
@@ -275,6 +373,8 @@ export function AIFeedbackPane({
       isCreatingComment={isCreatingComment}
     />
   );
+
+  const feedbackItems = useMemo(() => feedback?.items ?? [], [feedback?.items]);
 
   if (analysisStatus === "analyzing") {
     return (
@@ -300,58 +400,89 @@ export function AIFeedbackPane({
 
   if (!feedback) {
     return (
-      <ScrollArea className="h-full">
-        <div className="flex flex-col items-center justify-center gap-2 p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            AI analysis completed with no feedback items.
-          </p>
-        </div>
-        <div className="px-4 pb-4">{teacherSection}</div>
-      </ScrollArea>
+      <div className="flex h-full flex-col">
+        <ScrollArea className="flex-1">
+          <div className="flex flex-col items-center justify-center gap-2 p-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              AI analysis completed with no feedback items.
+            </p>
+          </div>
+          <div className="px-4 pb-4">{teacherSection}</div>
+        </ScrollArea>
+        {onFinalize && (
+          <ApprovalToolbar
+            items={[]}
+            onFinalize={onFinalize}
+            isFinalized={isFinalized}
+            isFinalizing={isFinalizing}
+            teacherFinalScore={teacherFinalScore}
+            teacherCriteriaScores={teacherCriteriaScores}
+          />
+        )}
+      </div>
     );
   }
 
-  const groups = groupByType(feedback.items);
+  const groups = groupByType(feedbackItems);
 
   return (
-    <ScrollArea className="h-full">
-      <div className="space-y-4 p-4">
-        <BandScoreCard
-          overallScore={feedback.overallScore}
-          criteriaScores={feedback.criteriaScores}
-          skill={skill}
-        />
+    <div className="flex h-full flex-col">
+      <ScrollArea className="flex-1">
+        <div className="space-y-4 p-4">
+          <BandScoreCard
+            overallScore={feedback.overallScore}
+            criteriaScores={feedback.criteriaScores}
+            skill={skill}
+            teacherFinalScore={teacherFinalScore}
+            teacherCriteriaScores={teacherCriteriaScores}
+            onScoreChange={onScoreChange}
+            isFinalized={isFinalized}
+          />
 
-        {feedback.generalFeedback && (
-          <div className="rounded-lg border p-3">
-            <h3 className="mb-1.5 text-sm font-medium">General Feedback</h3>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {feedback.generalFeedback}
-            </p>
-          </div>
-        )}
-
-        {groups.map((group) => (
-          <div key={group.type}>
-            <h3 className="mb-2 text-sm font-medium">
-              {group.label} ({group.items.length})
-            </h3>
-            <div className="space-y-2">
-              {group.items.map((item) => (
-                <FeedbackItemCard
-                  key={item.id}
-                  item={item}
-                  anchorStatus={anchorStatuses?.get(item.id)}
-                  isHighlighted={highlightedItemId === item.id}
-                  onHighlight={onHighlight}
-                />
-              ))}
+          {feedback.generalFeedback && (
+            <div className="rounded-lg border p-3">
+              <h3 className="mb-1.5 text-sm font-medium">General Feedback</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {feedback.generalFeedback}
+              </p>
             </div>
-          </div>
-        ))}
+          )}
 
-        {teacherSection}
-      </div>
-    </ScrollArea>
+          {groups.map((group) => (
+            <div key={group.type}>
+              <h3 className="mb-2 text-sm font-medium">
+                {group.label} ({group.items.length})
+              </h3>
+              <div className="space-y-2">
+                {group.items.map((item) => (
+                  <FeedbackItemCard
+                    key={item.id}
+                    item={item}
+                    anchorStatus={anchorStatuses?.get(item.id)}
+                    isHighlighted={highlightedItemId === item.id}
+                    onHighlight={onHighlight}
+                    onApprove={onApproveFeedbackItem}
+                    onOverrideText={onOverrideFeedbackText}
+                    isFinalized={isFinalized}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {teacherSection}
+        </div>
+      </ScrollArea>
+
+      <ApprovalToolbar
+        items={feedbackItems}
+        onBulkApprove={onBulkApprove}
+        onFinalize={onFinalize}
+        isFinalized={isFinalized}
+        isFinalizing={isFinalizing}
+        teacherFinalScore={teacherFinalScore}
+        teacherCriteriaScores={teacherCriteriaScores}
+      />
+    </div>
   );
 }

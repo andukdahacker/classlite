@@ -1,4 +1,4 @@
-import type { CommentVisibility, CreateTeacherComment, GradingQueueFilters, UpdateTeacherComment } from "@workspace/types";
+import type { ApproveFeedbackItem, BulkApproveFeedbackItems, CommentVisibility, CreateTeacherComment, FinalizeGrading, GradingQueueFilters, UpdateTeacherComment } from "@workspace/types";
 import { GradingService } from "./grading.service.js";
 
 function serializeDates<T extends Record<string, unknown>>(obj: T): T {
@@ -159,6 +159,62 @@ export class GradingController {
     return {
       data: serializeDates(job as unknown as Record<string, unknown>),
       message: "AI analysis triggered",
+    };
+  }
+
+  async approveFeedbackItem(
+    centerId: string,
+    submissionId: string,
+    itemId: string,
+    firebaseUid: string,
+    body: ApproveFeedbackItem,
+  ) {
+    const item = await this.service.approveFeedbackItem(
+      centerId,
+      submissionId,
+      itemId,
+      firebaseUid,
+      body,
+    );
+    return {
+      data: serializeDates(item as unknown as Record<string, unknown>),
+      message: "Feedback item updated",
+    };
+  }
+
+  async bulkApproveFeedbackItems(
+    centerId: string,
+    submissionId: string,
+    firebaseUid: string,
+    body: BulkApproveFeedbackItems,
+  ) {
+    const result = await this.service.bulkApproveFeedbackItems(
+      centerId,
+      submissionId,
+      firebaseUid,
+      body,
+    );
+    return {
+      data: result,
+      message: `${result.count} items updated`,
+    };
+  }
+
+  async finalizeGrading(
+    centerId: string,
+    submissionId: string,
+    firebaseUid: string,
+    body: FinalizeGrading,
+  ) {
+    const result = await this.service.finalizeGrading(
+      centerId,
+      submissionId,
+      firebaseUid,
+      body,
+    );
+    return {
+      data: result,
+      message: "Grading finalized",
     };
   }
 }

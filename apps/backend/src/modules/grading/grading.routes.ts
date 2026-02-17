@@ -10,6 +10,11 @@ import {
   TeacherCommentResponseSchema,
   TeacherCommentListResponseSchema,
   CommentVisibilitySchema,
+  ApproveFeedbackItemSchema,
+  BulkApproveFeedbackItemsSchema,
+  FinalizeGradingSchema,
+  FinalizeGradingResponseSchema,
+  AIFeedbackItemSchema,
 } from "@workspace/types";
 import { FastifyInstance, FastifyReply } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -270,6 +275,113 @@ export async function gradingRoutes(fastify: FastifyInstance) {
           submissionId,
           commentId,
           { uid: payload.uid, centerId: payload.centerId },
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        return handleRouteError(error, request, reply);
+      }
+    },
+  });
+
+  // PATCH /submissions/:submissionId/feedback/items/bulk — Bulk approve/reject remaining items
+  api.patch("/submissions/:submissionId/feedback/items/bulk", {
+    schema: {
+      params: z.object({ submissionId: z.string() }),
+      body: BulkApproveFeedbackItemsSchema,
+      response: {
+        200: z.object({ data: z.object({ count: z.number() }), message: z.string() }),
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["TEACHER", "ADMIN", "OWNER"])],
+    handler: async (request, reply) => {
+      try {
+        const payload = request.jwtPayload!;
+        if (!payload.centerId) {
+          return reply.status(400).send({ message: "User does not belong to a center" });
+        }
+        const { submissionId } = request.params as { submissionId: string };
+        const result = await controller.bulkApproveFeedbackItems(
+          payload.centerId,
+          submissionId,
+          payload.uid,
+          request.body as z.infer<typeof BulkApproveFeedbackItemsSchema>,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        return handleRouteError(error, request, reply);
+      }
+    },
+  });
+
+  // PATCH /submissions/:submissionId/feedback/items/:itemId — Approve/reject single AI feedback item
+  api.patch("/submissions/:submissionId/feedback/items/:itemId", {
+    schema: {
+      params: z.object({ submissionId: z.string(), itemId: z.string() }),
+      body: ApproveFeedbackItemSchema,
+      response: {
+        200: z.object({ data: AIFeedbackItemSchema, message: z.string() }),
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["TEACHER", "ADMIN", "OWNER"])],
+    handler: async (request, reply) => {
+      try {
+        const payload = request.jwtPayload!;
+        if (!payload.centerId) {
+          return reply.status(400).send({ message: "User does not belong to a center" });
+        }
+        const { submissionId, itemId } = request.params as { submissionId: string; itemId: string };
+        const result = await controller.approveFeedbackItem(
+          payload.centerId,
+          submissionId,
+          itemId,
+          payload.uid,
+          request.body as z.infer<typeof ApproveFeedbackItemSchema>,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        return handleRouteError(error, request, reply);
+      }
+    },
+  });
+
+  // POST /submissions/:submissionId/finalize — Finalize grading
+  api.post("/submissions/:submissionId/finalize", {
+    schema: {
+      params: z.object({ submissionId: z.string() }),
+      body: FinalizeGradingSchema,
+      response: {
+        200: FinalizeGradingResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        409: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["TEACHER", "ADMIN", "OWNER"])],
+    handler: async (request, reply) => {
+      try {
+        const payload = request.jwtPayload!;
+        if (!payload.centerId) {
+          return reply.status(400).send({ message: "User does not belong to a center" });
+        }
+        const { submissionId } = request.params as { submissionId: string };
+        const result = await controller.finalizeGrading(
+          payload.centerId,
+          submissionId,
+          payload.uid,
+          request.body as z.infer<typeof FinalizeGradingSchema>,
         );
         return reply.send(result);
       } catch (error: unknown) {

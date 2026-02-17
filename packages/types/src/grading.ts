@@ -268,3 +268,33 @@ export type SubmissionFeedbackResponse = z.infer<typeof SubmissionFeedbackRespon
 
 export const GradingJobResponseSchema = createResponseSchema(GradingJobSchema);
 export type GradingJobResponse = z.infer<typeof GradingJobResponseSchema>;
+
+// --- Feedback Approval Schemas (Story 5.4) ---
+
+export const ApproveFeedbackItemSchema = z.object({
+  isApproved: z.boolean(),
+  teacherOverrideText: z.string().max(2000).nullable().optional(),
+});
+export type ApproveFeedbackItem = z.infer<typeof ApproveFeedbackItemSchema>;
+
+export const BulkApproveFeedbackItemsSchema = z.object({
+  action: z.enum(["approve_remaining", "reject_remaining"]),
+});
+export type BulkApproveFeedbackItems = z.infer<typeof BulkApproveFeedbackItemsSchema>;
+
+export const FinalizeGradingSchema = z.object({
+  teacherFinalScore: z.number().min(0).max(9).step(0.5).nullable().optional(),
+  teacherCriteriaScores: CriteriaScoresSchema.nullable().optional(),
+  teacherGeneralFeedback: z.string().max(5000).trim().nullable().optional(),
+});
+export type FinalizeGrading = z.infer<typeof FinalizeGradingSchema>;
+
+export const FinalizeGradingResponseSchema = createResponseSchema(
+  z.object({
+    submissionId: z.string(),
+    status: z.literal("GRADED"),
+    teacherFinalScore: z.number().nullable(),
+    nextSubmissionId: z.string().nullable(),
+  }),
+);
+export type FinalizeGradingResponse = z.infer<typeof FinalizeGradingResponseSchema>;

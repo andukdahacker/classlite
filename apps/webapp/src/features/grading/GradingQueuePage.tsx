@@ -12,7 +12,9 @@ import { useNavigate, useParams } from "react-router";
 import type { TeacherComment } from "@workspace/types";
 import { useAuth } from "@/features/auth/auth-context";
 import { AIFeedbackPane } from "./components/AIFeedbackPane";
+import { BreatherCard } from "./components/BreatherCard";
 import { ConnectionLineOverlay } from "./components/ConnectionLineOverlay";
+import { StampedAnimation } from "./components/StampedAnimation";
 import { StudentWorkPane } from "./components/StudentWorkPane";
 import { SubmissionNav } from "./components/SubmissionNav";
 import { WorkbenchLayout } from "./components/WorkbenchLayout";
@@ -22,14 +24,18 @@ import {
   HighlightProvider,
   useHighlightState,
 } from "./hooks/use-highlight-context";
-import { useGradingQueue } from "./hooks/use-grading-queue";
+import { useApproveFeedbackItem } from "./hooks/use-approve-feedback-item";
+import { useBulkApprove } from "./hooks/use-bulk-approve";
 import { useCreateComment } from "./hooks/use-create-comment";
-import { useUpdateComment } from "./hooks/use-update-comment";
 import { useDeleteComment } from "./hooks/use-delete-comment";
+import { useFinalizeGrading } from "./hooks/use-finalize-grading";
+import { useGradingQueue } from "./hooks/use-grading-queue";
+import { useGradingShortcuts } from "./hooks/use-grading-shortcuts";
 import { useMediaQuery } from "./hooks/use-media-query";
 import { usePrefetchSubmission } from "./hooks/use-prefetch-submission";
 import { useRetriggerAnalysis } from "./hooks/use-retrigger-analysis";
 import { useSubmissionDetail } from "./hooks/use-submission-detail";
+import { useUpdateComment } from "./hooks/use-update-comment";
 
 function formatRelativeTime(dateStr: string | null): string {
   if (!dateStr) return "No date";
@@ -83,7 +89,6 @@ function GradingQueuePageInner() {
         return;
       }
     }
-    // Auto-select first "ready" submission, or first item
     const readyIdx = queueItems.findIndex(
       (item) => item.analysisStatus === "ready",
     );
@@ -117,25 +122,27 @@ function GradingQueuePageInner() {
   const updateComment = useUpdateComment(activeSubmissionId ?? "");
   const deleteComment = useDeleteComment(activeSubmissionId ?? "");
 
-  // Navigation handlers
-  const navigateTo = useCallback(
-    (idx: number) => {
-      setCurrentIndex(idx);
-      const id = submissionIds[idx];
-      if (id) {
-        navigate(`/${centerId}/dashboard/grading/${id}`, { replace: true });
-      }
-    },
-    [submissionIds, centerId, navigate],
-  );
+  // Approval mutations
+  const approveFeedbackItem = useApproveFeedbackItem(activeSubmissionId ?? "");
+  const bulkApprove = useBulkApprove(activeSubmissionId ?? "");
+  const finalizeGrading = useFinalizeGrading(activeSubmissionId ?? "");
 
-  const handlePrev = useCallback(() => {
-    if (currentIndex > 0) navigateTo(currentIndex - 1);
-  }, [currentIndex, navigateTo]);
+  // Teacher score override state
+  const [teacherFinalScore, setTeacherFinalScore] = useState<number | null>(null);
+  const [teacherCriteriaScores, setTeacherCriteriaScores] = useState<Record<string, number> | null>(null);
 
-  const handleNext = useCallback(() => {
-    if (currentIndex < submissionIds.length - 1) navigateTo(currentIndex + 1);
-  }, [currentIndex, submissionIds.length, navigateTo]);
+  // Stamped animation state
+  const [showStamped, setShowStamped] = useState(false);
+
+  // Session tracking state
+  const [sessionGradedCount, setSessionGradedCount] = useState(0);
+  const [sessionApprovedCount, setSessionApprovedCount] = useState(0);
+  const [sessionRejectedCount, setSessionRejectedCount] = useState(0);
+  const [showBreather, setShowBreather] = useState(false);
+  const [sessionStartTime] = useState(Date.now());
+
+  // Pending navigation target after animation
+  const pendingNavRef = useRef<string | null>(null);
 
   // Build detail content
   const detail = detailData?.data;
@@ -143,6 +150,16 @@ function GradingQueuePageInner() {
   const analysisStatus = detail?.analysisStatus ?? "not_applicable";
   const feedback = detail?.feedback;
   const currentQueueItem = queueItems[currentIndex];
+
+  // Reset teacher overrides when submission changes
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fb = feedback as any;
+    setTeacherFinalScore(fb?.teacherFinalScore ?? null);
+    setTeacherCriteriaScores(fb?.teacherCriteriaScores ?? null);
+  }, [activeSubmissionId, feedback]);
+
+  const isFinalized = submission?.status === "GRADED";
 
   const studentName = currentQueueItem?.studentName ?? "Unknown Student";
   const assignmentTitle =
@@ -164,7 +181,6 @@ function GradingQueuePageInner() {
     [submission?.answers],
   );
 
-  // Build concatenated student text for anchor validation
   const concatenatedStudentText = useMemo(() => {
     return answers
       .map((a) =>
@@ -173,19 +189,16 @@ function GradingQueuePageInner() {
       .join(ANSWER_SEPARATOR);
   }, [answers, skill]);
 
-  // Feedback items from API
   const feedbackItems = useMemo(
     () => feedback?.items ?? [],
     [feedback?.items],
   );
 
-  // Teacher comments from detail
   const teacherComments = useMemo(
     () => (detail?.teacherComments ?? []) as TeacherComment[],
     [detail?.teacherComments],
   );
 
-  // Compute anchor statuses per feedback item AND teacher comment
   const anchorStatuses = useMemo(() => {
     const map = new Map<string, AnchorStatus>();
     for (const item of feedbackItems) {
@@ -211,7 +224,39 @@ function GradingQueuePageInner() {
     return map;
   }, [feedbackItems, teacherComments, concatenatedStudentText]);
 
-  // Stable highlight callback — debounce param passed through from card
+  // Navigation handlers
+  const navigateTo = useCallback(
+    (idx: number) => {
+      setCurrentIndex(idx);
+      const id = submissionIds[idx];
+      if (id) {
+        navigate(`/${centerId}/dashboard/grading/${id}`, { replace: true });
+      }
+    },
+    [submissionIds, centerId, navigate],
+  );
+
+  const navigateToSubmission = useCallback(
+    (id: string) => {
+      const idx = submissionIds.indexOf(id);
+      if (idx >= 0) {
+        navigateTo(idx);
+      } else {
+        navigate(`/${centerId}/dashboard/grading/${id}`, { replace: true });
+      }
+    },
+    [submissionIds, navigateTo, centerId, navigate],
+  );
+
+  const handlePrev = useCallback(() => {
+    if (currentIndex > 0) navigateTo(currentIndex - 1);
+  }, [currentIndex, navigateTo]);
+
+  const handleNext = useCallback(() => {
+    if (currentIndex < submissionIds.length - 1) navigateTo(currentIndex + 1);
+  }, [currentIndex, submissionIds.length, navigateTo]);
+
+  // Stable highlight callback
   const handleHighlight = useCallback(
     (id: string | null, debounce = true) => {
       setHighlightedItemId(id, debounce);
@@ -219,16 +264,154 @@ function GradingQueuePageInner() {
     [setHighlightedItemId],
   );
 
-  // Get severity of currently highlighted item for the connection line
   const highlightedSeverity = useMemo(() => {
     if (!highlightedItemId) return null;
     const item = feedbackItems.find((i) => i.id === highlightedItemId);
     if (item) return (item.severity as "error" | "warning" | "suggestion") ?? null;
-    // Check if it's a teacher comment — return null severity (emerald)
     const isTeacherComment = teacherComments.some((c) => c.id === highlightedItemId);
     if (isTeacherComment) return null;
     return null;
   }, [highlightedItemId, feedbackItems, teacherComments]);
+
+  // Score change handler
+  const handleScoreChange = useCallback(
+    (field: string, value: number | null) => {
+      if (field === "overall") {
+        setTeacherFinalScore(value);
+      } else if (value != null) {
+        setTeacherCriteriaScores((prev) => ({ ...prev, [field]: value }));
+      } else {
+        setTeacherCriteriaScores((prev) => {
+          if (!prev) return prev;
+          const next = { ...prev };
+          delete next[field];
+          return Object.keys(next).length > 0 ? next : null;
+        });
+      }
+    },
+    [],
+  );
+
+  // Approve feedback item handler
+  const handleApproveFeedbackItem = useCallback(
+    (itemId: string, isApproved: boolean) => {
+      approveFeedbackItem.mutate({ itemId, data: { isApproved } });
+    },
+    [approveFeedbackItem],
+  );
+
+  // Override feedback text handler
+  const handleOverrideFeedbackText = useCallback(
+    (itemId: string, text: string | null) => {
+      approveFeedbackItem.mutate({
+        itemId,
+        data: { isApproved: true, teacherOverrideText: text },
+      });
+    },
+    [approveFeedbackItem],
+  );
+
+  // Bulk approve handler
+  const handleBulkApprove = useCallback(
+    (action: "approve_remaining" | "reject_remaining") => {
+      bulkApprove.mutate({ action });
+    },
+    [bulkApprove],
+  );
+
+  // Finalize handler
+  const handleFinalize = useCallback(
+    async (data: {
+      teacherFinalScore?: number | null;
+      teacherCriteriaScores?: Record<string, number> | null;
+      teacherGeneralFeedback?: string | null;
+    }) => {
+      try {
+        const result = await finalizeGrading.mutateAsync(data);
+        const nextSubId = result?.data?.nextSubmissionId ?? null;
+
+        // Count approved/rejected items for session tracking
+        const items = feedbackItems as Array<{ isApproved?: boolean | null }>;
+        const approved = items.filter((i) => i.isApproved === true).length;
+        const rejected = items.filter((i) => i.isApproved === false).length;
+        // Add remaining as approved (auto-approved by finalize)
+        const pending = items.filter((i) => i.isApproved == null).length;
+
+        setSessionApprovedCount((prev) => prev + approved + pending);
+        setSessionRejectedCount((prev) => prev + rejected);
+
+        const newGradedCount = sessionGradedCount + 1;
+        setSessionGradedCount(newGradedCount);
+
+        pendingNavRef.current = nextSubId;
+
+        // Show stamped animation
+        setShowStamped(true);
+      } catch {
+        // Error handled by mutation hook
+      }
+    },
+    [finalizeGrading, feedbackItems, sessionGradedCount],
+  );
+
+  // Handle stamped animation complete
+  const handleStampedComplete = useCallback(() => {
+    setShowStamped(false);
+
+    // Check if breather should show
+    if (sessionGradedCount > 0 && sessionGradedCount % 5 === 0) {
+      setShowBreather(true);
+      return;
+    }
+
+    // Navigate to next submission
+    const nextSubId = pendingNavRef.current;
+    pendingNavRef.current = null;
+    if (nextSubId) {
+      navigateToSubmission(nextSubId);
+    }
+  }, [sessionGradedCount, navigateToSubmission]);
+
+  // Handle breather continue
+  const handleBreatherContinue = useCallback(() => {
+    setShowBreather(false);
+    const nextSubId = pendingNavRef.current;
+    pendingNavRef.current = null;
+    if (nextSubId) {
+      navigateToSubmission(nextSubId);
+    }
+  }, [navigateToSubmission]);
+
+  // Keyboard shortcut handlers
+  const handleShortcutApprove = useCallback(
+    (itemId: string) => handleApproveFeedbackItem(itemId, true),
+    [handleApproveFeedbackItem],
+  );
+
+  const handleShortcutReject = useCallback(
+    (itemId: string) => handleApproveFeedbackItem(itemId, false),
+    [handleApproveFeedbackItem],
+  );
+
+  const handleShortcutFinalize = useCallback(() => {
+    if (isFinalized || finalizeGrading.isPending) return;
+    handleFinalize({
+      teacherFinalScore,
+      teacherCriteriaScores,
+      teacherGeneralFeedback: null,
+    });
+  }, [isFinalized, finalizeGrading.isPending, handleFinalize, teacherFinalScore, teacherCriteriaScores]);
+
+  // Register keyboard shortcuts — navigation works even on finalized submissions
+  useGradingShortcuts({
+    onApproveItem: isFinalized ? undefined : handleShortcutApprove,
+    onRejectItem: isFinalized ? undefined : handleShortcutReject,
+    onFinalize: isFinalized ? undefined : handleShortcutFinalize,
+    onNextSubmission: handleNext,
+    onPrevSubmission: handlePrev,
+    highlightedItemId,
+    enabled: !showBreather && !showStamped,
+  });
 
   // Loading state
   if (isQueueLoading) {
@@ -300,8 +483,24 @@ function GradingQueuePageInner() {
     );
   }
 
+  // Breather overlay
+  if (showBreather) {
+    return (
+      <BreatherCard
+        sessionGradedCount={sessionGradedCount}
+        sessionApprovedCount={sessionApprovedCount}
+        sessionRejectedCount={sessionRejectedCount}
+        sessionStartTime={sessionStartTime}
+        onContinue={handleBreatherContinue}
+      />
+    );
+  }
+
   return (
     <div className="flex h-full flex-col">
+      {/* Stamped animation overlay */}
+      <StampedAnimation isVisible={showStamped} onComplete={handleStampedComplete} />
+
       {/* Workbench header */}
       <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3">
         <span className="font-medium">{studentName}</span>
@@ -317,6 +516,9 @@ function GradingQueuePageInner() {
         <span className="text-xs text-muted-foreground">
           {formatRelativeTime(submittedAt ?? null)}
         </span>
+        {isFinalized && (
+          <Badge variant="secondary" className="ml-auto">Graded</Badge>
+        )}
       </div>
 
       {/* Navigation */}
@@ -388,6 +590,9 @@ function GradingQueuePageInner() {
                       criteriaScores: feedback.criteriaScores ?? null,
                       generalFeedback: feedback.generalFeedback ?? null,
                       items: feedback.items ?? [],
+                      teacherFinalScore: (feedback as Record<string, unknown>).teacherFinalScore as number | null | undefined,
+                      teacherCriteriaScores: (feedback as Record<string, unknown>).teacherCriteriaScores as Record<string, number> | null | undefined,
+                      teacherGeneralFeedback: (feedback as Record<string, unknown>).teacherGeneralFeedback as string | null | undefined,
                     }
                   : null
               }
@@ -406,6 +611,15 @@ function GradingQueuePageInner() {
               }
               onDeleteComment={(commentId) => deleteComment.mutate(commentId)}
               isCreatingComment={createComment.isPending}
+              onApproveFeedbackItem={handleApproveFeedbackItem}
+              onOverrideFeedbackText={handleOverrideFeedbackText}
+              onBulkApprove={handleBulkApprove}
+              onFinalize={handleFinalize}
+              isFinalized={isFinalized}
+              isFinalizing={finalizeGrading.isPending}
+              teacherFinalScore={teacherFinalScore}
+              teacherCriteriaScores={teacherCriteriaScores as Record<string, number> | null}
+              onScoreChange={handleScoreChange}
             />
           }
         />

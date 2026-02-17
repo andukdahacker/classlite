@@ -1,5 +1,5 @@
 import { PrismaClient, getTenantedClient } from "@workspace/db";
-import type { AnalysisStatus, CommentVisibility, CreateTeacherComment, GradingQueueFilters, UpdateTeacherComment } from "@workspace/types";
+import type { AnalysisStatus, ApproveFeedbackItem, BulkApproveFeedbackItems, CommentVisibility, CreateTeacherComment, FinalizeGrading, GradingQueueFilters, UpdateTeacherComment } from "@workspace/types";
 import { AppError } from "../../errors/app-error.js";
 import { inngest } from "../inngest/client.js";
 
@@ -465,6 +465,174 @@ export class GradingService {
     if (!feedback) throw AppError.notFound("No feedback available for this submission");
 
     return feedback as unknown as Record<string, unknown>;
+  }
+
+  async approveFeedbackItem(
+    centerId: string,
+    submissionId: string,
+    itemId: string,
+    firebaseUid: string,
+    data: ApproveFeedbackItem,
+  ) {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const submission = await db.submission.findUnique({
+      where: { id: submissionId },
+      include: {
+        assignment: {
+          include: { class: { select: { teacherId: true } } },
+        },
+      },
+    });
+    if (!submission) throw AppError.notFound("Submission not found");
+
+    await this.verifyAccess(db, firebaseUid, submission.assignment.class?.teacherId);
+
+    const item = await db.aIFeedbackItem.findFirst({
+      where: {
+        id: itemId,
+        submissionFeedback: { submissionId },
+      },
+    });
+    if (!item) throw AppError.notFound("Feedback item not found");
+
+    const updated = await db.aIFeedbackItem.update({
+      where: { id: itemId },
+      data: {
+        isApproved: data.isApproved,
+        approvedAt: data.isApproved ? new Date() : null,
+        teacherOverrideText: data.teacherOverrideText !== undefined ? data.teacherOverrideText : item.teacherOverrideText,
+      },
+    });
+
+    return updated;
+  }
+
+  async bulkApproveFeedbackItems(
+    centerId: string,
+    submissionId: string,
+    firebaseUid: string,
+    data: BulkApproveFeedbackItems,
+  ) {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const submission = await db.submission.findUnique({
+      where: { id: submissionId },
+      include: {
+        assignment: {
+          include: { class: { select: { teacherId: true } } },
+        },
+      },
+    });
+    if (!submission) throw AppError.notFound("Submission not found");
+
+    await this.verifyAccess(db, firebaseUid, submission.assignment.class?.teacherId);
+
+    const feedback = await db.submissionFeedback.findFirst({
+      where: { submissionId },
+    });
+    if (!feedback) throw AppError.notFound("No feedback found for this submission");
+
+    const result = await db.aIFeedbackItem.updateMany({
+      where: {
+        submissionFeedbackId: feedback.id,
+        isApproved: null,
+      },
+      data: {
+        isApproved: data.action === "approve_remaining",
+        approvedAt: data.action === "approve_remaining" ? new Date() : null,
+      },
+    });
+
+    return { count: result.count };
+  }
+
+  async finalizeGrading(
+    centerId: string,
+    submissionId: string,
+    firebaseUid: string,
+    data: FinalizeGrading,
+  ) {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const submission = await db.submission.findUnique({
+      where: { id: submissionId },
+      include: {
+        assignment: {
+          include: { class: { select: { teacherId: true } } },
+        },
+      },
+    });
+    if (!submission) throw AppError.notFound("Submission not found");
+
+    await this.verifyAccess(db, firebaseUid, submission.assignment.class?.teacherId);
+
+    if (submission.status === "GRADED") {
+      throw AppError.conflict("Submission is already graded");
+    }
+    if (submission.status === "AI_PROCESSING") {
+      throw AppError.badRequest("AI analysis is still running. Please wait before finalizing");
+    }
+    if (submission.status === "IN_PROGRESS") {
+      throw AppError.badRequest("Student has not submitted yet");
+    }
+
+    const feedback = await db.submissionFeedback.findFirst({
+      where: { submissionId },
+    });
+
+    // Atomic writes inside transaction — per project-context.md Rule 5
+    await this.prisma.$transaction(async (tx) => {
+      if (feedback) {
+        // Auto-approve remaining pending items
+        await tx.aIFeedbackItem.updateMany({
+          where: {
+            submissionFeedbackId: feedback.id,
+            centerId,
+            isApproved: null,
+          },
+          data: { isApproved: true, approvedAt: new Date() },
+        });
+
+        // Update teacher scores
+        await tx.submissionFeedback.update({
+          where: { id: feedback.id, centerId },
+          data: {
+            teacherFinalScore: data.teacherFinalScore ?? feedback.overallScore,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            teacherCriteriaScores: (data.teacherCriteriaScores ?? feedback.criteriaScores ?? undefined) as any,
+            teacherGeneralFeedback: data.teacherGeneralFeedback ?? null,
+          },
+        });
+      }
+
+      // Set submission status to GRADED
+      await tx.submission.update({
+        where: { id: submissionId, centerId },
+        data: { status: "GRADED" },
+      });
+    });
+
+    // Find next submission in the grading queue
+    const nextSubmission = await db.submission.findFirst({
+      where: {
+        centerId,
+        id: { not: submissionId },
+        status: "SUBMITTED",
+        gradingJob: { status: "completed" },
+      },
+      orderBy: { submittedAt: "asc" },
+      select: { id: true },
+    });
+
+    const teacherFinalScore = data.teacherFinalScore ?? feedback?.overallScore ?? null;
+
+    return {
+      submissionId,
+      status: "GRADED" as const,
+      teacherFinalScore,
+      nextSubmissionId: nextSubmission?.id ?? null,
+    };
   }
 }
 

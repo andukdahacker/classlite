@@ -10,6 +10,8 @@ vi.mock("lucide-react", () => ({
   Star: (props: Record<string, unknown>) => <span data-testid="icon-star" {...props} />,
   MessageCircle: (props: Record<string, unknown>) => <span data-testid="icon-message" {...props} />,
   Unlink: (props: Record<string, unknown>) => <span data-testid="icon-unlink" {...props} />,
+  Check: (props: Record<string, unknown>) => <span data-testid="icon-check" {...props} />,
+  X: (props: Record<string, unknown>) => <span data-testid="icon-x" {...props} />,
 }));
 
 vi.mock("@workspace/ui/components/badge", () => ({
@@ -25,6 +27,16 @@ vi.mock("@workspace/ui/components/card", () => ({
   CardContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
     <div data-testid="card-content" className={className}>{children}</div>
   ),
+}));
+
+vi.mock("@workspace/ui/components/button", () => ({
+  Button: ({ children, onClick, ...props }: { children: React.ReactNode; onClick?: () => void; [key: string]: unknown }) => (
+    <button data-testid={props["aria-label"] ? `btn-${props["aria-label"]}` : "button"} onClick={onClick} {...props}>{children}</button>
+  ),
+}));
+
+vi.mock("@workspace/ui/components/textarea", () => ({
+  Textarea: (props: Record<string, unknown>) => <textarea data-testid="textarea" {...props} />,
 }));
 
 const baseItem = {
@@ -157,5 +169,95 @@ describe("FeedbackItemCard", () => {
 
     const card = screen.getByTestId("card");
     expect(card).toHaveAttribute("data-card-id", "item-1");
+  });
+
+  // --- Approval tests (Story 5.4) ---
+
+  it("calls onApprove with (itemId, true) on approve button click", () => {
+    const onApprove = vi.fn();
+    render(
+      <FeedbackItemCard item={baseItem} onApprove={onApprove} />,
+    );
+
+    fireEvent.click(screen.getByTestId("btn-Approve"));
+    expect(onApprove).toHaveBeenCalledWith("item-1", true);
+  });
+
+  it("calls onApprove with (itemId, false) on reject button click", () => {
+    const onApprove = vi.fn();
+    render(
+      <FeedbackItemCard item={baseItem} onApprove={onApprove} />,
+    );
+
+    fireEvent.click(screen.getByTestId("btn-Reject"));
+    expect(onApprove).toHaveBeenCalledWith("item-1", false);
+  });
+
+  it("applies approved styling when isApproved is true", () => {
+    render(
+      <FeedbackItemCard item={{ ...baseItem, isApproved: true }} />,
+    );
+
+    const card = screen.getByTestId("card");
+    expect(card.className).toContain("border-l-green-500");
+  });
+
+  it("applies rejected styling with line-through when isApproved is false", () => {
+    render(
+      <FeedbackItemCard item={{ ...baseItem, isApproved: false }} />,
+    );
+
+    const card = screen.getByTestId("card");
+    expect(card.className).toContain("border-l-red-300");
+    expect(screen.getByText("Subject-verb agreement error").className).toContain("line-through");
+  });
+
+  it("does NOT show approve/reject buttons on score_suggestion items", () => {
+    const onApprove = vi.fn();
+    render(
+      <FeedbackItemCard
+        item={{ ...baseItem, type: "score_suggestion" }}
+        onApprove={onApprove}
+      />,
+    );
+
+    expect(screen.queryByTestId("btn-Approve")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("btn-Reject")).not.toBeInTheDocument();
+  });
+
+  it("does NOT show approve/reject buttons when isFinalized", () => {
+    const onApprove = vi.fn();
+    render(
+      <FeedbackItemCard
+        item={baseItem}
+        onApprove={onApprove}
+        isFinalized={true}
+      />,
+    );
+
+    expect(screen.queryByTestId("btn-Approve")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("btn-Reject")).not.toBeInTheDocument();
+  });
+
+  it("shows 'Edited' badge when teacherOverrideText is set", () => {
+    render(
+      <FeedbackItemCard
+        item={{ ...baseItem, isApproved: true, teacherOverrideText: "Override text" }}
+      />,
+    );
+
+    expect(screen.getByText("Edited")).toBeInTheDocument();
+    expect(screen.getByText("Override text")).toBeInTheDocument();
+  });
+
+  it("keyboard A key approves when card is focused", () => {
+    const onApprove = vi.fn();
+    render(
+      <FeedbackItemCard item={baseItem} onApprove={onApprove} />,
+    );
+
+    const card = screen.getByTestId("card");
+    fireEvent.keyDown(card, { key: "a" });
+    expect(onApprove).toHaveBeenCalledWith("item-1", true);
   });
 });

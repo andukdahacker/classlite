@@ -12,6 +12,8 @@ describe("GradingService", () => {
   let service: GradingService;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockDb: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockTx: any;
   const centerId = "center-123";
   const submissionId = "sub-1";
   const firebaseUid = "firebase-teacher-1";
@@ -95,7 +97,9 @@ describe("GradingService", () => {
       submission: {
         findUnique: vi.fn(),
         findMany: vi.fn(),
+        findFirst: vi.fn(),
         count: vi.fn(),
+        update: vi.fn(),
       },
       gradingJob: {
         create: vi.fn().mockResolvedValue(mockGradingJob),
@@ -104,7 +108,9 @@ describe("GradingService", () => {
       },
       submissionFeedback: {
         findUnique: vi.fn(),
+        findFirst: vi.fn(),
         deleteMany: vi.fn(),
+        update: vi.fn(),
       },
       authAccount: {
         findUniqueOrThrow: vi.fn().mockResolvedValue(mockAuthAccount),
@@ -119,10 +125,25 @@ describe("GradingService", () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
+      aIFeedbackItem: {
+        findFirst: vi.fn(),
+        update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+    };
+
+    mockTx = {
+      aIFeedbackItem: { updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      submissionFeedback: { update: vi.fn() },
+      submission: { update: vi.fn() },
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mockPrisma = { $extends: vi.fn().mockReturnValue(mockDb) } as any;
+    const mockPrisma = {
+      $extends: vi.fn().mockReturnValue(mockDb),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      $transaction: vi.fn().mockImplementation(async (fn: any) => fn(mockTx)),
+    } as any;
     service = new GradingService(mockPrisma);
   });
 
@@ -670,6 +691,231 @@ describe("GradingService", () => {
 
       expect(result.teacherComments).toHaveLength(1);
       expect((result.teacherComments[0] as { authorName: string }).authorName).toBe("Teacher A");
+    });
+  });
+
+  describe("approveFeedbackItem", () => {
+    const itemId = "item-1";
+    const mockItem = {
+      id: itemId,
+      centerId,
+      submissionFeedbackId: "fb-1",
+      isApproved: null,
+      teacherOverrideText: null,
+    };
+
+    it("should approve an item", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.aIFeedbackItem.findFirst.mockResolvedValue(mockItem);
+      mockDb.aIFeedbackItem.update.mockResolvedValue({ ...mockItem, isApproved: true });
+
+      const result = await service.approveFeedbackItem(centerId, submissionId, itemId, firebaseUid, {
+        isApproved: true,
+      });
+
+      expect(result.isApproved).toBe(true);
+      expect(mockDb.aIFeedbackItem.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: itemId },
+          data: expect.objectContaining({ isApproved: true }),
+        }),
+      );
+    });
+
+    it("should reject an item", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.aIFeedbackItem.findFirst.mockResolvedValue(mockItem);
+      mockDb.aIFeedbackItem.update.mockResolvedValue({ ...mockItem, isApproved: false, approvedAt: null });
+
+      const result = await service.approveFeedbackItem(centerId, submissionId, itemId, firebaseUid, {
+        isApproved: false,
+      });
+
+      expect(result.isApproved).toBe(false);
+      expect(mockDb.aIFeedbackItem.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ isApproved: false, approvedAt: null }),
+        }),
+      );
+    });
+
+    it("should toggle back to approved", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.aIFeedbackItem.findFirst.mockResolvedValue({ ...mockItem, isApproved: false });
+      mockDb.aIFeedbackItem.update.mockResolvedValue({ ...mockItem, isApproved: true });
+
+      const result = await service.approveFeedbackItem(centerId, submissionId, itemId, firebaseUid, {
+        isApproved: true,
+      });
+
+      expect(result.isApproved).toBe(true);
+    });
+
+    it("should throw access denied for wrong teacher", async () => {
+      mockDb.submission.findUnique.mockResolvedValue({
+        ...mockSubmission,
+        assignment: {
+          exercise: { skill: "WRITING" },
+          class: { teacherId: "other-teacher" },
+        },
+      });
+      mockDb.centerMembership.findFirst.mockResolvedValue({ role: "TEACHER" });
+
+      await expect(
+        service.approveFeedbackItem(centerId, submissionId, itemId, firebaseUid, { isApproved: true }),
+      ).rejects.toThrow("You can only access submissions from your classes");
+    });
+
+    it("should throw 404 if item not found", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.aIFeedbackItem.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.approveFeedbackItem(centerId, submissionId, itemId, firebaseUid, { isApproved: true }),
+      ).rejects.toThrow("Feedback item not found");
+    });
+  });
+
+  describe("bulkApproveFeedbackItems", () => {
+    it("should approve remaining items", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.submissionFeedback.findFirst.mockResolvedValue(mockFeedback);
+      mockDb.aIFeedbackItem.updateMany.mockResolvedValue({ count: 3 });
+
+      const result = await service.bulkApproveFeedbackItems(centerId, submissionId, firebaseUid, {
+        action: "approve_remaining",
+      });
+
+      expect(result.count).toBe(3);
+      expect(mockDb.aIFeedbackItem.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ isApproved: null }),
+          data: expect.objectContaining({ isApproved: true }),
+        }),
+      );
+    });
+
+    it("should reject remaining items", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.submissionFeedback.findFirst.mockResolvedValue(mockFeedback);
+      mockDb.aIFeedbackItem.updateMany.mockResolvedValue({ count: 2 });
+
+      const result = await service.bulkApproveFeedbackItems(centerId, submissionId, firebaseUid, {
+        action: "reject_remaining",
+      });
+
+      expect(result.count).toBe(2);
+      expect(mockDb.aIFeedbackItem.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ isApproved: false, approvedAt: null }),
+        }),
+      );
+    });
+
+    it("should return 0 when no pending items", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.submissionFeedback.findFirst.mockResolvedValue(mockFeedback);
+      mockDb.aIFeedbackItem.updateMany.mockResolvedValue({ count: 0 });
+
+      const result = await service.bulkApproveFeedbackItems(centerId, submissionId, firebaseUid, {
+        action: "approve_remaining",
+      });
+
+      expect(result.count).toBe(0);
+    });
+  });
+
+  describe("finalizeGrading", () => {
+    it("should finalize with teacher score override", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.submissionFeedback.findFirst.mockResolvedValue(mockFeedback);
+      mockDb.submission.findFirst.mockResolvedValue({ id: "sub-next" });
+
+      const result = await service.finalizeGrading(centerId, submissionId, firebaseUid, {
+        teacherFinalScore: 7.0,
+        teacherCriteriaScores: { taskAchievement: 7.0, coherence: 7.0, lexicalResource: 7.0, grammaticalRange: 7.0 },
+      });
+
+      expect(result.status).toBe("GRADED");
+      expect(result.teacherFinalScore).toBe(7.0);
+      expect(result.nextSubmissionId).toBe("sub-next");
+    });
+
+    it("should finalize without score override — defaults to AI score", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.submissionFeedback.findFirst.mockResolvedValue(mockFeedback);
+      mockDb.submission.findFirst.mockResolvedValue(null);
+
+      const result = await service.finalizeGrading(centerId, submissionId, firebaseUid, {});
+
+      expect(result.status).toBe("GRADED");
+      expect(result.teacherFinalScore).toBe(6.5); // AI score
+      expect(result.nextSubmissionId).toBeNull();
+    });
+
+    it("should throw 409 if already GRADED", async () => {
+      mockDb.submission.findUnique.mockResolvedValue({
+        ...mockSubmission,
+        status: "GRADED",
+      });
+
+      await expect(
+        service.finalizeGrading(centerId, submissionId, firebaseUid, {}),
+      ).rejects.toThrow("already graded");
+    });
+
+    it("should throw 400 if AI_PROCESSING", async () => {
+      mockDb.submission.findUnique.mockResolvedValue({
+        ...mockSubmission,
+        status: "AI_PROCESSING",
+      });
+
+      await expect(
+        service.finalizeGrading(centerId, submissionId, firebaseUid, {}),
+      ).rejects.toThrow("AI analysis is still running");
+    });
+
+    it("should finalize without feedback (manual grading)", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.submissionFeedback.findFirst.mockResolvedValue(null);
+      mockDb.submission.findFirst.mockResolvedValue(null);
+
+      const result = await service.finalizeGrading(centerId, submissionId, firebaseUid, {
+        teacherFinalScore: 5.0,
+      });
+
+      expect(result.status).toBe("GRADED");
+      expect(result.teacherFinalScore).toBe(5.0);
+    });
+
+    it("should auto-approve pending items during finalize", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.submissionFeedback.findFirst.mockResolvedValue(mockFeedback);
+      mockDb.submission.findFirst.mockResolvedValue(null);
+
+      await service.finalizeGrading(centerId, submissionId, firebaseUid, {});
+
+      expect(mockTx.aIFeedbackItem.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ isApproved: null }),
+          data: expect.objectContaining({ isApproved: true }),
+        }),
+      );
+      expect(mockTx.submission.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { status: "GRADED" },
+        }),
+      );
+    });
+
+    it("should return nextSubmissionId when next exists", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmission);
+      mockDb.submissionFeedback.findFirst.mockResolvedValue(mockFeedback);
+      mockDb.submission.findFirst.mockResolvedValue({ id: "next-sub-123" });
+
+      const result = await service.finalizeGrading(centerId, submissionId, firebaseUid, {});
+
+      expect(result.nextSubmissionId).toBe("next-sub-123");
     });
   });
 });
