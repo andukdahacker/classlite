@@ -8,7 +8,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import type { TeacherComment } from "@workspace/types";
 import { useAuth } from "@/features/auth/auth-context";
 import { AIFeedbackPane } from "./components/AIFeedbackPane";
@@ -16,6 +16,7 @@ import { BreatherCard } from "./components/BreatherCard";
 import { ConnectionLineOverlay } from "./components/ConnectionLineOverlay";
 import { StampedAnimation } from "./components/StampedAnimation";
 import { StudentWorkPane } from "./components/StudentWorkPane";
+import { QueueListMode } from "./components/QueueListMode";
 import { SubmissionNav } from "./components/SubmissionNav";
 import { WorkbenchLayout } from "./components/WorkbenchLayout";
 import { validateAnchor } from "./hooks/use-anchor-validation";
@@ -36,18 +37,7 @@ import { usePrefetchSubmission } from "./hooks/use-prefetch-submission";
 import { useRetriggerAnalysis } from "./hooks/use-retrigger-analysis";
 import { useSubmissionDetail } from "./hooks/use-submission-detail";
 import { useUpdateComment } from "./hooks/use-update-comment";
-
-function formatRelativeTime(dateStr: string | null): string {
-  if (!dateStr) return "No date";
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
+import { formatRelativeTime } from "./utils/format-time";
 
 const ANSWER_SEPARATOR = "\n\n";
 
@@ -56,7 +46,18 @@ function GradingQueuePageInner() {
     centerId: string;
     submissionId?: string;
   }>();
+
+  // List view mode: when no submissionId in URL, show the queue list
+  if (!urlSubmissionId) {
+    return <QueueListMode centerId={centerId!} />;
+  }
+
+  return <WorkbenchMode centerId={centerId!} urlSubmissionId={urlSubmissionId} />;
+}
+
+function WorkbenchMode({ centerId, urlSubmissionId }: { centerId: string; urlSubmissionId: string }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const workbenchRef = useRef<HTMLDivElement>(null);
   const { highlightedItemId, setHighlightedItemId } = useHighlightState();
   const isMobile = useMediaQuery("(max-width: 767px)");
@@ -82,21 +83,13 @@ function GradingQueuePageInner() {
   // Sync currentIndex when queue data loads or URL submissionId changes
   useEffect(() => {
     if (submissionIds.length === 0) return;
-    if (urlSubmissionId) {
-      const idx = submissionIds.indexOf(urlSubmissionId);
-      if (idx >= 0) {
-        setCurrentIndex(idx);
-        return;
-      }
+    const idx = submissionIds.indexOf(urlSubmissionId);
+    if (idx >= 0) {
+      setCurrentIndex(idx);
     }
-    const readyIdx = queueItems.findIndex(
-      (item) => item.analysisStatus === "ready",
-    );
-    setCurrentIndex(readyIdx >= 0 ? readyIdx : 0);
-  }, [submissionIds, urlSubmissionId, queueItems]);
+  }, [submissionIds, urlSubmissionId]);
 
-  const activeSubmissionId =
-    urlSubmissionId ?? submissionIds[currentIndex] ?? null;
+  const activeSubmissionId = urlSubmissionId;
 
   const nextId =
     currentIndex < submissionIds.length - 1
@@ -527,6 +520,10 @@ function GradingQueuePageInner() {
         total={submissionIds.length}
         onPrev={handlePrev}
         onNext={handleNext}
+        onBackToQueue={() => {
+          const params = searchParams.toString();
+          navigate(`/${centerId}/dashboard/grading${params ? `?${params}` : ""}`);
+        }}
       />
 
       {/* Detail loading */}

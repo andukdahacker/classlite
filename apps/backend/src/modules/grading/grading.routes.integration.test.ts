@@ -58,6 +58,8 @@ describe("Grading Routes Integration", () => {
       findUnique: vi.fn(),
       findMany: vi.fn(),
       count: vi.fn(),
+      groupBy: vi.fn().mockResolvedValue([]),
+      update: vi.fn(),
     },
     gradingJob: {
       create: vi.fn().mockResolvedValue(mockGradingJob),
@@ -120,10 +122,21 @@ describe("Grading Routes Integration", () => {
       mockDb.submission.findMany.mockResolvedValue([
         {
           id: "sub-1",
+          status: "SUBMITTED",
+          isPriority: false,
           submittedAt: new Date("2026-02-16"),
           student: { name: "Student A" },
-          assignment: { exercise: { title: "Essay 1", skill: "WRITING" } },
-          gradingJob: { status: "completed", error: null },
+          assignment: {
+            id: "assign-1",
+            title: "Essay 1",
+            dueDate: null,
+            classId: "class-1",
+            class: { id: "class-1", name: "IELTS A" },
+            exercise: { title: "Essay 1", skill: "WRITING" },
+          },
+          gradingJob: { status: "completed", error: null, errorCategory: null },
+          feedback: { items: [] },
+          _count: { teacherComments: 0 },
         },
       ]);
 
@@ -469,6 +482,103 @@ describe("Grading Routes Integration", () => {
       });
 
       expect(response.statusCode).toBe(404);
+    });
+  });
+
+  describe("PATCH /submissions/:submissionId/priority", () => {
+    const mockSubmissionForPriority = {
+      id: "sub-1",
+      centerId: "center-1",
+      isPriority: false,
+      assignment: {
+        class: { teacherId: "teacher-1" },
+      },
+    };
+
+    it("should return 200 when toggling priority on", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(mockSubmissionForPriority);
+      mockDb.submission.update.mockResolvedValue({ ...mockSubmissionForPriority, isPriority: true });
+
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/api/v1/grading/submissions/sub-1/priority",
+        headers: { authorization: "Bearer valid-token" },
+        payload: { isPriority: true },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data.submissionId).toBe("sub-1");
+      expect(body.data.isPriority).toBe(true);
+      expect(body.message).toBe("Priority updated");
+    });
+
+    it("should return 200 when toggling priority off", async () => {
+      mockDb.submission.findUnique.mockResolvedValue({ ...mockSubmissionForPriority, isPriority: true });
+      mockDb.submission.update.mockResolvedValue({ ...mockSubmissionForPriority, isPriority: false });
+
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/api/v1/grading/submissions/sub-1/priority",
+        headers: { authorization: "Bearer valid-token" },
+        payload: { isPriority: false },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data.isPriority).toBe(false);
+    });
+
+    it("should return 401 without auth header", async () => {
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/api/v1/grading/submissions/sub-1/priority",
+        payload: { isPriority: true },
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should return 403 for STUDENT role", async () => {
+      mockFirebaseAuth.verifyIdToken.mockResolvedValueOnce({
+        uid: "firebase-student-1",
+        email: "student@test.com",
+        role: "STUDENT",
+        center_id: "center-1",
+      });
+
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/api/v1/grading/submissions/sub-1/priority",
+        headers: { authorization: "Bearer student-token" },
+        payload: { isPriority: true },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it("should return 404 when submission not found", async () => {
+      mockDb.submission.findUnique.mockResolvedValue(null);
+
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/api/v1/grading/submissions/nonexistent/priority",
+        headers: { authorization: "Bearer valid-token" },
+        payload: { isPriority: true },
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    it("should return 400 for invalid body", async () => {
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/api/v1/grading/submissions/sub-1/priority",
+        headers: { authorization: "Bearer valid-token" },
+        payload: { isPriority: "not-a-boolean" },
+      });
+
+      expect(response.statusCode).toBe(400);
     });
   });
 

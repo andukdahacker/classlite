@@ -15,6 +15,7 @@ import {
   FinalizeGradingSchema,
   FinalizeGradingResponseSchema,
   AIFeedbackItemSchema,
+  TogglePrioritySchema,
 } from "@workspace/types";
 import { FastifyInstance, FastifyReply } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -74,6 +75,43 @@ export async function gradingRoutes(fastify: FastifyInstance) {
         const result = await controller.getGradingQueue(
           { uid: payload.uid, centerId: payload.centerId },
           filters,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        return handleRouteError(error, request, reply);
+      }
+    },
+  });
+
+  // PATCH /submissions/:submissionId/priority — Toggle priority flag
+  api.patch("/submissions/:submissionId/priority", {
+    schema: {
+      params: z.object({ submissionId: z.string() }),
+      body: TogglePrioritySchema,
+      response: {
+        200: z.object({
+          data: z.object({ submissionId: z.string(), isPriority: z.boolean() }),
+          message: z.string(),
+        }),
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["TEACHER", "ADMIN", "OWNER"])],
+    handler: async (request, reply) => {
+      try {
+        const payload = request.jwtPayload!;
+        if (!payload.centerId) {
+          return reply.status(400).send({ message: "User does not belong to a center" });
+        }
+        const { submissionId } = request.params as { submissionId: string };
+        const result = await controller.togglePriority(
+          submissionId,
+          { uid: payload.uid, centerId: payload.centerId },
+          request.body as z.infer<typeof TogglePrioritySchema>,
         );
         return reply.send(result);
       } catch (error: unknown) {

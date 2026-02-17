@@ -47,6 +47,14 @@ export type FeedbackSeverity = z.infer<typeof FeedbackSeveritySchema>;
 export const CommentVisibilitySchema = z.enum(["private", "student_facing"]);
 export type CommentVisibility = z.infer<typeof CommentVisibilitySchema>;
 
+export const GradingStatusSchema = z.enum([
+  "pending_ai",
+  "ready",
+  "in_progress",
+  "graded",
+]);
+export type GradingStatus = z.infer<typeof GradingStatusSchema>;
+
 // --- GradingJob ---
 
 export const GradingJobSchema = z.object({
@@ -204,10 +212,27 @@ export const GradingQueueFiltersSchema = z.object({
   classId: z.string().optional(),
   assignmentId: z.string().optional(),
   status: AnalysisStatusSchema.optional(),
+  gradingStatus: GradingStatusSchema.optional(),
+  sortBy: z
+    .enum(["submittedAt", "dueDate", "studentName"])
+    .default("submittedAt")
+    .optional(),
+  sortOrder: z.enum(["asc", "desc"]).default("asc").optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 export type GradingQueueFilters = z.infer<typeof GradingQueueFiltersSchema>;
+
+export const TogglePrioritySchema = z.object({
+  isPriority: z.boolean(),
+});
+export type TogglePriority = z.infer<typeof TogglePrioritySchema>;
+
+export const QueueProgressSchema = z.object({
+  graded: z.number().int(),
+  total: z.number().int(),
+});
+export type QueueProgress = z.infer<typeof QueueProgressSchema>;
 
 export const TriggerAnalysisRequestSchema = z.object({
   submissionId: z.string().min(1),
@@ -224,6 +249,12 @@ export const GradingQueueItemSchema = z.object({
   submittedAt: z.string().nullable(),
   analysisStatus: AnalysisStatusSchema,
   failureReason: z.string().nullable().optional(),
+  assignmentId: z.string(),
+  classId: z.string().nullable(),
+  className: z.string().nullable(),
+  dueDate: z.string().nullable(),
+  isPriority: z.boolean(),
+  gradingStatus: GradingStatusSchema,
 });
 export type GradingQueueItem = z.infer<typeof GradingQueueItemSchema>;
 
@@ -233,6 +264,7 @@ export const GradingQueueResponseSchema = createResponseSchema(
     total: z.number(),
     page: z.number(),
     limit: z.number(),
+    progress: QueueProgressSchema.nullable().optional(),
   }),
 );
 export type GradingQueueResponse = z.infer<typeof GradingQueueResponseSchema>;

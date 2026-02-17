@@ -1,4 +1,4 @@
-import type { ApproveFeedbackItem, BulkApproveFeedbackItems, CommentVisibility, CreateTeacherComment, FinalizeGrading, GradingQueueFilters, UpdateTeacherComment } from "@workspace/types";
+import type { ApproveFeedbackItem, BulkApproveFeedbackItems, CommentVisibility, CreateTeacherComment, FinalizeGrading, GradingQueueFilters, TogglePriority, UpdateTeacherComment } from "@workspace/types";
 import { GradingService } from "./grading.service.js";
 
 function serializeDates<T extends Record<string, unknown>>(obj: T): T {
@@ -145,6 +145,20 @@ export class GradingController {
       user.uid,
     );
     return { data: null, message: "Comment deleted" };
+  }
+
+  async togglePriority(
+    submissionId: string,
+    user: { uid: string; centerId: string },
+    body: TogglePriority,
+  ) {
+    const result = await this.service.togglePriority(
+      user.centerId,
+      submissionId,
+      user.uid,
+      body.isPriority,
+    );
+    return { data: result, message: "Priority updated" };
   }
 
   async triggerAnalysis(

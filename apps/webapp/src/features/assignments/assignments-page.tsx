@@ -47,6 +47,7 @@ import {
   Book,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   Headphones,
   Loader2,
   Mic,
@@ -57,6 +58,7 @@ import {
 } from "lucide-react";
 import { cn } from "@workspace/ui/lib/utils";
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useAssignments } from "./hooks/use-assignments";
 import { CreateAssignmentDialog } from "./components/create-assignment-dialog";
@@ -100,6 +102,7 @@ function formatTimeLimit(seconds: number | null) {
 export default function AssignmentsPage() {
   const { user } = useAuth();
   const centerId = user?.centerId;
+  const navigate = useNavigate();
 
   const [statusFilter, setStatusFilter] = useState<AssignmentStatus | "ALL">("ALL");
   const [classFilter, setClassFilter] = useState<string>("ALL");
@@ -225,6 +228,18 @@ export default function AssignmentsPage() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        {(assignment.status === "OPEN" || assignment.status === "CLOSED") && (
+          <DropdownMenuItem
+            onClick={() =>
+              navigate(
+                `/${centerId}/dashboard/grading?assignmentId=${assignment.id}`,
+              )
+            }
+          >
+            <ClipboardList className="mr-2 h-4 w-4" />
+            View Submissions
+          </DropdownMenuItem>
+        )}
         {assignment.status !== "ARCHIVED" && (
           <DropdownMenuItem onClick={() => setEditTarget(assignment)}>
             Edit

@@ -1,5 +1,5 @@
 import { PrismaClient, getTenantedClient } from "@workspace/db";
-import type { AnalysisStatus, ApproveFeedbackItem, BulkApproveFeedbackItems, CommentVisibility, CreateTeacherComment, FinalizeGrading, GradingQueueFilters, UpdateTeacherComment } from "@workspace/types";
+import type { AnalysisStatus, ApproveFeedbackItem, BulkApproveFeedbackItems, CommentVisibility, CreateTeacherComment, FinalizeGrading, GradingQueueFilters, GradingStatus, UpdateTeacherComment } from "@workspace/types";
 import { AppError } from "../../errors/app-error.js";
 import { inngest } from "../inngest/client.js";
 
@@ -201,7 +201,7 @@ export class GradingService {
     });
     const teacherUserId = authAccount.userId;
 
-    const { classId, assignmentId, status, page, limit } = filters;
+    const { classId, assignmentId, status, gradingStatus, sortBy = "submittedAt", sortOrder = "asc", page, limit } = filters;
 
     // Build where clause — teacher can only see submissions for classes they teach
     // When classId is provided, still verify teacher teaches that class
@@ -221,69 +221,126 @@ export class GradingService {
     const include = {
       student: { select: { name: true } },
       assignment: {
-        include: {
+        select: {
+          id: true,
+          title: true,
+          dueDate: true,
+          classId: true,
+          class: { select: { name: true } },
           exercise: { select: { title: true, skill: true } },
         },
       },
-      gradingJob: { select: { status: true, error: true } },
+      gradingJob: { select: { status: true, error: true, errorCategory: true } },
+      feedback: {
+        select: {
+          items: {
+            where: { isApproved: { not: null } },
+            select: { id: true },
+            take: 1,
+          },
+        },
+      },
+      _count: { select: { teacherComments: true } },
     };
 
-    // When filtering by analysis status (derived from GradingJob.status),
-    // we must compute status for all matching items before paginating,
-    // since the derived status cannot be filtered at the DB level.
-    if (status) {
-      const allSubmissions = await db.submission.findMany({
-        where,
-        include,
-        orderBy: { submittedAt: "desc" },
-      });
-
-      const allItems = allSubmissions
-        .map((s) => ({
-          submissionId: s.id,
-          studentName: s.student.name,
-          assignmentTitle: s.assignment.exercise.title,
-          exerciseSkill: s.assignment.exercise.skill,
-          submittedAt: s.submittedAt?.toISOString() ?? null,
-          analysisStatus: deriveAnalysisStatus(
-            s.assignment.exercise.skill,
-            s.gradingJob?.status ?? null,
-          ),
-          failureReason: s.gradingJob?.error ?? null,
-        }))
-        .filter((item) => item.analysisStatus === status);
-
-      const total = allItems.length;
-      const items = allItems.slice((page - 1) * limit, page * limit);
-
-      return { items, total, page, limit };
-    }
-
-    // No status filter — use efficient DB-level pagination
-    const total = await db.submission.count({ where });
-
-    const submissions = await db.submission.findMany({
+    // Fetch all items — gradingStatus derivation and priority sorting require in-memory processing
+    const allSubmissions = await db.submission.findMany({
       where,
       include,
-      orderBy: { submittedAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
     });
 
-    const items = submissions.map((s) => ({
-      submissionId: s.id,
-      studentName: s.student.name,
-      assignmentTitle: s.assignment.exercise.title,
-      exerciseSkill: s.assignment.exercise.skill,
-      submittedAt: s.submittedAt?.toISOString() ?? null,
-      analysisStatus: deriveAnalysisStatus(
-        s.assignment.exercise.skill,
-        s.gradingJob?.status ?? null,
-      ),
-      failureReason: s.gradingJob?.error ?? null,
-    }));
+    // Map and derive statuses
+    let allItems = allSubmissions.map((s) => {
+      const hasTeacherAction =
+        (s.feedback?.items?.length ?? 0) > 0 || s._count.teacherComments > 0;
 
-    return { items, total, page, limit };
+      return {
+        submissionId: s.id,
+        studentName: s.student.name,
+        assignmentTitle: s.assignment.exercise.title,
+        exerciseSkill: s.assignment.exercise.skill,
+        submittedAt: s.submittedAt?.toISOString() ?? null,
+        analysisStatus: deriveAnalysisStatus(
+          s.assignment.exercise.skill,
+          s.gradingJob?.status ?? null,
+        ),
+        failureReason: s.gradingJob?.error ?? null,
+        assignmentId: s.assignment.id,
+        classId: s.assignment.classId,
+        className: s.assignment.class?.name ?? null,
+        dueDate: s.assignment.dueDate?.toISOString() ?? null,
+        isPriority: s.isPriority,
+        gradingStatus: deriveGradingStatus(
+          s.status,
+          s.gradingJob?.status ?? null,
+          hasTeacherAction,
+        ),
+      };
+    });
+
+    // Apply analysisStatus filter
+    if (status) {
+      allItems = allItems.filter((item) => item.analysisStatus === status);
+    }
+
+    // Apply gradingStatus filter
+    if (gradingStatus) {
+      allItems = allItems.filter((item) => item.gradingStatus === gradingStatus);
+    }
+
+    // Sort: priority first, then by selected sort field
+    allItems.sort((a, b) => {
+      // Priority items always come first
+      if (a.isPriority !== b.isPriority) return a.isPriority ? -1 : 1;
+      // Then sort by selected field
+      return compareBySortField(a, b, sortBy, sortOrder);
+    });
+
+    const total = allItems.length;
+    const items = allItems.slice((page - 1) * limit, page * limit);
+
+    // Compute progress when assignmentId filter is active
+    let progress: { graded: number; total: number } | null = null;
+    if (assignmentId) {
+      const progressQuery = await db.submission.groupBy({
+        by: ["status"],
+        where: { assignmentId },
+        _count: { id: true },
+      });
+      const graded = progressQuery.find((g) => g.status === "GRADED")?._count.id ?? 0;
+      const progressTotal = progressQuery.reduce((sum, g) => sum + g._count.id, 0);
+      progress = { graded, total: progressTotal };
+    }
+
+    return { items, total, page, limit, progress };
+  }
+
+  async togglePriority(
+    centerId: string,
+    submissionId: string,
+    firebaseUid: string,
+    isPriority: boolean,
+  ) {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const submission = await db.submission.findUnique({
+      where: { id: submissionId },
+      include: {
+        assignment: {
+          include: { class: { select: { teacherId: true } } },
+        },
+      },
+    });
+    if (!submission) throw AppError.notFound("Submission not found");
+
+    await this.verifyAccess(db, firebaseUid, submission.assignment.class?.teacherId);
+
+    await db.submission.update({
+      where: { id: submissionId },
+      data: { isPriority },
+    });
+
+    return { submissionId, isPriority };
   }
 
   async createComment(
@@ -646,4 +703,44 @@ function deriveAnalysisStatus(
   if (jobStatus === "completed") return "ready";
   if (jobStatus === "failed") return "failed";
   return "analyzing";
+}
+
+function deriveGradingStatus(
+  submissionStatus: string,
+  jobStatus: string | null,
+  hasTeacherAction: boolean,
+): GradingStatus {
+  if (submissionStatus === "GRADED") return "graded";
+  if (!jobStatus || jobStatus === "pending" || jobStatus === "processing") return "pending_ai";
+  if (jobStatus === "failed") return "pending_ai";
+  // jobStatus === "completed"
+  return hasTeacherAction ? "in_progress" : "ready";
+}
+
+function compareBySortField(
+  a: { submittedAt: string | null; dueDate: string | null; studentName: string | null },
+  b: { submittedAt: string | null; dueDate: string | null; studentName: string | null },
+  sortBy: string,
+  sortOrder: string,
+): number {
+  const dir = sortOrder === "desc" ? -1 : 1;
+
+  if (sortBy === "studentName") {
+    const nameA = (a.studentName ?? "").toLowerCase();
+    const nameB = (b.studentName ?? "").toLowerCase();
+    return dir * nameA.localeCompare(nameB);
+  }
+
+  if (sortBy === "dueDate") {
+    // Nulls last
+    if (!a.dueDate && !b.dueDate) return 0;
+    if (!a.dueDate) return 1;
+    if (!b.dueDate) return -1;
+    return dir * (new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }
+
+  // Default: submittedAt
+  const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+  const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+  return dir * (timeA - timeB);
 }

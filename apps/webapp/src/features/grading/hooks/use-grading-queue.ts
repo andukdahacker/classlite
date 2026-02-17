@@ -2,10 +2,13 @@ import client from "@/core/client";
 import { useQuery } from "@tanstack/react-query";
 import { gradingKeys } from "./grading-keys";
 
-interface GradingQueueFilters {
+export interface GradingQueueFilters {
   classId?: string;
   assignmentId?: string;
   status?: "not_applicable" | "analyzing" | "ready" | "failed";
+  gradingStatus?: "pending_ai" | "ready" | "in_progress" | "graded";
+  sortBy?: "submittedAt" | "dueDate" | "studentName";
+  sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
 }

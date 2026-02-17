@@ -1,5 +1,5 @@
 import { Button } from "@workspace/ui/components/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect } from "react";
 
 interface SubmissionNavProps {
@@ -7,6 +7,7 @@ interface SubmissionNavProps {
   total: number;
   onPrev: () => void;
   onNext: () => void;
+  onBackToQueue?: () => void;
 }
 
 export function SubmissionNav({
@@ -14,6 +15,7 @@ export function SubmissionNav({
   total,
   onPrev,
   onNext,
+  onBackToQueue,
 }: SubmissionNavProps) {
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < total - 1;
@@ -45,15 +47,27 @@ export function SubmissionNav({
 
   return (
     <div className="flex items-center justify-between border-b px-4 py-2">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onPrev}
-        disabled={!hasPrev}
-      >
-        <ChevronLeft className="mr-1 h-4 w-4" />
-        Prev
-      </Button>
+      <div className="flex items-center gap-1">
+        {onBackToQueue && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBackToQueue}
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Queue
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onPrev}
+          disabled={!hasPrev}
+        >
+          <ChevronLeft className="mr-1 h-4 w-4" />
+          Prev
+        </Button>
+      </div>
       <span className="text-sm text-muted-foreground">
         {total > 0 ? `${currentIndex + 1} of ${total} submissions` : "No submissions"}
       </span>

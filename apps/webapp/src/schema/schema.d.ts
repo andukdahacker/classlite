@@ -11690,6 +11690,9 @@ export interface paths {
                     classId?: string;
                     assignmentId?: string;
                     status?: "not_applicable" | "analyzing" | "ready" | "failed";
+                    gradingStatus?: "pending_ai" | "ready" | "in_progress" | "graded";
+                    sortBy?: "submittedAt" | "dueDate" | "studentName";
+                    sortOrder?: "asc" | "desc";
                     page?: number;
                     limit?: number;
                 };
@@ -11716,10 +11719,21 @@ export interface paths {
                                     /** @enum {string} */
                                     analysisStatus: "not_applicable" | "analyzing" | "ready" | "failed";
                                     failureReason?: string | null;
+                                    assignmentId: string;
+                                    classId: string | null;
+                                    className: string | null;
+                                    dueDate: string | null;
+                                    isPriority: boolean;
+                                    /** @enum {string} */
+                                    gradingStatus: "pending_ai" | "ready" | "in_progress" | "graded";
                                 }[];
                                 total: number;
                                 page: number;
                                 limit: number;
+                                progress?: {
+                                    graded: number;
+                                    total: number;
+                                } | null;
                             } | null;
                             message: string;
                         };
@@ -11781,6 +11795,115 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/grading/submissions/{submissionId}/priority": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    submissionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        isPriority: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                submissionId: string;
+                                isPriority: boolean;
+                            };
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/v1/grading/submissions/{submissionId}": {

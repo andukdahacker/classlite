@@ -699,6 +699,7 @@ model Submission {
   startedAt    DateTime         @default(now()) @map("started_at")
   submittedAt  DateTime?        @map("submitted_at")
   timeSpentSec Int?             @map("time_spent_sec")
+  isPriority   Boolean          @default(false) @map("is_priority")
   createdAt    DateTime         @default(now()) @map("created_at")
   updatedAt    DateTime         @updatedAt @map("updated_at")
 
