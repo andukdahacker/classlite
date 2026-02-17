@@ -6,7 +6,9 @@ import {
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { Separator } from "@workspace/ui/components/separator";
 import { ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { HighlightedText } from "./HighlightedText";
+import type { AnchorStatus } from "../hooks/use-anchor-validation";
 
 interface Answer {
   id: string;
@@ -26,11 +28,21 @@ interface Section {
   questions: Question[];
 }
 
+interface StudentWorkFeedbackItem {
+  id: string;
+  startOffset?: number | null;
+  endOffset?: number | null;
+  originalContextSnippet?: string | null;
+  severity?: "error" | "warning" | "suggestion" | null;
+}
+
 interface StudentWorkPaneProps {
   exerciseTitle: string;
   exerciseSkill: "WRITING" | "SPEAKING";
   sections: Section[];
   answers: Answer[];
+  feedbackItems?: StudentWorkFeedbackItem[];
+  anchorStatuses?: Map<string, AnchorStatus>;
 }
 
 function getWordCount(text: string): number {
@@ -45,15 +57,92 @@ function getMinWordCount(skill: string, sectionType?: string): number | null {
   return 250;
 }
 
+const ANSWER_SEPARATOR = "\n\n";
+
 export function StudentWorkPane({
   exerciseTitle,
   exerciseSkill,
   sections,
   answers,
+  feedbackItems,
+  anchorStatuses,
 }: StudentWorkPaneProps) {
   const [promptOpen, setPromptOpen] = useState(true);
 
   const answerMap = new Map(answers.map((a) => [a.questionId, a]));
+
+  // Extract text from each answer
+  const answerTexts = useMemo(() => {
+    return answers.map((a) =>
+      exerciseSkill === "WRITING" ? a.answer?.text ?? "" : a.answer?.transcript ?? "",
+    );
+  }, [answers, exerciseSkill]);
+
+  // Compute per-answer feedback items with local offsets
+  const answerFeedbackMap = useMemo(() => {
+    if (!feedbackItems || feedbackItems.length === 0) return new Map<number, Array<{
+      id: string;
+      startOffset: number;
+      endOffset: number;
+      severity: "error" | "warning" | "suggestion" | null | undefined;
+      anchorStatus: AnchorStatus;
+    }>>();
+
+    const map = new Map<number, Array<{
+      id: string;
+      startOffset: number;
+      endOffset: number;
+      severity: "error" | "warning" | "suggestion" | null | undefined;
+      anchorStatus: AnchorStatus;
+    }>>();
+
+    // Compute global start offset for each answer
+    const answerRanges: Array<{ globalStart: number; globalEnd: number }> = [];
+    let offset = 0;
+    for (const text of answerTexts) {
+      answerRanges.push({ globalStart: offset, globalEnd: offset + text.length });
+      offset += text.length + ANSWER_SEPARATOR.length;
+    }
+
+    for (const item of feedbackItems) {
+      if (item.startOffset == null || item.endOffset == null) continue;
+
+      // Find which answer this item belongs to
+      let answerIdx = -1;
+      for (let i = 0; i < answerRanges.length; i++) {
+        const range = answerRanges[i];
+        if (
+          item.startOffset >= range.globalStart &&
+          item.endOffset <= range.globalEnd
+        ) {
+          answerIdx = i;
+          break;
+        }
+      }
+
+      // Skip items spanning answer boundaries
+      if (answerIdx === -1) continue;
+
+      const range = answerRanges[answerIdx];
+      const localStart = item.startOffset - range.globalStart;
+      const localEnd = item.endOffset - range.globalStart;
+
+      const existing = map.get(answerIdx) ?? [];
+      existing.push({
+        id: item.id,
+        startOffset: localStart,
+        endOffset: localEnd,
+        severity: item.severity,
+        anchorStatus: anchorStatuses?.get(item.id) ?? "no-anchor",
+      });
+      map.set(answerIdx, existing);
+    }
+
+    return map;
+  }, [feedbackItems, answerTexts, anchorStatuses]);
+
+  // Determine whether to render from sections or directly from answers
+  const hasSections = sections.length > 0;
 
   return (
     <ScrollArea className="h-full">
@@ -90,59 +179,91 @@ export function StudentWorkPane({
           </CollapsibleContent>
         </Collapsible>
 
-        {sections.map((section, sIdx) =>
-          section.questions.map((question, qIdx) => {
-            const answer = answerMap.get(question.id);
-            const text =
-              exerciseSkill === "WRITING"
-                ? answer?.answer?.text
-                : answer?.answer?.transcript;
-            const wordCount = text ? getWordCount(text) : 0;
-            const minWords = getMinWordCount(exerciseSkill, section.type);
-            const showSeparator =
-              sIdx < sections.length - 1 ||
-              qIdx < section.questions.length - 1;
+        {hasSections
+          ? sections.map((section, sIdx) =>
+              section.questions.map((question, qIdx) => {
+                const answer = answerMap.get(question.id);
+                const text =
+                  exerciseSkill === "WRITING"
+                    ? answer?.answer?.text
+                    : answer?.answer?.transcript;
+                const wordCount = text ? getWordCount(text) : 0;
+                const minWords = getMinWordCount(exerciseSkill, section.type);
+                const showSeparator =
+                  sIdx < sections.length - 1 ||
+                  qIdx < section.questions.length - 1;
 
-            return (
-              <div key={question.id}>
-                {sections.length > 1 || section.questions.length > 1 ? (
-                  <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-                    Question {qIdx + 1}
-                  </h3>
-                ) : null}
+                return (
+                  <div key={question.id}>
+                    {sections.length > 1 || section.questions.length > 1 ? (
+                      <h3 className="mb-2 text-sm font-medium text-muted-foreground">
+                        Question {qIdx + 1}
+                      </h3>
+                    ) : null}
 
-                <div className="rounded-lg border p-4">
-                  {text ? (
-                    <div className="space-y-1">
-                      {text.split("\n").map((paragraph, pIdx) => (
-                        <p
-                          key={pIdx}
-                          className="text-sm leading-relaxed"
-                        >
-                          {paragraph || "\u00A0"}
+                    <div className="rounded-lg border p-4">
+                      {text ? (
+                        <HighlightedText text={text} feedbackItems={[]} />
+                      ) : (
+                        <p className="text-sm italic text-muted-foreground">
+                          {exerciseSkill === "SPEAKING"
+                            ? "No transcript available"
+                            : "No answer submitted"}
                         </p>
-                      ))}
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-sm italic text-muted-foreground">
-                      {exerciseSkill === "SPEAKING"
-                        ? "No transcript available"
-                        : "No answer submitted"}
-                    </p>
+
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      {minWords
+                        ? `${wordCount} / ${minWords} min words`
+                        : `${wordCount} words`}
+                    </div>
+
+                    {showSeparator && <Separator className="my-4" />}
+                  </div>
+                );
+              }),
+            )
+          : answers.map((answer, aIdx) => {
+              const text =
+                exerciseSkill === "WRITING"
+                  ? answer.answer?.text
+                  : answer.answer?.transcript;
+              const wordCount = text ? getWordCount(text) : 0;
+              const minWords = getMinWordCount(exerciseSkill);
+              const showSeparator = aIdx < answers.length - 1;
+              const itemFeedback = answerFeedbackMap.get(aIdx) ?? [];
+
+              return (
+                <div key={answer.id}>
+                  {answers.length > 1 && (
+                    <h3 className="mb-2 text-sm font-medium text-muted-foreground">
+                      Answer {aIdx + 1}
+                    </h3>
                   )}
-                </div>
 
-                <div className="mt-2 text-xs text-muted-foreground">
-                  {minWords
-                    ? `${wordCount} / ${minWords} min words`
-                    : `${wordCount} words`}
-                </div>
+                  <div className="rounded-lg border p-4">
+                    {text ? (
+                      <HighlightedText text={text} feedbackItems={itemFeedback} />
+                    ) : (
+                      <p className="text-sm italic text-muted-foreground">
+                        {exerciseSkill === "SPEAKING"
+                          ? "No transcript available"
+                          : "No answer submitted"}
+                      </p>
+                    )}
+                  </div>
 
-                {showSeparator && <Separator className="my-4" />}
-              </div>
-            );
-          }),
-        )}
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {minWords
+                      ? `${wordCount} / ${minWords} min words`
+                      : `${wordCount} words`}
+                  </div>
+
+                  {showSeparator && <Separator className="my-4" />}
+                </div>
+              );
+            })}
       </div>
     </ScrollArea>
   );

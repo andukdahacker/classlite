@@ -4,6 +4,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { BandScoreCard } from "./BandScoreCard";
 import { FeedbackItemCard } from "./FeedbackItemCard";
+import type { AnchorStatus } from "../hooks/use-anchor-validation";
 
 type AnalysisStatus = "not_applicable" | "analyzing" | "ready" | "failed";
 type FeedbackType =
@@ -21,6 +22,8 @@ interface FeedbackItem {
   severity?: "error" | "warning" | "suggestion" | null;
   confidence?: number | null;
   originalContextSnippet?: string | null;
+  startOffset?: number | null;
+  endOffset?: number | null;
 }
 
 interface CriteriaScores {
@@ -47,6 +50,9 @@ interface AIFeedbackPaneProps {
   skill: "WRITING" | "SPEAKING";
   onRetrigger: () => void;
   isRetriggering: boolean;
+  anchorStatuses?: Map<string, AnchorStatus>;
+  highlightedItemId?: string | null;
+  onHighlight?: (id: string | null, debounce?: boolean) => void;
 }
 
 const TYPE_ORDER: FeedbackType[] = [
@@ -136,6 +142,9 @@ export function AIFeedbackPane({
   skill,
   onRetrigger,
   isRetriggering,
+  anchorStatuses,
+  highlightedItemId,
+  onHighlight,
 }: AIFeedbackPaneProps) {
   if (analysisStatus === "analyzing") {
     return (
@@ -196,7 +205,13 @@ export function AIFeedbackPane({
             </h3>
             <div className="space-y-2">
               {group.items.map((item) => (
-                <FeedbackItemCard key={item.id} item={item} />
+                <FeedbackItemCard
+                  key={item.id}
+                  item={item}
+                  anchorStatus={anchorStatuses?.get(item.id)}
+                  isHighlighted={highlightedItemId === item.id}
+                  onHighlight={onHighlight}
+                />
               ))}
             </div>
           </div>

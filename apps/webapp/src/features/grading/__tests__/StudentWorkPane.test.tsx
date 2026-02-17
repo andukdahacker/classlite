@@ -24,6 +24,15 @@ vi.mock("@workspace/ui/components/separator", () => ({
   Separator: (props: { className?: string }) => <hr data-testid="separator" {...props} />,
 }));
 
+// Mock HighlightedText to simplify testing
+vi.mock("../components/HighlightedText", () => ({
+  HighlightedText: ({ text, feedbackItems }: { text: string; feedbackItems: unknown[] }) => (
+    <div data-testid="highlighted-text" data-feedback-count={feedbackItems.length}>
+      {text}
+    </div>
+  ),
+}));
+
 import { StudentWorkPane } from "../components/StudentWorkPane";
 
 const mockSections = [
@@ -70,7 +79,7 @@ describe("StudentWorkPane", () => {
     expect(screen.getByText("Discuss the impact of...")).toBeInTheDocument();
   });
 
-  it("renders student text", () => {
+  it("renders student text via HighlightedText", () => {
     render(
       <StudentWorkPane
         exerciseTitle="Test"
@@ -163,5 +172,142 @@ describe("StudentWorkPane", () => {
     expect(screen.getByText("Answer one")).toBeInTheDocument();
     expect(screen.getByText("Answer two")).toBeInTheDocument();
     expect(screen.getAllByTestId("separator")).toHaveLength(1);
+  });
+
+  // NEW TESTS for Story 5-3
+
+  it("renders text from answers when sections is empty", () => {
+    const answersNoSections = [
+      {
+        id: "a1",
+        questionId: "q1",
+        answer: { text: "This is my essay about the topic." },
+      },
+    ];
+
+    render(
+      <StudentWorkPane
+        exerciseTitle="Test"
+        exerciseSkill="WRITING"
+        sections={[]}
+        answers={answersNoSections}
+      />,
+    );
+
+    expect(screen.getByText("This is my essay about the topic.")).toBeInTheDocument();
+  });
+
+  it("displays word count when sections is empty", () => {
+    const answersNoSections = [
+      {
+        id: "a1",
+        questionId: "q1",
+        answer: { text: "One two three four five" },
+      },
+    ];
+
+    render(
+      <StudentWorkPane
+        exerciseTitle="Test"
+        exerciseSkill="WRITING"
+        sections={[]}
+        answers={answersNoSections}
+      />,
+    );
+
+    expect(screen.getByText(/5.*250 min words/)).toBeInTheDocument();
+  });
+
+  it("renders multiple answers with separators when sections is empty", () => {
+    const multiAnswers = [
+      { id: "a1", questionId: "q1", answer: { text: "First answer" } },
+      { id: "a2", questionId: "q2", answer: { text: "Second answer" } },
+    ];
+
+    render(
+      <StudentWorkPane
+        exerciseTitle="Test"
+        exerciseSkill="WRITING"
+        sections={[]}
+        answers={multiAnswers}
+      />,
+    );
+
+    expect(screen.getByText("First answer")).toBeInTheDocument();
+    expect(screen.getByText("Second answer")).toBeInTheDocument();
+    expect(screen.getAllByTestId("separator")).toHaveLength(1);
+  });
+
+  it("passes feedbackItems to HighlightedText when sections is empty", () => {
+    const answersNoSections = [
+      {
+        id: "a1",
+        questionId: "q1",
+        answer: { text: "Hello world" },
+      },
+    ];
+
+    const feedbackItems = [
+      {
+        id: "fb-1",
+        startOffset: 0,
+        endOffset: 5,
+        originalContextSnippet: "Hello",
+        severity: "error" as const,
+      },
+    ];
+
+    const anchorStatuses = new Map([["fb-1", "valid" as const]]);
+
+    render(
+      <StudentWorkPane
+        exerciseTitle="Test"
+        exerciseSkill="WRITING"
+        sections={[]}
+        answers={answersNoSections}
+        feedbackItems={feedbackItems}
+        anchorStatuses={anchorStatuses}
+      />,
+    );
+
+    const highlighted = screen.getByTestId("highlighted-text");
+    expect(highlighted).toBeInTheDocument();
+    expect(highlighted).toHaveAttribute("data-feedback-count", "1");
+  });
+
+  it("shows 'No answer submitted' in empty sections mode with no text", () => {
+    const emptyAnswers = [
+      { id: "a1", questionId: "q1", answer: {} },
+    ];
+
+    render(
+      <StudentWorkPane
+        exerciseTitle="Test"
+        exerciseSkill="WRITING"
+        sections={[]}
+        answers={emptyAnswers}
+      />,
+    );
+
+    expect(screen.getByText("No answer submitted")).toBeInTheDocument();
+  });
+
+  it("shows answer labels when multiple answers in empty sections mode", () => {
+    const multiAnswers = [
+      { id: "a1", questionId: "q1", answer: { text: "First" } },
+      { id: "a2", questionId: "q2", answer: { text: "Second" } },
+    ];
+
+    render(
+      <StudentWorkPane
+        exerciseTitle="Test"
+        exerciseSkill="WRITING"
+        sections={[]}
+        answers={multiAnswers}
+      />,
+    );
+
+    expect(screen.getByText("Answer 1")).toBeInTheDocument();
+    expect(screen.getByText("Answer 2")).toBeInTheDocument();
   });
 });

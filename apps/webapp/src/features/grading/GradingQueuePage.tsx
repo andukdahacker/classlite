@@ -7,13 +7,21 @@ import {
   PenLine,
   RefreshCw,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { AIFeedbackPane } from "./components/AIFeedbackPane";
+import { ConnectionLineOverlay } from "./components/ConnectionLineOverlay";
 import { StudentWorkPane } from "./components/StudentWorkPane";
 import { SubmissionNav } from "./components/SubmissionNav";
 import { WorkbenchLayout } from "./components/WorkbenchLayout";
+import { validateAnchor } from "./hooks/use-anchor-validation";
+import type { AnchorStatus } from "./hooks/use-anchor-validation";
+import {
+  HighlightProvider,
+  useHighlightState,
+} from "./hooks/use-highlight-context";
 import { useGradingQueue } from "./hooks/use-grading-queue";
+import { useMediaQuery } from "./hooks/use-media-query";
 import { usePrefetchSubmission } from "./hooks/use-prefetch-submission";
 import { useRetriggerAnalysis } from "./hooks/use-retrigger-analysis";
 import { useSubmissionDetail } from "./hooks/use-submission-detail";
@@ -30,12 +38,17 @@ function formatRelativeTime(dateStr: string | null): string {
   return `${days}d ago`;
 }
 
-export function GradingQueuePage() {
+const ANSWER_SEPARATOR = "\n\n";
+
+function GradingQueuePageInner() {
   const { centerId, submissionId: urlSubmissionId } = useParams<{
     centerId: string;
     submissionId?: string;
   }>();
   const navigate = useNavigate();
+  const workbenchRef = useRef<HTMLDivElement>(null);
+  const { highlightedItemId, setHighlightedItemId } = useHighlightState();
+  const isMobile = useMediaQuery("(max-width: 767px)");
 
   const {
     data: queueData,
@@ -113,6 +126,78 @@ export function GradingQueuePage() {
     if (currentIndex < submissionIds.length - 1) navigateTo(currentIndex + 1);
   }, [currentIndex, submissionIds.length, navigateTo]);
 
+  // Build detail content
+  const detail = detailData?.data;
+  const submission = detail?.submission;
+  const analysisStatus = detail?.analysisStatus ?? "not_applicable";
+  const feedback = detail?.feedback;
+  const currentQueueItem = queueItems[currentIndex];
+
+  const studentName = currentQueueItem?.studentName ?? "Unknown Student";
+  const assignmentTitle =
+    currentQueueItem?.assignmentTitle ?? "Untitled Assignment";
+  const exerciseSkill = currentQueueItem?.exerciseSkill ?? "WRITING";
+  const skill = (exerciseSkill === "SPEAKING" ? "SPEAKING" : "WRITING") as
+    "WRITING" | "SPEAKING";
+  const submittedAt =
+    submission?.submittedAt ?? currentQueueItem?.submittedAt;
+
+  const answers = useMemo(
+    () =>
+      (submission?.answers ?? []).map((a) => ({
+        id: a.id,
+        questionId: a.questionId ?? "",
+        answer: (a.answer ?? {}) as { text?: string; transcript?: string },
+        score: a.score ?? undefined,
+      })),
+    [submission?.answers],
+  );
+
+  // Build concatenated student text for anchor validation
+  const concatenatedStudentText = useMemo(() => {
+    return answers
+      .map((a) =>
+        skill === "WRITING" ? a.answer?.text ?? "" : a.answer?.transcript ?? "",
+      )
+      .join(ANSWER_SEPARATOR);
+  }, [answers, skill]);
+
+  // Feedback items from API
+  const feedbackItems = useMemo(
+    () => feedback?.items ?? [],
+    [feedback?.items],
+  );
+
+  // Compute anchor statuses per feedback item
+  const anchorStatuses = useMemo(() => {
+    const map = new Map<string, AnchorStatus>();
+    for (const item of feedbackItems) {
+      const result = validateAnchor(
+        item.startOffset,
+        item.endOffset,
+        item.originalContextSnippet,
+        concatenatedStudentText,
+      );
+      map.set(item.id, result.anchorStatus);
+    }
+    return map;
+  }, [feedbackItems, concatenatedStudentText]);
+
+  // Stable highlight callback — debounce param passed through from card
+  const handleHighlight = useCallback(
+    (id: string | null, debounce = true) => {
+      setHighlightedItemId(id, debounce);
+    },
+    [setHighlightedItemId],
+  );
+
+  // Get severity of currently highlighted item for the connection line
+  const highlightedSeverity = useMemo(() => {
+    if (!highlightedItemId) return null;
+    const item = feedbackItems.find((i) => i.id === highlightedItemId);
+    return (item?.severity as "error" | "warning" | "suggestion") ?? null;
+  }, [highlightedItemId, feedbackItems]);
+
   // Loading state
   if (isQueueLoading) {
     return (
@@ -183,29 +268,6 @@ export function GradingQueuePage() {
     );
   }
 
-  // Build detail content
-  const detail = detailData?.data;
-  const submission = detail?.submission;
-  const analysisStatus = detail?.analysisStatus ?? "not_applicable";
-  const feedback = detail?.feedback;
-  const currentQueueItem = queueItems[currentIndex];
-
-  const studentName = currentQueueItem?.studentName ?? "Unknown Student";
-  const assignmentTitle =
-    currentQueueItem?.assignmentTitle ?? "Untitled Assignment";
-  const exerciseSkill = currentQueueItem?.exerciseSkill ?? "WRITING";
-  const skill = (exerciseSkill === "SPEAKING" ? "SPEAKING" : "WRITING") as
-    "WRITING" | "SPEAKING";
-  const submittedAt =
-    submission?.submittedAt ?? currentQueueItem?.submittedAt;
-
-  const answers = (submission?.answers ?? []).map((a) => ({
-    id: a.id,
-    questionId: a.questionId ?? "",
-    answer: (a.answer ?? {}) as { text?: string; transcript?: string },
-    score: a.score ?? undefined,
-  }));
-
   return (
     <div className="flex h-full flex-col">
       {/* Workbench header */}
@@ -254,12 +316,23 @@ export function GradingQueuePage() {
         </div>
       ) : (
         <WorkbenchLayout
+          containerRef={workbenchRef}
+          overlay={
+            <ConnectionLineOverlay
+              containerRef={workbenchRef}
+              highlightedItemId={highlightedItemId}
+              isMobile={isMobile}
+              severity={highlightedSeverity}
+            />
+          }
           leftPane={
             <StudentWorkPane
               exerciseTitle={assignmentTitle}
               exerciseSkill={skill}
               sections={[]}
               answers={answers}
+              feedbackItems={feedbackItems}
+              anchorStatuses={anchorStatuses}
             />
           }
           rightPane={
@@ -280,10 +353,21 @@ export function GradingQueuePage() {
               skill={skill}
               onRetrigger={() => retriggerMutation.mutate()}
               isRetriggering={retriggerMutation.isPending}
+              anchorStatuses={anchorStatuses}
+              highlightedItemId={highlightedItemId}
+              onHighlight={handleHighlight}
             />
           }
         />
       )}
     </div>
+  );
+}
+
+export function GradingQueuePage() {
+  return (
+    <HighlightProvider>
+      <GradingQueuePageInner />
+    </HighlightProvider>
   );
 }
