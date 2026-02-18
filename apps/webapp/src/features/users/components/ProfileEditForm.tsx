@@ -29,8 +29,8 @@ import {
 import type { AuthUser } from "@workspace/types";
 
 const profileFormSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100),
-  phoneNumber: z.string().max(20).optional().or(z.literal("")),
+  name: z.string().min(1, "Name is required").max(100, "Name must be at most 100 characters"),
+  phoneNumber: z.string().max(20, "Phone number must be at most 20 characters").optional().or(z.literal("")),
   preferredLanguage: z.enum(["en", "vi"]),
   emailScheduleNotifications: z.boolean(),
 });

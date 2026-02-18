@@ -29,6 +29,7 @@ import { notificationsRoutes } from "./modules/notifications/notifications.route
 import { usersRoutes } from "./modules/users/users.routes.js";
 import { submissionsRoutes } from "./modules/submissions/submissions.routes.js";
 import { gradingRoutes } from "./modules/grading/grading.routes.js";
+import { studentHealthRoutes } from "./modules/student-health/index.js";
 import { inngestRoutes } from "./modules/inngest/inngest.routes.js";
 import { healthRoutes } from "./modules/health/health.routes.js";
 import firebasePlugin from "./plugins/firebase.plugin.js";
@@ -238,6 +239,7 @@ export const buildApp = async () => {
   await app.register(studentAssignmentsRoutes, { prefix: "/api/v1/student/assignments" });
   await app.register(submissionsRoutes, { prefix: "/api/v1/student/submissions" });
   await app.register(gradingRoutes, { prefix: "/api/v1/grading" });
+  await app.register(studentHealthRoutes, { prefix: "/api/v1/student-health" });
   await app.register(notificationsRoutes, { prefix: "/api/v1/notifications" });
   await app.register(usersRoutes, { prefix: "/api/v1/users" });
 

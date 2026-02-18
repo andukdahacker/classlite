@@ -12,3 +12,4 @@ export * from "./mock-tests.js";
 export * from "./assignments.js";
 export * from "./submissions.js";
 export * from "./grading.js";
+export * from "./student-health.js";

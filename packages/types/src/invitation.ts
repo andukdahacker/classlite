@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createResponseSchema } from "./response.js";
 
 export const CreateInvitationRequestSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email("Invalid email address"),
   role: z.enum(["ADMIN", "TEACHER", "STUDENT"]),
   personalMessage: z.string().max(500).optional(),
 });

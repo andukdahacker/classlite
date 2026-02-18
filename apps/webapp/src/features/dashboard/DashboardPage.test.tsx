@@ -58,7 +58,7 @@ describe("DashboardPage", () => {
     );
 
     expect(
-      await screen.findByText(/Center Health Overview/i),
+      await screen.findByText(/Student Health/i),
     ).toBeInTheDocument();
   });
 

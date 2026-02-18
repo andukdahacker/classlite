@@ -36,13 +36,16 @@ export default function DashboardPage() {
         <RBACWrapper requiredRoles={["OWNER"]}>
           <OwnerDashboard />
         </RBACWrapper>
+        <RBACWrapper requiredRoles={["ADMIN"]}>
+          <OwnerDashboard />
+        </RBACWrapper>
         <RBACWrapper requiredRoles={["TEACHER"]}>
           <TeacherDashboard />
         </RBACWrapper>
         <RBACWrapper requiredRoles={["STUDENT"]}>
           <StudentDashboard />
         </RBACWrapper>
-        {user && !["OWNER", "TEACHER", "STUDENT"].includes(user.role) && (
+        {user && !["OWNER", "ADMIN", "TEACHER", "STUDENT"].includes(user.role) && (
           <div className="flex h-[50vh] items-center justify-center p-4">
             <div className="text-center">
               <h2 className="text-xl font-semibold">Unknown Role</h2>
