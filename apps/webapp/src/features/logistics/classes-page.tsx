@@ -16,8 +16,9 @@ import {
   TabsList,
   TabsTrigger,
 } from "@workspace/ui/components/tabs";
-import { Edit2, Loader2, Plus, Trash2, Users } from "lucide-react";
+import { Edit2, HeartPulse, Loader2, Plus, Trash2, Users } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import { ClassDrawer } from "./components/ClassDrawer";
 import { CourseDrawer } from "./components/CourseDrawer";
@@ -155,6 +156,18 @@ export const ClassesPage = () => {
                       <TableCell>{cls.studentCount || 0}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          {user?.role === "TEACHER" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              asChild
+                            >
+                              <Link to={`/${centerId}/dashboard/students?classId=${cls.id}`}>
+                                <HeartPulse className="mr-2 size-4" />
+                                View Health
+                              </Link>
+                            </Button>
+                          )}
                           <RBACWrapper requiredRoles={["OWNER", "ADMIN"]}>
                             <Button
                               variant="outline"

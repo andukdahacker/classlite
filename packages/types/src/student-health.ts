@@ -34,6 +34,7 @@ export const StudentHealthCardSchema = z.object({
       name: z.string(),
     }),
   ),
+  hasOpenFlags: z.boolean().optional(),
 });
 export type StudentHealthCard = z.infer<typeof StudentHealthCardSchema>;
 
@@ -131,4 +132,27 @@ export type StudentProfileResponse = z.infer<
 
 export const StudentProfileApiResponseSchema = createResponseSchema(
   StudentProfileResponseSchema,
+);
+
+// --- Teacher At-Risk Widget (Story 6.4) ---
+
+export const ClassBreakdownSchema = z.object({
+  classId: z.string(),
+  className: z.string(),
+  atRiskCount: z.number(),
+  warningCount: z.number(),
+});
+export type ClassBreakdown = z.infer<typeof ClassBreakdownSchema>;
+
+export const TeacherAtRiskWidgetResponseSchema = z.object({
+  students: z.array(StudentHealthCardSchema),
+  summary: HealthSummarySchema,
+  classBreakdown: z.array(ClassBreakdownSchema),
+});
+export type TeacherAtRiskWidgetResponse = z.infer<
+  typeof TeacherAtRiskWidgetResponseSchema
+>;
+
+export const TeacherAtRiskWidgetApiResponseSchema = createResponseSchema(
+  TeacherAtRiskWidgetResponseSchema,
 );

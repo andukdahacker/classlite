@@ -17,6 +17,7 @@ model User {
   preferredLanguage   String    @default("en") @map("preferred_language")
   deletionRequestedAt          DateTime? @map("deletion_requested_at")
   emailScheduleNotifications   Boolean   @default(true) @map("email_schedule_notifications")
+  parentEmail                  String?   @map("parent_email")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -36,6 +37,11 @@ model User {
   studentAssignments  AssignmentStudent[] @relation("AssignmentStudents")
   submissions         Submission[]
   teacherComments     TeacherComment[]
+  interventionsReceived InterventionLog[] @relation("InterventionStudent")
+  interventionsCreated  InterventionLog[] @relation("InterventionCreatedBy")
+  flagsReceived         StudentFlag[]     @relation("FlaggedStudent")
+  flagsCreated          StudentFlag[]     @relation("FlagCreator")
+  flagsResolved         StudentFlag[]     @relation("FlagResolver")
 
   @@map("user")
 }
@@ -825,6 +831,69 @@ model TeacherComment {
   @@index([centerId])
   @@index([submissionId])
   @@map("teacher_comment")
+}
+
+// ─── Student Health Intervention (Story 6.3) ────────────────────────
+
+enum InterventionStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model InterventionLog {
+  id             String             @id @default(cuid())
+  studentId      String             @map("student_id")
+  centerId       String             @map("center_id")
+  createdById    String             @map("created_by_id")
+  recipientEmail String             @map("recipient_email")
+  subject        String
+  body           String             @db.Text
+  templateUsed   String             @map("template_used")
+  status         InterventionStatus @default(PENDING)
+  error          String?
+  sentAt         DateTime           @default(now()) @map("sent_at")
+
+  student   User @relation("InterventionStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy User @relation("InterventionCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@unique([id, centerId])
+  @@index([centerId])
+  @@index([studentId])
+  @@index([studentId, sentAt])
+  @@map("intervention_log")
+}
+
+// ─── Student Flags (Story 6.4) ──────────────────────────────────────
+
+enum StudentFlagStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+model StudentFlag {
+  id           String            @id @default(cuid())
+  studentId    String            @map("student_id")
+  centerId     String            @map("center_id")
+  createdById  String            @map("created_by_id")
+  note         String            @db.Text
+  status       StudentFlagStatus @default(OPEN)
+  resolvedById String?           @map("resolved_by_id")
+  resolvedNote String?           @map("resolved_note")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  resolvedAt   DateTime?         @map("resolved_at")
+
+  student    User  @relation("FlaggedStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy  User  @relation("FlagCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  resolvedBy User? @relation("FlagResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@unique([id, centerId])
+  @@index([centerId])
+  @@index([studentId])
+  @@index([studentId, status])
+  @@map("student_flag")
 }
 
 // ─── Email Logging ──────────────────────────────────────────────────

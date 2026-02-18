@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useSearchParams } from "react-router";
 import type { HealthStatus } from "@workspace/types";
 import { Input } from "@workspace/ui/components/input";
 import {
@@ -17,7 +18,9 @@ import { StudentHealthCardComponent } from "./StudentHealthCard";
 import { StudentProfileOverlay } from "./StudentProfileOverlay";
 
 export function StudentHealthDashboard() {
-  const [classId, setClassId] = useState<string | undefined>();
+  const [searchParams] = useSearchParams();
+  const initialClassId = searchParams.get("classId") ?? undefined;
+  const [classId, setClassId] = useState<string | undefined>(initialClassId);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<HealthStatus | null>(null);

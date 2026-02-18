@@ -2,9 +2,36 @@ import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockUseStudentProfile = vi.fn();
+const mockUseAuth = vi.fn();
 
 vi.mock("../hooks/use-student-profile", () => ({
   useStudentProfile: (...args: unknown[]) => mockUseStudentProfile(...args),
+}));
+
+vi.mock("@/features/auth/auth-context", () => ({
+  useAuth: () => mockUseAuth(),
+}));
+
+vi.mock("../hooks/use-intervention", () => ({
+  useInterventionHistory: () => ({
+    history: [],
+    isLoading: false,
+  }),
+  useInterventionPreview: () => ({
+    preview: null,
+    isLoading: false,
+  }),
+  useSendIntervention: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
+}));
+
+const mockUseStudentFlags = vi.fn();
+vi.mock("../hooks/use-student-flags", () => ({
+  useStudentFlags: (...args: unknown[]) => mockUseStudentFlags(...args),
+  useCreateFlag: () => ({ mutate: vi.fn(), isPending: false }),
+  useResolveFlag: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 import { StudentProfileOverlay } from "../components/StudentProfileOverlay";
@@ -72,6 +99,13 @@ describe("StudentProfileOverlay", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({ user: { role: "OWNER" }, isLoading: false });
+    mockUseStudentFlags.mockReturnValue({
+      flags: [],
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
   });
 
   it("renders student name and email when open", () => {
@@ -110,7 +144,7 @@ describe("StudentProfileOverlay", () => {
       />,
     );
 
-    // All three tabs exist
+    // All four tabs exist
     expect(screen.getByRole("tab", { name: /trends/i })).toBeInTheDocument();
     expect(
       screen.getByRole("tab", { name: /attendance/i }),
@@ -236,5 +270,207 @@ describe("StudentProfileOverlay", () => {
     closeButton.click();
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("shows Contact Parent button for OWNER/ADMIN and hides for TEACHER", () => {
+    mockUseStudentProfile.mockReturnValue({
+      profile: makeProfile(),
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+
+    // OWNER should see the button
+    mockUseAuth.mockReturnValue({ user: { role: "OWNER" }, isLoading: false });
+    const { unmount } = render(
+      <StudentProfileOverlay
+        studentId="s1"
+        open={true}
+        onOpenChange={onOpenChange}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: /contact parent/i }),
+    ).toBeInTheDocument();
+    unmount();
+
+    // TEACHER should NOT see the button
+    mockUseAuth.mockReturnValue({
+      user: { role: "TEACHER" },
+      isLoading: false,
+    });
+    render(
+      <StudentProfileOverlay
+        studentId="s1"
+        open={true}
+        onOpenChange={onOpenChange}
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: /contact parent/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders Interventions tab", () => {
+    mockUseStudentProfile.mockReturnValue({
+      profile: makeProfile(),
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+
+    render(
+      <StudentProfileOverlay
+        studentId="s1"
+        open={true}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    expect(
+      screen.getByRole("tab", { name: /interventions/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows Flag for Admin button for TEACHER role", () => {
+    mockUseAuth.mockReturnValue({
+      user: { role: "TEACHER" },
+      isLoading: false,
+    });
+    mockUseStudentProfile.mockReturnValue({
+      profile: makeProfile(),
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+
+    render(
+      <StudentProfileOverlay
+        studentId="s1"
+        open={true}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /flag for admin/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("hides Interventions tab for TEACHER role", () => {
+    mockUseAuth.mockReturnValue({
+      user: { role: "TEACHER" },
+      isLoading: false,
+    });
+    mockUseStudentProfile.mockReturnValue({
+      profile: makeProfile(),
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+
+    render(
+      <StudentProfileOverlay
+        studentId="s1"
+        open={true}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("tab", { name: /interventions/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows flags section for TEACHER when open flags exist (read-only)", () => {
+    mockUseAuth.mockReturnValue({
+      user: { role: "TEACHER" },
+      isLoading: false,
+    });
+    mockUseStudentProfile.mockReturnValue({
+      profile: makeProfile(),
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+    mockUseStudentFlags.mockReturnValue({
+      flags: [
+        {
+          id: "flag-1",
+          studentId: "s1",
+          centerId: "c1",
+          createdById: "t1",
+          createdByName: "Teacher",
+          note: "Needs help with attendance",
+          status: "OPEN",
+          resolvedById: null,
+          resolvedByName: null,
+          resolvedNote: null,
+          createdAt: "2026-02-18T10:00:00Z",
+          resolvedAt: null,
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(
+      <StudentProfileOverlay
+        studentId="s1"
+        open={true}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    expect(screen.getByText(/Student Flags/)).toBeInTheDocument();
+    // Teacher should NOT see resolve button (isAdmin=false)
+    expect(
+      screen.queryByRole("button", { name: /^resolve$/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows flags section for ADMIN when open flags exist", () => {
+    mockUseAuth.mockReturnValue({
+      user: { role: "ADMIN" },
+      isLoading: false,
+    });
+    mockUseStudentProfile.mockReturnValue({
+      profile: makeProfile(),
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+    mockUseStudentFlags.mockReturnValue({
+      flags: [
+        {
+          id: "flag-1",
+          studentId: "s1",
+          centerId: "c1",
+          createdById: "t1",
+          createdByName: "Teacher",
+          note: "Needs help with attendance",
+          status: "OPEN",
+          resolvedById: null,
+          resolvedByName: null,
+          resolvedNote: null,
+          createdAt: "2026-02-18T10:00:00Z",
+          resolvedAt: null,
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(
+      <StudentProfileOverlay
+        studentId="s1"
+        open={true}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    expect(screen.getByText(/Student Flags/)).toBeInTheDocument();
   });
 });

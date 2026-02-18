@@ -22,6 +22,41 @@ vi.mock("../hooks/use-student-profile", () => ({
   useStudentProfile: (...args: unknown[]) => mockUseStudentProfile(...args),
 }));
 
+vi.mock("@/features/auth/auth-context", () => ({
+  useAuth: () => ({ user: { role: "OWNER" }, isLoading: false }),
+}));
+
+vi.mock("../hooks/use-intervention", () => ({
+  useInterventionHistory: () => ({
+    history: [],
+    isLoading: false,
+  }),
+  useInterventionPreview: () => ({
+    preview: null,
+    isLoading: false,
+  }),
+  useSendIntervention: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
+}));
+
+vi.mock("../hooks/use-student-flags", () => ({
+  useStudentFlags: () => ({
+    flags: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+  useCreateFlag: () => ({ mutate: vi.fn(), isPending: false }),
+  useResolveFlag: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+const mockSearchParams = vi.fn(() => new URLSearchParams());
+vi.mock("react-router", () => ({
+  useSearchParams: () => [mockSearchParams()],
+}));
+
 function makeStudent(
   overrides: Partial<StudentHealthCard> = {},
 ): StudentHealthCard {
@@ -165,6 +200,61 @@ describe("StudentHealthDashboard", () => {
 
     // After clicking, useStudentProfile should be called with the student's ID
     expect(mockUseStudentProfile).toHaveBeenCalledWith("s1");
+  });
+
+  it("renders correctly with teacher-scoped data (empty classes)", () => {
+    // Teacher scoping is enforced by the backend — the dashboard renders
+    // whatever the API returns. Verify it handles teacher-scoped empty data.
+    setupHook({
+      students: [],
+      summary: { total: 0, atRisk: 0, warning: 0, onTrack: 0 },
+    });
+
+    render(<StudentHealthDashboard />);
+
+    expect(screen.getByText("Student Health")).toBeInTheDocument();
+    expect(
+      screen.getByText(/No students enrolled yet/),
+    ).toBeInTheDocument();
+  });
+
+  it("shows flag icon on student cards with hasOpenFlags", () => {
+    const studentWithFlags = makeStudent({
+      id: "s-flagged",
+      name: "Flagged Student",
+      hasOpenFlags: true,
+    });
+    const studentNoFlags = makeStudent({
+      id: "s-clean",
+      name: "Clean Student",
+      hasOpenFlags: false,
+    });
+    setupHook({
+      students: [studentWithFlags, studentNoFlags],
+      summary: { total: 2, atRisk: 0, warning: 0, onTrack: 2 },
+    });
+
+    render(<StudentHealthDashboard />);
+
+    // The flagged student card should have a flag icon
+    const flagIcons = document.querySelectorAll('[aria-label="Has open flags"]');
+    expect(flagIcons).toHaveLength(1);
+  });
+
+  it("pre-populates class filter from URL classId search param", () => {
+    mockSearchParams.mockReturnValueOnce(new URLSearchParams("classId=c1"));
+    const student = makeStudent({ classes: [{ id: "c1", name: "IELTS A" }] });
+    setupHook({
+      students: [student],
+      summary: { total: 1, atRisk: 0, warning: 0, onTrack: 1 },
+    });
+
+    render(<StudentHealthDashboard />);
+
+    // The hook should be called with classId from URL
+    expect(mockUseHook).toHaveBeenCalledWith(
+      expect.objectContaining({ classId: "c1" }),
+    );
   });
 
   it("debounces search input before calling API", async () => {

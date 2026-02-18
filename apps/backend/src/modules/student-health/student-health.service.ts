@@ -4,8 +4,19 @@ import type {
   StudentHealthCard,
   StudentHealthDashboardResponse,
   StudentProfileResponse,
+  InterventionLogRecord,
+  InterventionEmailPreview,
+  InterventionTemplate,
+  TeacherAtRiskWidgetResponse,
+  StudentFlagRecord,
 } from "@workspace/types";
 import { AppError } from "../../errors/app-error.js";
+import { inngest } from "../inngest/client.js";
+import {
+  buildInterventionEmailSubject,
+  buildInterventionEmailPreviewText,
+  wrapPlainTextInEmailHtml,
+} from "./emails/intervention.template.js";
 
 const ATTENDANCE_THRESHOLDS = { AT_RISK: 80, WARNING: 90 } as const;
 const COMPLETION_THRESHOLDS = { AT_RISK: 50, WARNING: 75 } as const;
@@ -38,9 +49,26 @@ export class StudentHealthService {
   async getDashboard(
     centerId: string,
     filters: { classId?: string; search?: string },
+    teacherUserId?: string,
   ): Promise<StudentHealthDashboardResponse> {
     const db = getTenantedClient(this.prisma, centerId);
     const now = new Date();
+
+    // Teacher scoping: get teacher's class IDs first
+    let teacherClassIds: string[] | undefined;
+    if (teacherUserId) {
+      const teacherClasses = await db.class.findMany({
+        where: { teacherId: teacherUserId },
+        select: { id: true },
+      });
+      teacherClassIds = teacherClasses.map((c) => c.id);
+      if (teacherClassIds.length === 0) {
+        return {
+          students: [],
+          summary: { total: 0, atRisk: 0, warning: 0, onTrack: 0 },
+        };
+      }
+    }
 
     // Step A — Get all active students in center
     const memberships = await db.centerMembership.findMany({
@@ -64,11 +92,28 @@ export class StudentHealthService {
       };
     }
 
+    // Build class filter: intersection of teacher's classes + optional classId filter
+    const classFilter = filters.classId
+      ? teacherClassIds
+        ? teacherClassIds.includes(filters.classId)
+          ? [filters.classId]
+          : [] // Teacher can only filter within their classes
+        : [filters.classId]
+      : teacherClassIds;
+
+    // If teacher filtering resulted in empty class list, return empty
+    if (classFilter && classFilter.length === 0) {
+      return {
+        students: [],
+        summary: { total: 0, atRisk: 0, warning: 0, onTrack: 0 },
+      };
+    }
+
     // Step B — Get enrollment data
     const enrollments = await db.classStudent.findMany({
       where: {
         studentId: { in: studentIds },
-        ...(filters.classId ? { classId: filters.classId } : {}),
+        ...(classFilter ? { classId: { in: classFilter } } : {}),
       },
       include: {
         class: { select: { id: true, name: true } },
@@ -83,8 +128,8 @@ export class StudentHealthService {
       enrollmentMap.set(e.studentId, classes);
     }
 
-    // If classId filter, only include students enrolled in that class
-    const filteredStudentIds = filters.classId
+    // If classId or teacher filter, only include students enrolled in those classes
+    const filteredStudentIds = classFilter
       ? studentIds.filter((id) => enrollmentMap.has(id))
       : studentIds;
 
@@ -160,6 +205,16 @@ export class StudentHealthService {
       submissionLookup.set(s.studentId, set);
     }
 
+    // Query open flags for all students (for admin badge display)
+    const openFlags = await db.studentFlag.findMany({
+      where: {
+        studentId: { in: filteredStudentIds },
+        status: "OPEN",
+      },
+      select: { studentId: true },
+    });
+    const flaggedStudentIds = new Set(openFlags.map((f) => f.studentId));
+
     // Build per-student data
     const membershipLookup = new Map(
       memberships
@@ -234,6 +289,7 @@ export class StudentHealthService {
           overdueAssignments,
         },
         classes: studentClasses,
+        hasOpenFlags: flaggedStudentIds.has(studentId),
       });
     }
 
@@ -258,9 +314,25 @@ export class StudentHealthService {
   async getStudentProfile(
     centerId: string,
     studentId: string,
+    teacherUserId?: string,
   ): Promise<StudentProfileResponse> {
     const db = getTenantedClient(this.prisma, centerId);
     const now = new Date();
+
+    // Teacher access check: verify student is in teacher's class
+    if (teacherUserId) {
+      const hasAccess = await db.classStudent.findFirst({
+        where: {
+          studentId,
+          class: { teacherId: teacherUserId },
+        },
+      });
+      if (!hasAccess) {
+        throw AppError.forbidden(
+          "You can only view students in your classes",
+        );
+      }
+    }
 
     // Step A — Validate student exists and belongs to center
     const membership = await db.centerMembership.findFirst({
@@ -548,5 +620,383 @@ export class StudentHealthService {
       assignmentHistory,
       weeklyTrends,
     };
+  }
+
+  async sendIntervention(
+    centerId: string,
+    createdById: string,
+    payload: {
+      studentId: string;
+      recipientEmail: string;
+      subject: string;
+      body: string;
+      templateUsed: string;
+    },
+  ): Promise<{ interventionId: string; status: "pending" }> {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    // Validate student exists in center
+    const membership = await db.centerMembership.findFirst({
+      where: {
+        userId: payload.studentId,
+        role: "STUDENT",
+        status: "ACTIVE",
+      },
+    });
+    if (!membership) {
+      throw AppError.notFound("Student not found");
+    }
+
+    // Fetch center name for branded HTML email wrapping
+    const center = await this.prisma.center.findUnique({
+      where: { id: centerId },
+      select: { name: true },
+    });
+    const centerName = center?.name ?? "ClassLite";
+
+    // Wrap user's plain text body in branded HTML email template
+    const htmlBody = wrapPlainTextInEmailHtml(payload.body, centerName);
+
+    // Create InterventionLog record with rendered HTML
+    const log = await db.interventionLog.create({
+      data: {
+        studentId: payload.studentId,
+        centerId,
+        createdById,
+        recipientEmail: payload.recipientEmail,
+        subject: payload.subject,
+        body: htmlBody,
+        templateUsed: payload.templateUsed,
+        status: "PENDING",
+      },
+    });
+
+    // Fire Inngest event for background email sending
+    await inngest.send({
+      name: "student-health/intervention.send",
+      data: {
+        interventionLogId: log.id,
+        centerId,
+        recipientEmail: payload.recipientEmail,
+        subject: payload.subject,
+        body: htmlBody,
+      },
+    });
+
+    return { interventionId: log.id, status: "pending" };
+  }
+
+  async getInterventionHistory(
+    centerId: string,
+    studentId: string,
+  ): Promise<InterventionLogRecord[]> {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    // Validate student exists in center
+    const membership = await db.centerMembership.findFirst({
+      where: {
+        userId: studentId,
+        role: "STUDENT",
+        status: "ACTIVE",
+      },
+    });
+    if (!membership) {
+      throw AppError.notFound("Student not found");
+    }
+
+    const logs = await db.interventionLog.findMany({
+      where: { studentId },
+      orderBy: { sentAt: "desc" },
+    });
+
+    return logs.map((log) => ({
+      id: log.id,
+      studentId: log.studentId,
+      centerId: log.centerId,
+      createdById: log.createdById,
+      recipientEmail: log.recipientEmail,
+      subject: log.subject,
+      body: log.body,
+      templateUsed: log.templateUsed,
+      status: log.status,
+      error: log.error,
+      sentAt: log.sentAt.toISOString(),
+    }));
+  }
+
+  async getEmailPreview(
+    centerId: string,
+    studentId: string,
+  ): Promise<InterventionEmailPreview> {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    // Validate student exists in center
+    const membership = await db.centerMembership.findFirst({
+      where: {
+        userId: studentId,
+        role: "STUDENT",
+        status: "ACTIVE",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            parentEmail: true,
+            preferredLanguage: true,
+          },
+        },
+      },
+    });
+    if (!membership) {
+      throw AppError.notFound("Student not found");
+    }
+
+    const user = membership.user;
+
+    // Fetch center info for template
+    const center = await this.prisma.center.findUnique({
+      where: { id: centerId },
+      select: { name: true },
+    });
+    const centerName = center?.name ?? "ClassLite";
+
+    // Compute health metrics to auto-detect template
+    const profile = await this.getStudentProfile(centerId, studentId);
+    const { metrics, classes } = profile.student;
+
+    // Auto-detect template variant
+    let templateUsed: InterventionTemplate;
+    if (metrics.attendanceRate < 80) {
+      templateUsed = "concern-attendance";
+    } else if (metrics.assignmentCompletionRate < 50) {
+      templateUsed = "concern-assignments";
+    } else {
+      templateUsed = "concern-general";
+    }
+
+    const locale = (
+      user.preferredLanguage === "vi" ? "vi" : "en"
+    ) as "en" | "vi";
+    const studentName = user.name ?? "Student";
+
+    const subject = buildInterventionEmailSubject(
+      templateUsed,
+      studentName,
+      centerName,
+      locale,
+    );
+
+    const body = buildInterventionEmailPreviewText(
+      {
+        studentName,
+        centerName,
+        senderName: "[Your Name]",
+        attendanceRate: metrics.attendanceRate,
+        attendedSessions: metrics.attendedSessions,
+        totalSessions: metrics.totalSessions,
+        assignmentCompletionRate: metrics.assignmentCompletionRate,
+        completedAssignments: metrics.completedAssignments,
+        totalAssignments: metrics.totalAssignments,
+        overdueAssignments: metrics.overdueAssignments,
+        healthStatus: profile.student.healthStatus,
+        classes: classes.map((c) => c.name),
+        locale,
+      },
+      templateUsed,
+    );
+
+    return {
+      recipientEmail: user.parentEmail ?? null,
+      subject,
+      body,
+      templateUsed,
+    };
+  }
+
+  async getTeacherAtRiskWidget(
+    centerId: string,
+    teacherUserId: string,
+  ): Promise<TeacherAtRiskWidgetResponse> {
+    const dashboard = await this.getDashboard(
+      centerId,
+      {},
+      teacherUserId,
+    );
+
+    // Filter to only at-risk + warning, limit to 6
+    const atRiskStudents = dashboard.students
+      .filter(
+        (s) => s.healthStatus === "at-risk" || s.healthStatus === "warning",
+      )
+      .slice(0, 6);
+
+    // Build class breakdown from dashboard student data (avoids extra DB query)
+    const classMap = new Map<string, { className: string; atRiskCount: number; warningCount: number }>();
+    for (const student of dashboard.students) {
+      for (const cls of student.classes) {
+        if (!classMap.has(cls.id)) {
+          classMap.set(cls.id, { className: cls.name, atRiskCount: 0, warningCount: 0 });
+        }
+        const entry = classMap.get(cls.id)!;
+        if (student.healthStatus === "at-risk") entry.atRiskCount++;
+        if (student.healthStatus === "warning") entry.warningCount++;
+      }
+    }
+    const classBreakdown = Array.from(classMap.entries()).map(([classId, data]) => ({
+      classId,
+      ...data,
+    }));
+
+    return {
+      students: atRiskStudents,
+      summary: dashboard.summary,
+      classBreakdown,
+    };
+  }
+
+  async createFlag(
+    centerId: string,
+    studentId: string,
+    createdById: string,
+    note: string,
+    teacherUserId?: string,
+  ): Promise<{ flagId: string; status: "OPEN" }> {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    // Teacher access check: verify student is in teacher's class
+    if (teacherUserId) {
+      const hasAccess = await db.classStudent.findFirst({
+        where: {
+          studentId,
+          class: { teacherId: teacherUserId },
+        },
+      });
+      if (!hasAccess) {
+        throw AppError.forbidden(
+          "You can only flag students in your classes",
+        );
+      }
+    }
+
+    // Validate student exists in center
+    const membership = await db.centerMembership.findFirst({
+      where: {
+        userId: studentId,
+        role: "STUDENT",
+        status: "ACTIVE",
+      },
+      include: {
+        user: { select: { name: true } },
+      },
+    });
+    if (!membership) {
+      throw AppError.notFound("Student not found");
+    }
+
+    // Get teacher name for notification
+    const teacher = await this.prisma.user.findUnique({
+      where: { id: createdById },
+      select: { name: true },
+    });
+
+    const flag = await db.studentFlag.create({
+      data: {
+        studentId,
+        centerId,
+        createdById,
+        note,
+        status: "OPEN",
+      },
+    });
+
+    // Create in-app notification for all OWNER/ADMIN users in center
+    const adminMembers = await db.centerMembership.findMany({
+      where: {
+        role: { in: ["OWNER", "ADMIN"] },
+        status: "ACTIVE",
+      },
+      select: { userId: true },
+    });
+
+    const teacherName = teacher?.name ?? "A teacher";
+    const studentName = membership.user.name ?? "a student";
+    const truncatedNote =
+      note.length > 100 ? note.slice(0, 100) + "..." : note;
+
+    if (adminMembers.length > 0) {
+      await db.notification.createMany({
+        data: adminMembers.map((m) => ({
+          userId: m.userId,
+          centerId,
+          title: "Student Flagged",
+          message: `${teacherName} flagged ${studentName}: ${truncatedNote}`,
+        })),
+      });
+    }
+
+    return { flagId: flag.id, status: "OPEN" };
+  }
+
+  async getStudentFlags(
+    centerId: string,
+    studentId: string,
+  ): Promise<StudentFlagRecord[]> {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const flags = await db.studentFlag.findMany({
+      where: { studentId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        createdBy: { select: { name: true } },
+        resolvedBy: { select: { name: true } },
+      },
+    });
+
+    return flags.map((f) => ({
+      id: f.id,
+      studentId: f.studentId,
+      centerId: f.centerId,
+      createdById: f.createdById,
+      createdByName: f.createdBy.name,
+      note: f.note,
+      status: f.status,
+      resolvedById: f.resolvedById,
+      resolvedByName: f.resolvedBy?.name ?? null,
+      resolvedNote: f.resolvedNote,
+      createdAt: f.createdAt.toISOString(),
+      resolvedAt: f.resolvedAt?.toISOString() ?? null,
+    }));
+  }
+
+  async resolveFlag(
+    centerId: string,
+    flagId: string,
+    resolvedById: string,
+    resolvedNote?: string,
+  ): Promise<{ flagId: string; status: "RESOLVED" }> {
+    const db = getTenantedClient(this.prisma, centerId);
+
+    const flag = await db.studentFlag.findFirst({
+      where: { id: flagId },
+    });
+    if (!flag) {
+      throw AppError.notFound("Flag not found");
+    }
+    if (flag.status === "RESOLVED") {
+      throw AppError.conflict("Flag is already resolved");
+    }
+
+    await db.studentFlag.update({
+      where: { id: flagId },
+      data: {
+        status: "RESOLVED",
+        resolvedById,
+        resolvedNote: resolvedNote ?? null,
+        resolvedAt: new Date(),
+      },
+    });
+
+    return { flagId, status: "RESOLVED" };
   }
 }

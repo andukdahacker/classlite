@@ -7,6 +7,7 @@ import {
   AvatarImage,
 } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
+import { Flag } from "lucide-react";
 import { TrafficLightBadge } from "./TrafficLightBadge";
 
 const BORDER_COLORS = {
@@ -71,7 +72,12 @@ export const StudentHealthCardComponent = memo(function StudentHealthCard({
             </Avatar>
             <span className="font-semibold">{student.name ?? "Unknown"}</span>
           </div>
-          <TrafficLightBadge status={student.healthStatus} />
+          <div className="flex items-center gap-1.5">
+            {student.hasOpenFlags && (
+              <Flag className="h-4 w-4 text-orange-500" aria-label="Has open flags" />
+            )}
+            <TrafficLightBadge status={student.healthStatus} />
+          </div>
         </div>
 
         {/* Metrics row */}

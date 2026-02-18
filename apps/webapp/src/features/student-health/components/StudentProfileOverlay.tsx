@@ -21,7 +21,15 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Button } from "@workspace/ui/components/button";
 import { TrafficLightBadge } from "./TrafficLightBadge";
+import { InterventionComposeModal } from "./InterventionComposeModal";
+import { InterventionHistoryTab } from "./InterventionHistoryTab";
+import { FlagStudentModal } from "./FlagStudentModal";
+import { StudentFlagsSection } from "./StudentFlagsSection";
 import { useStudentProfile } from "../hooks/use-student-profile";
+import { useStudentFlags } from "../hooks/use-student-flags";
+import { useAuth } from "@/features/auth/auth-context";
+import { useState } from "react";
+import { Flag } from "lucide-react";
 import type { HealthStatus } from "@workspace/types";
 
 function getInitials(name: string | null): string {
@@ -86,6 +94,14 @@ export function StudentProfileOverlay({
   const { profile, isLoading, isError, refetch } = useStudentProfile(
     open ? studentId : null,
   );
+  const { user } = useAuth();
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [flagModalOpen, setFlagModalOpen] = useState(false);
+  const userRole = user?.role;
+  const isTeacher = userRole === "TEACHER";
+  const isAdminOrOwner = userRole === "OWNER" || userRole === "ADMIN";
+  const { flags } = useStudentFlags(open ? studentId : null);
+  const openFlagCount = flags.filter((f) => f.status === "OPEN").length;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -117,10 +133,34 @@ export function StudentProfileOverlay({
                     </SheetDescription>
                   </div>
                 </div>
-                <TrafficLightBadge
-                  status={profile.student.healthStatus}
-                  size="md"
-                />
+                <div className="flex items-center gap-2">
+                  {isAdminOrOwner && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setComposeOpen(true)}
+                    >
+                      Contact Parent
+                    </Button>
+                  )}
+                  {isTeacher && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFlagModalOpen(true)}
+                    >
+                      <Flag className="h-4 w-4 mr-1" />
+                      Flag for Admin
+                    </Button>
+                  )}
+                  {isAdminOrOwner && openFlagCount > 0 && (
+                    <span className="w-2.5 h-2.5 rounded-full bg-orange-500" title={`${openFlagCount} open flag(s)`} />
+                  )}
+                  <TrafficLightBadge
+                    status={profile.student.healthStatus}
+                    size="md"
+                  />
+                </div>
               </div>
               {profile.student.classes.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
@@ -189,6 +229,16 @@ export function StudentProfileOverlay({
                   }
                 />
 
+                {/* Flags section for admin (above tabs when open flags exist) */}
+                {isAdminOrOwner && openFlagCount > 0 && studentId && (
+                  <StudentFlagsSection studentId={studentId} isAdmin />
+                )}
+
+                {/* Flags section for teacher (read-only, open flags only) */}
+                {isTeacher && openFlagCount > 0 && studentId && (
+                  <StudentFlagsSection studentId={studentId} />
+                )}
+
                 {/* Tabs */}
                 <Tabs defaultValue="trends">
                   <TabsList className="w-full">
@@ -201,6 +251,11 @@ export function StudentProfileOverlay({
                     <TabsTrigger value="assignments" className="flex-1">
                       Assignments
                     </TabsTrigger>
+                    {!isTeacher && (
+                      <TabsTrigger value="interventions" className="flex-1">
+                        Interventions
+                      </TabsTrigger>
+                    )}
                   </TabsList>
 
                   <TabsContent value="trends" className="mt-4">
@@ -214,9 +269,30 @@ export function StudentProfileOverlay({
                   <TabsContent value="assignments" className="mt-4">
                     <AssignmentsTab history={profile.assignmentHistory} />
                   </TabsContent>
+
+                  {!isTeacher && (
+                    <TabsContent value="interventions" className="mt-4">
+                      <InterventionHistoryTab studentId={profile.student.id} />
+                    </TabsContent>
+                  )}
                 </Tabs>
               </div>
             </ScrollArea>
+
+            {studentId && isAdminOrOwner && (
+              <InterventionComposeModal
+                studentId={studentId}
+                open={composeOpen}
+                onOpenChange={setComposeOpen}
+              />
+            )}
+            {studentId && isTeacher && (
+              <FlagStudentModal
+                studentId={studentId}
+                open={flagModalOpen}
+                onOpenChange={setFlagModalOpen}
+              />
+            )}
           </>
         ) : null}
       </SheetContent>

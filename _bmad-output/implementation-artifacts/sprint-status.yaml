@@ -133,7 +133,7 @@ development_status:
   epic-4-retrospective: optional
 
   # Epic 5: AI Grading Workbench
-  epic-5: in-progress
+  epic-5: done
   5-1-automated-submission-analysis: done
   5-2-split-screen-grading-interface: done
   5-3-evidence-anchoring: done
@@ -144,11 +144,12 @@ development_status:
   epic-5-retrospective: optional
 
   # Epic 6: Student Health & Intervention
-  epic-6: in-progress
+  # Status: DONE (all 4 stories complete)
+  epic-6: done
   6-1-traffic-light-dashboard: done
   6-2-student-profile-overlay: done
-  6-3-email-intervention-loop: backlog
-  6-4-teacher-student-health-view: backlog # NEW
+  6-3-email-intervention-loop: done # Code review fixes applied 2026-02-18
+  6-4-teacher-student-health-view: done # Code review fixes applied 2026-02-18
   epic-6-retrospective: optional
 
   # Epic 7: Email Notifications & Parent Communication
