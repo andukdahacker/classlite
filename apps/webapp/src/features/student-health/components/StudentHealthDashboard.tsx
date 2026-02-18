@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { HealthStatus } from "@workspace/types";
 import { Input } from "@workspace/ui/components/input";
 import {
@@ -40,8 +40,11 @@ export function StudentHealthDashboard() {
   const { students, summary, isLoading, isError, refetch } =
     useStudentHealthDashboard(filters);
 
-  // Extract unique classes from response for class filter dropdown
-  const availableClasses = useMemo(() => {
+  // Cache the full class list from unfiltered responses to prevent
+  // the dropdown from losing options when a class filter is active
+  const classListCacheRef = useRef<Array<{ id: string; name: string }>>([]);
+
+  const computedClasses = useMemo(() => {
     const classMap = new Map<string, string>();
     for (const student of students) {
       for (const cls of student.classes) {
@@ -52,6 +55,15 @@ export function StudentHealthDashboard() {
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [students]);
+
+  if (!classId && !debouncedSearch && computedClasses.length > 0) {
+    classListCacheRef.current = computedClasses;
+  }
+
+  const availableClasses =
+    classListCacheRef.current.length > 0
+      ? classListCacheRef.current
+      : computedClasses;
 
   // Client-side filter by status (from summary bar clicks)
   const filteredStudents = statusFilter

@@ -39,6 +39,7 @@ export function useStudentHealthDashboard(
     summary,
     isLoading: query.isLoading,
     isError: query.isError,
+    error: query.error,
     refetch: query.refetch,
   };
 }

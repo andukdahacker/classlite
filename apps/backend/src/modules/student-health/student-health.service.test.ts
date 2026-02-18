@@ -332,9 +332,10 @@ describe("StudentHealthService", () => {
     });
   });
 
-  it("should exclude deactivated students", async () => {
-    // Deactivated students won't be returned by the query because
-    // we filter by status: 'ACTIVE'. The mock only returns active students.
+  it("should query only ACTIVE students, excluding deactivated", async () => {
+    // The service filters at the database query level via status: 'ACTIVE'.
+    // Only active students are returned by the query; deactivated users
+    // are never fetched, so they never appear in results.
     const active = makeStudent("s1", "Alice");
     mockDb.centerMembership.findMany.mockResolvedValue([active]);
 
@@ -342,10 +343,11 @@ describe("StudentHealthService", () => {
     expect(result.students).toHaveLength(1);
     expect(result.students[0].id).toBe("s1");
 
-    // Verify the query included the status filter
+    // Verify the query filters by both STUDENT role and ACTIVE status
     expect(mockDb.centerMembership.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
+          role: "STUDENT",
           status: "ACTIVE",
         }),
       }),

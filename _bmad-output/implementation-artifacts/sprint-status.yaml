@@ -145,7 +145,7 @@ development_status:
 
   # Epic 6: Student Health & Intervention
   epic-6: in-progress
-  6-1-traffic-light-dashboard: review
+  6-1-traffic-light-dashboard: done
   6-2-student-profile-overlay: backlog
   6-3-email-intervention-loop: backlog
   6-4-teacher-student-health-view: backlog # NEW

@@ -1,6 +1,6 @@
 # Story 6.1: Traffic Light Dashboard
 
-Status: review
+Status: done
 
 ## Story
 
@@ -577,6 +577,7 @@ None — clean implementation with no blocking issues.
 ### Change Log
 
 - 2026-02-18: Story 6-1 implemented — Traffic Light Dashboard (full-stack: types, backend, frontend, tests)
+- 2026-02-18: Code review fixes — class filter caching (M2), orchestrator tests (M3), improved deactivated test (M4), added error to hook return (L1)
 
 ### File List
 
@@ -597,6 +598,7 @@ None — clean implementation with no blocking issues.
 - `apps/webapp/src/features/student-health/__tests__/StudentHealthCard.test.tsx`
 - `apps/webapp/src/features/student-health/__tests__/HealthSummaryBar.test.tsx`
 - `apps/webapp/src/features/student-health/__tests__/use-student-health-dashboard.test.ts`
+- `apps/webapp/src/features/student-health/__tests__/StudentHealthDashboard.test.tsx`
 
 **Modified files:**
 - `packages/types/src/index.ts` — added student-health export
@@ -605,3 +607,5 @@ None — clean implementation with no blocking issues.
 - `apps/webapp/src/features/dashboard/DashboardPage.tsx` — added ADMIN RBACWrapper block + updated unknown role check
 - `apps/webapp/src/features/dashboard/DashboardPage.test.tsx` — updated assertion for new heading text
 - `apps/webapp/src/schema/schema.d.ts` — regenerated (auto-generated)
+- `apps/webapp/src/features/users/components/ProfileEditForm.tsx` — Zod 4 email validation fix (bundled in story commit)
+- `packages/types/src/invitation.ts` — Zod 4 max-length validation fix (bundled in story commit)
