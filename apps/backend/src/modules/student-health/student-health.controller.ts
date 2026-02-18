@@ -13,4 +13,12 @@ export class StudentHealthController {
       message: "Student health dashboard loaded",
     };
   }
+
+  async getStudentProfile(centerId: string, studentId: string) {
+    const result = await this.service.getStudentProfile(centerId, studentId);
+    return {
+      data: result,
+      message: "Student profile loaded",
+    };
+  }
 }

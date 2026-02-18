@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
 import { StudentHealthCardComponent } from "../components/StudentHealthCard";
 import type { StudentHealthCard } from "@workspace/types";
 
@@ -87,5 +87,25 @@ describe("StudentHealthCard", () => {
     expect(screen.getByText("Class C")).toBeInTheDocument();
     expect(screen.getByText("+2 more")).toBeInTheDocument();
     expect(screen.queryByText("Class D")).not.toBeInTheDocument();
+  });
+
+  it("calls onClick when card is clicked", () => {
+    const onClick = vi.fn();
+    render(
+      <StudentHealthCardComponent student={makeStudent()} onClick={onClick} />,
+    );
+    const card = screen.getByRole("button");
+    fireEvent.click(card);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("card is keyboard accessible (Enter triggers onClick)", () => {
+    const onClick = vi.fn();
+    render(
+      <StudentHealthCardComponent student={makeStudent()} onClick={onClick} />,
+    );
+    const card = screen.getByRole("button");
+    fireEvent.keyDown(card, { key: "Enter" });
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 });

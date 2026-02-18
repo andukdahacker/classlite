@@ -1,6 +1,7 @@
 import {
   StudentHealthDashboardQuerySchema,
   StudentHealthDashboardApiResponseSchema,
+  StudentProfileApiResponseSchema,
   ErrorResponseSchema,
 } from "@workspace/types";
 import { FastifyInstance, FastifyReply } from "fastify";
@@ -68,6 +69,40 @@ export async function studentHealthRoutes(fastify: FastifyInstance) {
         const result = await controller.getDashboard(
           payload.centerId,
           filters,
+        );
+        return reply.send(result);
+      } catch (error: unknown) {
+        return handleRouteError(error, request, reply);
+      }
+    },
+  });
+
+  // GET /profile/:studentId — Student profile overlay
+  api.get("/profile/:studentId", {
+    schema: {
+      params: z.object({ studentId: z.string() }),
+      response: {
+        200: StudentProfileApiResponseSchema,
+        400: ErrorResponseSchema,
+        401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
+        404: ErrorResponseSchema,
+        500: ErrorResponseSchema,
+      },
+    },
+    preHandler: [requireRole(["OWNER", "ADMIN"])],
+    handler: async (request, reply) => {
+      try {
+        const payload = request.jwtPayload!;
+        if (!payload.centerId) {
+          return reply
+            .status(400)
+            .send({ message: "Center ID required" });
+        }
+        const { studentId } = request.params;
+        const result = await controller.getStudentProfile(
+          payload.centerId,
+          studentId,
         );
         return reply.send(result);
       } catch (error: unknown) {

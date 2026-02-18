@@ -3,7 +3,9 @@ import type {
   HealthStatus,
   StudentHealthCard,
   StudentHealthDashboardResponse,
+  StudentProfileResponse,
 } from "@workspace/types";
+import { AppError } from "../../errors/app-error.js";
 
 const ATTENDANCE_THRESHOLDS = { AT_RISK: 80, WARNING: 90 } as const;
 const COMPLETION_THRESHOLDS = { AT_RISK: 50, WARNING: 75 } as const;
@@ -251,5 +253,300 @@ export class StudentHealthService {
     };
 
     return { students, summary };
+  }
+
+  async getStudentProfile(
+    centerId: string,
+    studentId: string,
+  ): Promise<StudentProfileResponse> {
+    const db = getTenantedClient(this.prisma, centerId);
+    const now = new Date();
+
+    // Step A — Validate student exists and belongs to center
+    const membership = await db.centerMembership.findFirst({
+      where: {
+        userId: studentId,
+        role: "STUDENT",
+        status: "ACTIVE",
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, avatarUrl: true },
+        },
+      },
+    });
+    if (!membership) {
+      throw AppError.notFound("Student not found");
+    }
+    const user = membership.user;
+
+    // Step B — Get enrollment data
+    const enrollments = await db.classStudent.findMany({
+      where: { studentId },
+      include: {
+        class: { select: { id: true, name: true } },
+      },
+    });
+    const classes = enrollments.map((e) => ({
+      id: e.class.id,
+      name: e.class.name,
+    }));
+    const classIds = classes.map((c) => c.id);
+
+    // Build class name lookup
+    const classNameMap = new Map<string, string>();
+    for (const c of classes) {
+      classNameMap.set(c.id, c.name);
+    }
+
+    // Step C — Compute health metrics
+    const [allSessions, attendanceRecords] = await Promise.all([
+      db.classSession.findMany({
+        where: {
+          classId: { in: classIds },
+          startTime: { lte: now },
+          status: { not: "CANCELLED" },
+        },
+        select: { id: true, classId: true, startTime: true },
+      }),
+      db.attendance.findMany({
+        where: { studentId },
+        select: { sessionId: true, status: true },
+      }),
+    ]);
+
+    const attendanceMap = new Map<string, string>();
+    for (const a of attendanceRecords) {
+      attendanceMap.set(a.sessionId, a.status);
+    }
+
+    const attendedCount = allSessions.filter((s) => {
+      const status = attendanceMap.get(s.id);
+      return status === "PRESENT" || status === "LATE" || status === "EXCUSED";
+    }).length;
+    const totalSessions = allSessions.length;
+    const attendanceRate =
+      totalSessions === 0
+        ? 100
+        : Math.round((attendedCount / totalSessions) * 1000) / 10;
+    const attendanceStatus = computeAttendanceStatus(attendanceRate);
+
+    // Step D+E — Fetch assignments and submissions
+    const [allAssignments, directAssignments, submissions] = await Promise.all([
+      db.assignment.findMany({
+        where: {
+          status: { in: ["OPEN", "CLOSED", "ARCHIVED"] },
+        },
+        include: {
+          exercise: { select: { title: true, skill: true } },
+          class: { select: { name: true } },
+        },
+      }),
+      db.assignmentStudent.findMany({
+        where: { studentId },
+        select: { assignmentId: true },
+      }),
+      this.prisma.submission.findMany({
+        where: { centerId, studentId },
+        include: {
+          feedback: {
+            select: { overallScore: true, teacherFinalScore: true },
+          },
+        },
+      }),
+    ]);
+
+    const directAssignmentIds = new Set(
+      directAssignments.map((a) => a.assignmentId),
+    );
+    const classIdSet = new Set(classIds);
+
+    const relevantAssignments = allAssignments.filter(
+      (a) =>
+        (a.classId && classIdSet.has(a.classId)) ||
+        directAssignmentIds.has(a.id),
+    );
+
+    const submissionMap = new Map<
+      string,
+      {
+        status: string;
+        submittedAt: Date | null;
+        feedback: {
+          overallScore: number | null;
+          teacherFinalScore: number | null;
+        } | null;
+      }
+    >();
+    for (const s of submissions) {
+      submissionMap.set(s.assignmentId, {
+        status: s.status,
+        submittedAt: s.submittedAt,
+        feedback: s.feedback,
+      });
+    }
+
+    const completedAssignments = relevantAssignments.filter((a) => {
+      const sub = submissionMap.get(a.id);
+      return (
+        sub &&
+        (sub.status === "SUBMITTED" ||
+          sub.status === "AI_PROCESSING" ||
+          sub.status === "GRADED")
+      );
+    }).length;
+    const totalAssignments = relevantAssignments.length;
+    const overdueAssignments = relevantAssignments.filter((a) => {
+      const sub = submissionMap.get(a.id);
+      const hasCompletedSubmission =
+        sub &&
+        (sub.status === "SUBMITTED" ||
+          sub.status === "AI_PROCESSING" ||
+          sub.status === "GRADED");
+      return a.dueDate && a.dueDate < now && !hasCompletedSubmission;
+    }).length;
+    const assignmentCompletionRate =
+      totalAssignments === 0
+        ? 100
+        : Math.round((completedAssignments / totalAssignments) * 1000) / 10;
+    const assignmentStatus = computeCompletionStatus(assignmentCompletionRate);
+    const healthStatus = worstStatus(attendanceStatus, assignmentStatus);
+
+    // Step D — Build attendance history (last 30 sessions)
+    const recentSessions = [...allSessions]
+      .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())
+      .slice(0, 30);
+
+    const attendanceHistory = recentSessions.map((session) => ({
+      sessionId: session.id,
+      className: classNameMap.get(session.classId) ?? "Unknown",
+      date: session.startTime.toISOString(),
+      status: (attendanceMap.get(session.id) ?? "ABSENT") as
+        | "PRESENT"
+        | "ABSENT"
+        | "LATE"
+        | "EXCUSED",
+    }));
+
+    // Step E — Build assignment history
+    const assignmentHistory = relevantAssignments
+      .map((a) => {
+        const sub = submissionMap.get(a.id);
+        let submissionStatus: "not-submitted" | "in-progress" | "submitted" | "graded";
+        if (!sub) {
+          submissionStatus = "not-submitted";
+        } else if (sub.status === "IN_PROGRESS") {
+          submissionStatus = "in-progress";
+        } else if (
+          sub.status === "SUBMITTED" ||
+          sub.status === "AI_PROCESSING"
+        ) {
+          submissionStatus = "submitted";
+        } else if (sub.status === "GRADED") {
+          submissionStatus = "graded";
+        } else {
+          submissionStatus = "not-submitted";
+        }
+
+        return {
+          assignmentId: a.id,
+          exerciseTitle: a.exercise.title,
+          className: a.class?.name ?? "Individual",
+          skill: a.exercise.skill ?? null,
+          dueDate: a.dueDate ? a.dueDate.toISOString() : "",
+          submissionStatus,
+          score:
+            sub?.feedback?.teacherFinalScore ??
+            sub?.feedback?.overallScore ??
+            null,
+          submittedAt: sub?.submittedAt?.toISOString() ?? null,
+        };
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime(),
+      );
+
+    // Step F — Compute weekly trends (last 8 weeks)
+    const weeklyTrends = [];
+    for (let i = 7; i >= 0; i--) {
+      const weekStart = new Date(now);
+      weekStart.setDate(
+        weekStart.getDate() - weekStart.getDay() - 7 * i + 1,
+      ); // Monday
+      weekStart.setHours(0, 0, 0, 0);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+
+      const weekLabel = weekStart.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+
+      const weekSessions = allSessions.filter(
+        (s) => s.startTime >= weekStart && s.startTime < weekEnd,
+      );
+      const weekAttended = weekSessions.filter((s) => {
+        const status = attendanceMap.get(s.id);
+        return (
+          status === "PRESENT" || status === "LATE" || status === "EXCUSED"
+        );
+      }).length;
+      const weekAttendanceRate =
+        weekSessions.length === 0
+          ? 100
+          : Math.round((weekAttended / weekSessions.length) * 1000) / 10;
+
+      const weekAssignments = relevantAssignments.filter((a) => {
+        if (!a.dueDate) return false;
+        return a.dueDate >= weekStart && a.dueDate < weekEnd;
+      });
+      const weekCompleted = weekAssignments.filter((a) => {
+        const sub = submissionMap.get(a.id);
+        return (
+          sub &&
+          (sub.status === "SUBMITTED" ||
+            sub.status === "AI_PROCESSING" ||
+            sub.status === "GRADED")
+        );
+      }).length;
+      const weekCompletionRate =
+        weekAssignments.length === 0
+          ? 100
+          : Math.round((weekCompleted / weekAssignments.length) * 1000) / 10;
+
+      weeklyTrends.push({
+        weekStart: weekStart.toISOString(),
+        weekLabel,
+        attendanceRate: weekAttendanceRate,
+        completionRate: weekCompletionRate,
+      });
+    }
+
+    // Step G — Build response
+    return {
+      student: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+        healthStatus,
+        metrics: {
+          attendanceRate,
+          attendanceStatus,
+          totalSessions,
+          attendedSessions: attendedCount,
+          assignmentCompletionRate,
+          assignmentStatus,
+          totalAssignments,
+          completedAssignments,
+          overdueAssignments,
+        },
+        classes,
+      },
+      attendanceHistory,
+      assignmentHistory,
+      weeklyTrends,
+    };
   }
 }

@@ -66,3 +66,69 @@ export type StudentHealthDashboardResponse = z.infer<
 export const StudentHealthDashboardApiResponseSchema = createResponseSchema(
   StudentHealthDashboardResponseSchema,
 );
+
+// --- Student Profile (Story 6.2) ---
+
+export const StudentAttendanceRecordSchema = z.object({
+  sessionId: z.string(),
+  className: z.string(),
+  date: z.string(),
+  status: z.enum(["PRESENT", "ABSENT", "LATE", "EXCUSED"]),
+});
+export type StudentAttendanceRecord = z.infer<
+  typeof StudentAttendanceRecordSchema
+>;
+
+export const StudentAssignmentRecordSchema = z.object({
+  assignmentId: z.string(),
+  exerciseTitle: z.string(),
+  className: z.string(),
+  skill: z.string().nullable(),
+  dueDate: z.string(),
+  submissionStatus: z.enum([
+    "not-submitted",
+    "in-progress",
+    "submitted",
+    "graded",
+  ]),
+  score: z.number().nullable(),
+  submittedAt: z.string().nullable(),
+});
+export type StudentAssignmentRecord = z.infer<
+  typeof StudentAssignmentRecordSchema
+>;
+
+export const WeeklyTrendPointSchema = z.object({
+  weekStart: z.string(),
+  weekLabel: z.string(),
+  attendanceRate: z.number(),
+  completionRate: z.number(),
+});
+export type WeeklyTrendPoint = z.infer<typeof WeeklyTrendPointSchema>;
+
+export const StudentProfileResponseSchema = z.object({
+  student: z.object({
+    id: z.string(),
+    name: z.string().nullable(),
+    email: z.string().nullable(),
+    avatarUrl: z.string().nullable(),
+    healthStatus: HealthStatusSchema,
+    metrics: StudentHealthMetricsSchema,
+    classes: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+      }),
+    ),
+  }),
+  attendanceHistory: z.array(StudentAttendanceRecordSchema),
+  assignmentHistory: z.array(StudentAssignmentRecordSchema),
+  weeklyTrends: z.array(WeeklyTrendPointSchema),
+});
+export type StudentProfileResponse = z.infer<
+  typeof StudentProfileResponseSchema
+>;
+
+export const StudentProfileApiResponseSchema = createResponseSchema(
+  StudentProfileResponseSchema,
+);

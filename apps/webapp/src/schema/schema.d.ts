@@ -13545,6 +13545,156 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/student-health/profile/{studentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    studentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                student: {
+                                    id: string;
+                                    name: string | null;
+                                    email: string | null;
+                                    avatarUrl: string | null;
+                                    /** @enum {string} */
+                                    healthStatus: "at-risk" | "warning" | "on-track";
+                                    metrics: {
+                                        attendanceRate: number;
+                                        /** @enum {string} */
+                                        attendanceStatus: "at-risk" | "warning" | "on-track";
+                                        totalSessions: number;
+                                        attendedSessions: number;
+                                        assignmentCompletionRate: number;
+                                        /** @enum {string} */
+                                        assignmentStatus: "at-risk" | "warning" | "on-track";
+                                        totalAssignments: number;
+                                        completedAssignments: number;
+                                        overdueAssignments: number;
+                                    };
+                                    classes: {
+                                        id: string;
+                                        name: string;
+                                    }[];
+                                };
+                                attendanceHistory: {
+                                    sessionId: string;
+                                    className: string;
+                                    date: string;
+                                    /** @enum {string} */
+                                    status: "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+                                }[];
+                                assignmentHistory: {
+                                    assignmentId: string;
+                                    exerciseTitle: string;
+                                    className: string;
+                                    skill: string | null;
+                                    dueDate: string;
+                                    /** @enum {string} */
+                                    submissionStatus: "not-submitted" | "in-progress" | "submitted" | "graded";
+                                    score: number | null;
+                                    submittedAt: string | null;
+                                }[];
+                                weeklyTrends: {
+                                    weekStart: string;
+                                    weekLabel: string;
+                                    attendanceRate: number;
+                                    completionRate: number;
+                                }[];
+                            } | null;
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            error?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/": {
         parameters: {
             query?: never;

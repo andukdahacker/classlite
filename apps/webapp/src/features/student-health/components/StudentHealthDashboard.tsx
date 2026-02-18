@@ -14,12 +14,16 @@ import { Search } from "lucide-react";
 import { useStudentHealthDashboard } from "../hooks/use-student-health-dashboard";
 import { HealthSummaryBar } from "./HealthSummaryBar";
 import { StudentHealthCardComponent } from "./StudentHealthCard";
+import { StudentProfileOverlay } from "./StudentProfileOverlay";
 
 export function StudentHealthDashboard() {
   const [classId, setClassId] = useState<string | undefined>();
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<HealthStatus | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
+    null,
+  );
 
   // Debounce search input
   useEffect(() => {
@@ -155,10 +159,22 @@ export function StudentHealthDashboard() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredStudents.map((student) => (
-            <StudentHealthCardComponent key={student.id} student={student} />
+            <StudentHealthCardComponent
+              key={student.id}
+              student={student}
+              onClick={() => setSelectedStudentId(student.id)}
+            />
           ))}
         </div>
       )}
+
+      <StudentProfileOverlay
+        studentId={selectedStudentId}
+        open={selectedStudentId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedStudentId(null);
+        }}
+      />
     </div>
   );
 }

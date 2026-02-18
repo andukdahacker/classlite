@@ -35,10 +35,12 @@ const MAX_VISIBLE_CLASSES = 3;
 
 interface StudentHealthCardProps {
   student: StudentHealthCardType;
+  onClick?: () => void;
 }
 
 export const StudentHealthCardComponent = memo(function StudentHealthCard({
   student,
+  onClick,
 }: StudentHealthCardProps) {
   const visibleClasses = student.classes.slice(0, MAX_VISIBLE_CLASSES);
   const overflowCount = student.classes.length - MAX_VISIBLE_CLASSES;
@@ -46,6 +48,15 @@ export const StudentHealthCardComponent = memo(function StudentHealthCard({
   return (
     <Card
       className={`border-l-4 ${BORDER_COLORS[student.healthStatus]} cursor-pointer hover:shadow-md transition-shadow`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && onClick) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       <CardContent className="pt-6">
         {/* Header row */}

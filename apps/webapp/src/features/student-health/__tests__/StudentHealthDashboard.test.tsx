@@ -10,6 +10,18 @@ vi.mock("../hooks/use-student-health-dashboard", () => ({
   useStudentHealthDashboard: (...args: unknown[]) => mockUseHook(...args),
 }));
 
+const mockUseStudentProfile = vi.fn().mockReturnValue({
+  profile: null,
+  isLoading: false,
+  isError: false,
+  error: null,
+  refetch: vi.fn(),
+});
+
+vi.mock("../hooks/use-student-profile", () => ({
+  useStudentProfile: (...args: unknown[]) => mockUseStudentProfile(...args),
+}));
+
 function makeStudent(
   overrides: Partial<StudentHealthCard> = {},
 ): StudentHealthCard {
@@ -133,6 +145,26 @@ describe("StudentHealthDashboard", () => {
     });
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("opens overlay when student card is clicked", async () => {
+    const student = makeStudent();
+    setupHook({
+      students: [student],
+      summary: { total: 1, atRisk: 0, warning: 0, onTrack: 1 },
+    });
+    render(<StudentHealthDashboard />);
+
+    // Initially, useStudentProfile called with null (no student selected)
+    expect(mockUseStudentProfile).toHaveBeenCalledWith(null);
+
+    const card = screen.getByRole("button");
+    await act(async () => {
+      fireEvent.click(card);
+    });
+
+    // After clicking, useStudentProfile should be called with the student's ID
+    expect(mockUseStudentProfile).toHaveBeenCalledWith("s1");
   });
 
   it("debounces search input before calling API", async () => {
