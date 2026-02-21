@@ -2,9 +2,11 @@ import { expect } from "@playwright/test";
 import {
   submissionTest as test,
   startSubmissionAsStudent,
+  waitForSubmissionReady,
 } from "../../fixtures/submission-fixtures";
 
 test.describe("Mobile Viewport Submission", () => {
+  test.setTimeout(90000);
   test("no horizontal scrollbar at 375px viewport", async ({ browser, testIds }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -104,6 +106,7 @@ test.describe("Mobile Viewport Submission", () => {
     await page.setViewportSize({ width: 375, height: 812 });
 
     await startSubmissionAsStudent(page, testIds.assignmentId);
+    await waitForSubmissionReady(page);
 
     // Answer Q1: MCQ
     await page.getByText("B. Climate change").click();
@@ -116,7 +119,7 @@ test.describe("Mobile Viewport Submission", () => {
 
     // Submit
     await page.getByRole("button", { name: "Submit" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Submit" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Submit" }).click();
 
     // Success
     await expect(

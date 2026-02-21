@@ -2,9 +2,13 @@ import { expect } from "@playwright/test";
 import {
   submissionTest as test,
   startSubmissionAsStudent,
+  waitForSubmissionReady,
 } from "../../fixtures/submission-fixtures";
 
 test.describe("Auto-Save", () => {
+  // Auto-save tests need extra time: fixture setup (TEACHER login + API calls) +
+  // test body (STUDENT login + submission initialization + auto-save cycle)
+  test.setTimeout(90000);
   test("Saved indicator appears after answering a question", async ({
     browser,
     testIds,
@@ -13,6 +17,7 @@ test.describe("Auto-Save", () => {
     const page = await context.newPage();
 
     await startSubmissionAsStudent(page, testIds.assignmentId);
+    await waitForSubmissionReady(page);
 
     // Answer Q1: MCQ
     await page.getByText("B. Climate change").click();
@@ -36,6 +41,7 @@ test.describe("Auto-Save", () => {
     const page = await context.newPage();
 
     await startSubmissionAsStudent(page, testIds.assignmentId);
+    await waitForSubmissionReady(page);
 
     // Answer Q1: MCQ — select option B
     await page.getByText("B. Climate change").click();

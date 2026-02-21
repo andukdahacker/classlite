@@ -109,7 +109,7 @@ export const StudentAssignmentSchema = z.object({
     id: z.string(),
     name: z.string().nullable(),
   }),
-  submissionStatus: z.enum(["IN_PROGRESS", "SUBMITTED", "GRADED"]).nullable().optional(),
+  submissionStatus: z.enum(["IN_PROGRESS", "SUBMITTED", "AI_PROCESSING", "GRADED"]).nullable().optional(),
   submissionId: z.string().nullable().optional(),
 });
 export type StudentAssignment = z.infer<typeof StudentAssignmentSchema>;

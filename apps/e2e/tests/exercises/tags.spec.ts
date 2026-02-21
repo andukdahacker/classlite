@@ -118,8 +118,12 @@ test.describe("Tag Management Flow (AC6)", () => {
     // Verify success
     await waitForToast(page, "Tag deleted");
 
-    // Verify tag is no longer visible
-    await expect(page.getByText(tagName)).not.toBeVisible();
+    // Wait for the confirmation dialog to fully close (it contains the tag name
+    // in its description, causing strict mode violations if still in the DOM)
+    await expect(confirmDialog).not.toBeVisible({ timeout: 5000 });
+
+    // Verify tag is no longer visible in the list
+    await expect(getTagRow(page, tagName)).not.toBeVisible();
   });
 
   test("assign tag to exercise via exercise editor", async ({ page }) => {

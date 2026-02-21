@@ -101,6 +101,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           const token = await fbUser.getIdToken();
           localStorage.setItem("token", token);
           await loginRef.current(token);
+          // Force refresh token to pick up custom claims (role, center_id)
+          // set by the backend during login
+          const freshToken = await fbUser.getIdToken(true);
+          localStorage.setItem("token", freshToken);
           setSessionExpired(false);
         } catch {
           // Login failed (e.g. user doesn't exist yet).

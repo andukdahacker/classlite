@@ -540,7 +540,7 @@ describe("AssignmentsService", () => {
 
       const result = await service.listStudentAssignments(centerId, studentFirebaseUid);
 
-      const { submissions, ...expectedAssignment } = mockStudentAssignment.assignment;
+      const { submissions, centerId: _cid, createdById: _cbid, updatedAt: _ua, ...expectedAssignment } = mockStudentAssignment.assignment;
       expect(result).toEqual([{ ...expectedAssignment, submissionStatus: null, submissionId: null }]);
       expect(mockDb.assignmentStudent.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -649,6 +649,7 @@ describe("AssignmentsService", () => {
         status: "OPEN",
         createdById: userId,
         createdAt: new Date(),
+        updatedAt: new Date(),
         exercise: { id: exerciseId, title: "Reading Test 1", skill: "READING", status: "PUBLISHED" },
         class: { id: classId, name: "Class 10A" },
         createdBy: { id: userId, name: "Teacher" },
@@ -665,7 +666,7 @@ describe("AssignmentsService", () => {
 
       const result = await service.getStudentAssignment(centerId, assignmentId, studentFirebaseUid);
 
-      const { submissions, ...expectedAssignment } = mockStudentAssignmentRecord.assignment;
+      const { submissions, centerId: _cid, createdById: _cbid, updatedAt: _ua, ...expectedAssignment } = mockStudentAssignmentRecord.assignment;
       expect(result).toEqual({ ...expectedAssignment, submissionStatus: null, submissionId: null });
     });
 

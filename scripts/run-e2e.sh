@@ -17,16 +17,21 @@ FIREBASE_PROJECT_ID="claite-87848"
 FIREBASE_AUTH_EMULATOR_PORT=9099
 BACKEND_PORT=4000
 WEBAPP_PORT=5173
+INNGEST_PORT=8288
 DATABASE_URL="${DATABASE_URL:-postgresql://user:password@localhost:5432/classlite}"
 
 # Export env vars for child processes
+export NODE_ENV="development"
 export FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:${FIREBASE_AUTH_EMULATOR_PORT}"
 export VITE_USE_FIREBASE_EMULATOR="true"
 export DATABASE_URL
+# Disable real email sending during E2E tests — backend jobs skip when unset
+unset RESEND_API_KEY
 
 # PIDs for cleanup
 FIREBASE_PID=""
 BACKEND_PID=""
+INNGEST_PID=""
 WEBAPP_PID=""
 
 cleanup() {
@@ -35,6 +40,11 @@ cleanup() {
     if [ -n "$WEBAPP_PID" ]; then
         echo "Stopping webapp (PID: $WEBAPP_PID)"
         kill $WEBAPP_PID 2>/dev/null || true
+    fi
+
+    if [ -n "$INNGEST_PID" ]; then
+        echo "Stopping Inngest Dev Server (PID: $INNGEST_PID)"
+        kill $INNGEST_PID 2>/dev/null || true
     fi
 
     if [ -n "$BACKEND_PID" ]; then
@@ -50,6 +60,7 @@ cleanup() {
     # Kill any remaining processes on the ports
     lsof -ti:$FIREBASE_AUTH_EMULATOR_PORT | xargs kill -9 2>/dev/null || true
     lsof -ti:$BACKEND_PORT | xargs kill -9 2>/dev/null || true
+    lsof -ti:$INNGEST_PORT | xargs kill -9 2>/dev/null || true
     lsof -ti:$WEBAPP_PORT | xargs kill -9 2>/dev/null || true
 
     echo -e "${GREEN}Cleanup complete${NC}"
@@ -62,6 +73,7 @@ trap cleanup EXIT INT TERM
 echo -e "${YELLOW}Clearing existing processes on ports...${NC}"
 lsof -ti:$FIREBASE_AUTH_EMULATOR_PORT | xargs kill -9 2>/dev/null || true
 lsof -ti:$BACKEND_PORT | xargs kill -9 2>/dev/null || true
+lsof -ti:$INNGEST_PORT | xargs kill -9 2>/dev/null || true
 lsof -ti:$WEBAPP_PORT | xargs kill -9 2>/dev/null || true
 sleep 1
 
@@ -141,8 +153,19 @@ if ! wait_for_port $BACKEND_PORT "Backend" 60; then
     exit 1
 fi
 
-# Step 3: Start Webapp
-echo -e "${YELLOW}Step 3: Starting Webapp...${NC}"
+# Step 3: Start Inngest Dev Server (required for background jobs like CSV import)
+echo -e "${YELLOW}Step 3: Starting Inngest Dev Server...${NC}"
+npx inngest-cli dev --no-discovery -u "http://localhost:${BACKEND_PORT}/api/inngest" -p $INNGEST_PORT > /tmp/inngest-dev.log 2>&1 &
+INNGEST_PID=$!
+
+if ! wait_for_port $INNGEST_PORT "Inngest Dev Server" 30; then
+    echo -e "${RED}Failed to start Inngest Dev Server${NC}"
+    cat /tmp/inngest-dev.log
+    exit 1
+fi
+
+# Step 4: Start Webapp
+echo -e "${YELLOW}Step 4: Starting Webapp...${NC}"
 pnpm --filter webapp dev > /tmp/webapp.log 2>&1 &
 WEBAPP_PID=$!
 
@@ -153,17 +176,17 @@ if ! wait_for_service "http://localhost:$WEBAPP_PORT" "Webapp" 60; then
     exit 1
 fi
 
-# Step 4: Seed test data
-echo -e "${YELLOW}Step 4: Seeding test data...${NC}"
+# Step 5: Seed test data
+echo -e "${YELLOW}Step 5: Seeding test data...${NC}"
 if ! pnpm test:e2e:seed; then
     echo -e "${RED}Failed to seed test data${NC}"
     exit 1
 fi
 echo -e "${GREEN}Test data seeded successfully${NC}"
 
-# Step 5: Run E2E tests
+# Step 6: Run E2E tests
 echo ""
-echo -e "${YELLOW}Step 5: Running E2E tests...${NC}"
+echo -e "${YELLOW}Step 6: Running E2E tests...${NC}"
 echo -e "${BLUE}========================================${NC}"
 
 # Run tests (pass any additional arguments to playwright)

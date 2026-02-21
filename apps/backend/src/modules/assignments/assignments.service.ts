@@ -344,7 +344,7 @@ export class AssignmentsService {
     });
 
     return studentAssignments.map((sa) => {
-      const { submissions, ...assignment } = sa.assignment;
+      const { submissions, centerId: _cid, createdById: _cbid, updatedAt: _ua, ...assignment } = sa.assignment;
       return {
         ...assignment,
         submissionStatus: submissions[0]?.status ?? null,
@@ -382,7 +382,7 @@ export class AssignmentsService {
       },
     });
     if (!studentAssignment) throw AppError.notFound("Assignment not found");
-    const { submissions, ...assignment } = studentAssignment.assignment;
+    const { submissions, centerId: _cid, createdById: _cbid, updatedAt: _ua, ...assignment } = studentAssignment.assignment;
     return {
       ...assignment,
       submissionStatus: submissions[0]?.status ?? null,

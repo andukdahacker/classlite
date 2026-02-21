@@ -16,6 +16,7 @@ import {
 } from "@workspace/types";
 import { FastifyInstance, FastifyReply } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
+import { PrismaClient } from "@workspace/db";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireRole } from "../../middlewares/role.middleware.js";
 import { AppError } from "../../errors/app-error.js";
@@ -23,6 +24,14 @@ import { mapPrismaError } from "../../errors/prisma-errors.js";
 import { StudentHealthController } from "./student-health.controller.js";
 import { StudentHealthService } from "./student-health.service.js";
 import z from "zod";
+
+async function resolveUid(prisma: PrismaClient, firebaseUid: string): Promise<string> {
+  const account = await prisma.authAccount.findUnique({
+    where: { provider_providerUserId: { provider: "FIREBASE", providerUserId: firebaseUid } },
+  });
+  if (!account) throw AppError.notFound("User not found");
+  return account.userId;
+}
 
 function handleRouteError(
   error: unknown,
@@ -77,7 +86,9 @@ export async function studentHealthRoutes(fastify: FastifyInstance) {
           typeof StudentHealthDashboardQuerySchema
         >;
         const teacherUserId =
-          payload.role === "TEACHER" ? payload.uid : undefined;
+          payload.role === "TEACHER"
+            ? await resolveUid(fastify.prisma, payload.uid)
+            : undefined;
         const result = await controller.getDashboard(
           payload.centerId,
           filters,
@@ -110,9 +121,10 @@ export async function studentHealthRoutes(fastify: FastifyInstance) {
             .status(400)
             .send({ message: "Center ID required" });
         }
+        const userId = await resolveUid(fastify.prisma, payload.uid);
         const result = await controller.getTeacherAtRiskWidget(
           payload.centerId,
-          payload.uid,
+          userId,
         );
         return reply.send(result);
       } catch (error: unknown) {
@@ -145,7 +157,9 @@ export async function studentHealthRoutes(fastify: FastifyInstance) {
         }
         const { studentId } = request.params;
         const teacherUserId =
-          payload.role === "TEACHER" ? payload.uid : undefined;
+          payload.role === "TEACHER"
+            ? await resolveUid(fastify.prisma, payload.uid)
+            : undefined;
         const result = await controller.getStudentProfile(
           payload.centerId,
           studentId,
@@ -181,12 +195,13 @@ export async function studentHealthRoutes(fastify: FastifyInstance) {
             .send({ message: "Center ID required" });
         }
         const { studentId, note } = request.body;
+        const userId = await resolveUid(fastify.prisma, payload.uid);
         const result = await controller.createFlag(
           payload.centerId,
           studentId,
-          payload.uid,
+          userId,
           note,
-          payload.uid,
+          userId,
         );
         return reply.status(201).send(result);
       } catch (error: unknown) {
@@ -253,10 +268,11 @@ export async function studentHealthRoutes(fastify: FastifyInstance) {
         }
         const { flagId } = request.params;
         const { resolvedNote } = request.body;
+        const userId = await resolveUid(fastify.prisma, payload.uid);
         const result = await controller.resolveFlag(
           payload.centerId,
           flagId,
-          payload.uid,
+          userId,
           resolvedNote,
         );
         return reply.send(result);
@@ -288,9 +304,10 @@ export async function studentHealthRoutes(fastify: FastifyInstance) {
             .status(400)
             .send({ message: "Center ID required" });
         }
+        const userId = await resolveUid(fastify.prisma, payload.uid);
         const result = await controller.sendIntervention(
           payload.centerId,
-          payload.uid,
+          userId,
           request.body,
         );
         return reply.status(201).send(result);

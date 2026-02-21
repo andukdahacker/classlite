@@ -162,71 +162,93 @@ test.describe("User Management", () => {
       }
     });
 
-    test.skip("successfully invites a new user", async ({ page }) => {
-      // Skip by default to avoid creating test data
-      await page.click('button:has-text("Invite")');
+    test("successfully invites a new user", async ({ page }) => {
+      // Open the Invite User dialog
+      await page.locator('button').filter({ hasText: 'Invite User' }).click();
+      await expect(page.getByRole('dialog', { name: 'Invite User' })).toBeVisible();
 
-      const uniqueEmail = `test-${Date.now()}@example.com`;
-      await page.fill('input[type="email"]', uniqueEmail);
+      // Fill in a timestamped unique email
+      const uniqueEmail = `test-invite-${Date.now()}@example.com`;
+      await page.locator('input[placeholder="email@example.com"]').fill(uniqueEmail);
 
-      // Select role
-      await page.click('[role="combobox"]:has-text("Role")');
-      await page.click('[role="option"]:has-text("Teacher")');
+      // Select Teacher role via combobox
+      await page.locator('[role="dialog"]').locator('[role="combobox"]').click();
+      await page.locator('[role="option"]').filter({ hasText: 'Teacher' }).click();
 
-      await page.click('button:has-text("Send")');
+      // Click Send Invitation
+      await page.locator('[role="dialog"] button[type="submit"]').click();
 
-      // Should show success message
-      await waitForToast(page, "invite");
+      // Verify success toast
+      await waitForToast(page, "Invitation sent successfully");
 
-      // Modal should close
-      await expect(page.locator('[role="dialog"]')).not.toBeVisible();
+      // Dialog should close
+      await expect(page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 5000 });
     });
   });
 
   test.describe("User Actions", () => {
     test("user actions dropdown is available", async ({ page }) => {
-      // Find first user row's action button
-      const actionButton = page.locator(
-        '[data-testid="user-actions"]'
-      ).or(page.locator('button[aria-label*="actions" i]')).first();
+      // Find first user row's action button (icon button with sr-only "Open menu")
+      const actionButton = page.locator('table tbody tr').first()
+        .locator('button').filter({ hasText: 'Open menu' });
 
       if (await actionButton.count() > 0) {
         await actionButton.click();
 
-        // Dropdown should show actions
+        // Dropdown menu should appear
         await expect(
-          page.locator('[role="menu"]').or(page.locator('[role="menuitem"]'))
+          page.locator('[role="menu"]')
         ).toBeVisible();
       }
     });
 
-    test.skip("role change dialog opens (owner only)", async ({ page }) => {
-      const actionButton = page.locator('[data-testid="user-actions"]').first();
+    test("role change dialog opens (owner only)", async ({ page }) => {
+      // Search for the TEACHER user to ensure the row is visible
+      const teacherEmail = TEST_USERS.TEACHER.email;
+      const searchInput = page.getByPlaceholder(/search/i);
+      await searchInput.fill(teacherEmail);
+      await page.waitForTimeout(500);
 
-      if (await actionButton.count() > 0) {
-        await actionButton.click();
-        await page.click('[role="menuitem"]:has-text("Change Role")');
+      const userRow = page.locator('table tbody tr').filter({ hasText: teacherEmail });
+      await userRow.first().waitFor({ state: 'visible', timeout: 10000 });
 
-        await expect(
-          page.locator('[role="dialog"]')
-        ).toBeVisible();
-      }
+      // Click the action menu button in that row
+      await userRow.first().locator('button').last().click();
+
+      // Click "Change Role" in the dropdown menu
+      await page.locator('[role="menuitem"]').filter({ hasText: 'Change Role' }).click();
+
+      // Verify the RoleChangeModal dialog opens
+      await expect(
+        page.getByRole('dialog', { name: 'Change User Role' })
+      ).toBeVisible();
     });
 
-    test.skip("deactivate user shows confirmation", async ({ page }) => {
-      const actionButton = page.locator('[data-testid="user-actions"]').first();
+    test("deactivate user shows confirmation", async ({ page }) => {
+      // Search for the TEACHER user to ensure the row is visible
+      const teacherEmail = TEST_USERS.TEACHER.email;
+      const searchInput = page.getByPlaceholder(/search/i);
+      await searchInput.fill(teacherEmail);
+      await page.waitForTimeout(500);
 
-      if (await actionButton.count() > 0) {
-        await actionButton.click();
-        await page.click('[role="menuitem"]:has-text("Deactivate")');
+      const userRow = page.locator('table tbody tr').filter({ hasText: teacherEmail });
+      await userRow.first().waitFor({ state: 'visible', timeout: 10000 });
 
-        // Should show confirmation dialog
-        await expect(
-          page.locator('[role="alertdialog"]').or(
-            page.locator('text="Are you sure"')
-          )
-        ).toBeVisible();
-      }
+      // Click the action menu button in that row
+      await userRow.first().locator('button').last().click();
+
+      // Click "Deactivate" in the dropdown menu
+      await page.locator('[role="menuitem"]').filter({ hasText: 'Deactivate' }).click();
+
+      // Verify AlertDialog with confirmation appears
+      const alertDialog = page.locator('[role="alertdialog"]');
+      await expect(alertDialog).toBeVisible();
+      await expect(alertDialog.locator('text="Deactivate User"')).toBeVisible();
+      await expect(alertDialog.getByText('Are you sure', { exact: false })).toBeVisible();
+
+      // Click Cancel to avoid actually deactivating the user
+      await alertDialog.locator('button').filter({ hasText: 'Cancel' }).click();
+      await expect(alertDialog).not.toBeVisible();
     });
   });
 });

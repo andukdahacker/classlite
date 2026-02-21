@@ -50,21 +50,17 @@ test.describe("Owner Dashboard", () => {
     await gotoDashboard(page, TEST_USERS.OWNER);
   });
 
-  test("displays Center Health Overview heading", async ({ page }) => {
+  test("displays Student Health heading", async ({ page }) => {
     await expect(
-      page.getByRole("heading", { name: "Center Health Overview" })
+      page.getByRole("heading", { name: "Student Health" })
     ).toBeVisible();
   });
 
-  test("shows three stat cards with labels and values", async ({ page }) => {
-    await expect(page.getByText("Total Revenue")).toBeVisible();
-    await expect(page.getByText("Active Students")).toBeVisible();
-    await expect(page.getByText("Teacher Utilization")).toBeVisible();
-
-    // Verify each stat card renders (OwnerDashboard uses plain divs with bg-card, not Card component)
-    const statCards = page.locator(".bg-card");
-    const cardCount = await statCards.count();
-    expect(cardCount).toBeGreaterThanOrEqual(3);
+  test("shows summary stat cards with labels and values", async ({ page }) => {
+    await expect(page.getByText("Total Students")).toBeVisible();
+    await expect(page.getByText("At Risk").first()).toBeVisible();
+    await expect(page.getByText("Warning").first()).toBeVisible();
+    await expect(page.getByText("On Track").first()).toBeVisible();
   });
 });
 
@@ -95,13 +91,13 @@ test.describe("Teacher Dashboard", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("Admin Dashboard", () => {
-  test("ADMIN sees Unknown Role fallback", async ({ page }) => {
+  test("ADMIN sees Student Health dashboard", async ({ page }) => {
     await gotoDashboard(page, TEST_USERS.ADMIN);
     await expect(
-      page.getByRole("heading", { name: "Unknown Role" })
+      page.getByRole("heading", { name: "Student Health" })
     ).toBeVisible();
     await expect(
-      page.getByText("Please contact support")
+      page.getByText("At-a-glance view of student engagement")
     ).toBeVisible();
   });
 });

@@ -54,7 +54,10 @@ export async function usersRoutes(fastify: FastifyInstance) {
   const usersController = new UsersController(usersService);
 
   const csvImportService = new CsvImportService(fastify.prisma);
-  const csvImportController = new CsvImportController(csvImportService);
+  const csvImportController = new CsvImportController(
+    csvImportService,
+    (uid) => usersService.resolveFirebaseUid(uid),
+  );
 
   // All user routes require authentication
   fastify.addHook("preHandler", authMiddleware);

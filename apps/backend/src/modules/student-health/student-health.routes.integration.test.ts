@@ -26,6 +26,9 @@ describe("Student Health Routes Integration", () => {
   const mockPrisma = {
     $extends: vi.fn(),
     submission: { findMany: vi.fn().mockResolvedValue([]) },
+    authAccount: {
+      findUnique: vi.fn().mockResolvedValue({ userId: "resolved-user-1" }),
+    },
   };
 
   const mockFirebaseAuth = {

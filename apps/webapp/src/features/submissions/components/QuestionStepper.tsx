@@ -27,6 +27,7 @@ export function QuestionStepper({
           onClick={onPrevious}
           disabled={isFirst}
           className="min-h-[44px] gap-1"
+          aria-label="Previous"
         >
           <ChevronLeft className="size-4" />
           <span className="hidden sm:inline">Previous</span>
@@ -48,6 +49,7 @@ export function QuestionStepper({
           <Button
             onClick={onNext}
             className="min-h-[44px] gap-1"
+            aria-label="Next"
           >
             <span className="hidden sm:inline">Next</span>
             <ChevronRight className="size-4" />

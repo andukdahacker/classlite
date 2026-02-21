@@ -1,4 +1,4 @@
-import { test as base, Page, BrowserContext } from "@playwright/test";
+import { test as base, Page } from "@playwright/test";
 
 /**
  * E2E Test Center ID - must match seed-e2e.ts
@@ -80,12 +80,47 @@ async function resetLoginAttempts(email: string): Promise<void> {
   }
 }
 
+
 /**
- * Login as a specific user.
+ * Login as a specific user with retry logic.
+ * Retries with exponential backoff + jitter to handle Firebase Auth emulator
+ * rate-limiting during parallel test execution.
  * @param page - Playwright page object
  * @param user - Test user to log in as
+ * @param retries - Number of retry attempts (default 5)
  */
-export async function loginAs(page: Page, user: TestUser): Promise<void> {
+export async function loginAs(page: Page, user: TestUser, retries = 5): Promise<void> {
+  let lastError: Error | null = null;
+
+  // Small random delay to avoid thundering herd when parallel tests start simultaneously
+  await page.waitForTimeout(Math.floor(Math.random() * 1500));
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await loginAsAttempt(page, user);
+      return; // Success
+    } catch (err) {
+      lastError = err as Error;
+
+      if (attempt < retries) {
+        // Exponential backoff with random jitter
+        const jitter = Math.floor(Math.random() * 2000);
+        await page.waitForTimeout(3000 * attempt + jitter);
+        // Reset backend login attempts
+        await resetLoginAttempts(user.email);
+        // Clear cookies/state to get a fresh session on retry
+        await page.context().clearCookies();
+      }
+    }
+  }
+
+  throw lastError!;
+}
+
+/**
+ * Single login attempt.
+ */
+async function loginAsAttempt(page: Page, user: TestUser): Promise<void> {
   // Reset any login attempt lockouts before logging in
   // This prevents flaky tests due to parallel execution
   await resetLoginAttempts(user.email);

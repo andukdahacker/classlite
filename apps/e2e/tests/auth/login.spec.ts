@@ -1,8 +1,25 @@
 import { test, expect, TEST_USERS, loginAs } from "../../fixtures/auth.fixture";
-import { waitForToast, getUrlPath } from "../../utils/test-helpers";
+import { getUrlPath } from "../../utils/test-helpers";
+
+/**
+ * Reset login attempts for an email via the backend API.
+ */
+async function resetLoginAttempts(email: string): Promise<void> {
+  const backendUrl = process.env.VITE_API_URL || "http://localhost:4000";
+  try {
+    await fetch(`${backendUrl}/api/v1/auth/login-attempt?email=${encodeURIComponent(email)}`, {
+      method: "DELETE",
+    });
+  } catch {
+    // Ignore errors - endpoint might not be available
+  }
+}
 
 test.describe("Login Page", () => {
   test.beforeEach(async ({ page }) => {
+    // Reset login attempts for the invalid-credentials test email to avoid
+    // false lockout from accumulated attempts across E2E runs.
+    await resetLoginAttempts("invalid@example.com");
     await page.goto("/sign-in");
   });
 
@@ -84,25 +101,43 @@ test.describe("Login Page", () => {
 });
 
 test.describe("Account Lockout", () => {
-  test.skip("account lockout after multiple failed attempts", async ({ page }) => {
-    // This test is skipped by default as it may affect test user state
-    // Enable when running against a test environment with reset capability
+  // Use a dedicated email NOT shared with TEST_USERS to prevent parallel tests'
+  // loginAs fixture from resetting the lockout counter via resetLoginAttempts.
+  // The email doesn't need to exist in Firebase — the backend records attempts
+  // regardless, and the frontend calls recordLoginAttempt after Firebase auth fails.
+  const lockoutEmail = "lockout-test@test.classlite.com";
 
+  test.beforeEach(async () => {
+    await resetLoginAttempts(lockoutEmail);
+  });
+
+  test.afterEach(async () => {
+    await resetLoginAttempts(lockoutEmail);
+  });
+
+  test("account lockout after multiple failed attempts", async ({ page }) => {
     await page.goto("/sign-in");
 
-    // Attempt login with wrong password multiple times
+    // Attempt login with wrong password 5 times (MAX_ATTEMPTS = 5)
+    // Wait for each submit to fully complete (Firebase auth + backend record)
+    // before starting the next attempt
     for (let i = 0; i < 5; i++) {
-      await page.fill('input[type="email"]', TEST_USERS.OWNER.email);
+      await page.fill('input[type="email"]', lockoutEmail);
       await page.fill('input[type="password"]', "wrongpassword");
       await page.click('button[type="submit"]');
-      await page.waitForTimeout(1000); // Wait between attempts
+
+      // Wait for either the lockout message or the regular error to appear
+      // This ensures the backend has recorded the attempt before we continue
+      await expect(
+        page.locator('text=/Account locked due to too many failed attempts/').or(
+          page.locator('text="Email or password is incorrect"')
+        )
+      ).toBeVisible({ timeout: 10000 });
     }
 
-    // Should show lockout message
+    // After 5 failed attempts, should show lockout message
     await expect(
-      page.locator('text="too many attempts"').or(
-        page.locator('text="locked"')
-      )
+      page.locator('text=/Account locked due to too many failed attempts/')
     ).toBeVisible({ timeout: 10000 });
   });
 });

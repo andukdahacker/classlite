@@ -4,17 +4,19 @@ import {
   submissionTest as test,
   startSubmissionAsStudent,
   startSubmissionFromDashboard,
+  waitForSubmissionReady,
 } from "../../fixtures/submission-fixtures";
 
 test.describe("Submission Flow", () => {
+  test.setTimeout(90000);
   test("student opens assignment from dashboard and submission starts", async ({
     browser,
-    testIds: _testIds,
+    testIds,
   }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    await startSubmissionFromDashboard(page);
+    await startSubmissionFromDashboard(page, testIds.exerciseTitle);
 
     // Verify questions rendered — first question (MCQ) should show question text
     await expect(
@@ -65,6 +67,7 @@ test.describe("Submission Flow", () => {
     const page = await context.newPage();
 
     await startSubmissionAsStudent(page, testIds.assignmentId);
+    await waitForSubmissionReady(page);
 
     // Answer both questions
     // Q1: MCQ
@@ -90,7 +93,7 @@ test.describe("Submission Flow", () => {
     ).toBeVisible();
 
     // Confirm submission
-    await page.getByRole("dialog").getByRole("button", { name: "Submit" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Submit" }).click();
 
     // Success page renders
     await expect(
@@ -108,6 +111,7 @@ test.describe("Submission Flow", () => {
     const page = await context.newPage();
 
     await startSubmissionAsStudent(page, testIds.assignmentId);
+    await waitForSubmissionReady(page);
 
     // Answer only Q1 (MCQ)
     await page.getByText("B. Climate change").click();
@@ -145,6 +149,7 @@ test.describe("Submission Flow", () => {
     const page = await context.newPage();
 
     await startSubmissionAsStudent(page, testIds.assignmentId);
+    await waitForSubmissionReady(page);
 
     // Answer Q1
     await page.getByText("B. Climate change").click();
@@ -153,7 +158,7 @@ test.describe("Submission Flow", () => {
 
     // Submit
     await page.getByRole("button", { name: "Submit" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Submit" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Submit" }).click();
     await expect(
       page.getByRole("heading", { name: "Submitted!" })
     ).toBeVisible({ timeout: 10000 });

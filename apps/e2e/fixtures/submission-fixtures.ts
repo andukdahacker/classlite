@@ -21,6 +21,7 @@ import { closeAIAssistantDialog } from "../utils/close-ai-assistant";
 export interface SubmissionTestIds {
   exerciseId: string;
   assignmentId: string;
+  exerciseTitle: string;
   sectionIds: string[];
   questionIds: string[];
 }
@@ -210,6 +211,7 @@ export async function createSubmissionTestData(
   return {
     exerciseId: exercise.id,
     assignmentId: assignment.id,
+    exerciseTitle: title,
     sectionIds,
     questionIds,
   };
@@ -246,11 +248,40 @@ export async function startSubmissionAsStudent(
 }
 
 /**
+ * Wait for the startSubmission mutation to complete (sets submissionId on the page).
+ * Auto-save and submit are disabled until submissionId is set.
+ * Call this after startSubmissionAsStudent when your test needs save/submit functionality.
+ *
+ * Retries with page reload if the mutation doesn't complete — under parallel load
+ * the POST /api/v1/student/submissions/ call can be slow or fail transiently.
+ */
+export async function waitForSubmissionReady(page: Page): Promise<void> {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await page.locator("[data-submission-id]").waitFor({ timeout: 15000 });
+      return;
+    } catch {
+      if (attempt < 3) {
+        await page.reload();
+        await page.waitForLoadState("networkidle");
+        await page
+          .getByRole("button", { name: /Next|Submit/ })
+          .first()
+          .waitFor({ timeout: 15000 });
+      }
+    }
+  }
+  // Final attempt with longer timeout
+  await page.locator("[data-submission-id]").waitFor({ timeout: 30000 });
+}
+
+/**
  * Login as STUDENT, navigate to dashboard, find and click "Start" on the assignment card.
  * This tests the full user flow from dashboard → submission.
  */
 export async function startSubmissionFromDashboard(
-  page: Page
+  page: Page,
+  exerciseTitle?: string
 ): Promise<void> {
   await loginAs(page, TEST_USERS.STUDENT);
   await page.goto(getAppUrl("/dashboard"));
@@ -260,8 +291,24 @@ export async function startSubmissionFromDashboard(
   // Verify "Your Tasks" heading is visible
   await page.getByRole("heading", { name: "Your Tasks" }).waitFor({ timeout: 10000 });
 
-  // Click the "Start" button on the assignment card
-  await page.getByRole("button", { name: /Start/ }).first().click();
+  // Click the "Start" button on the correct assignment card
+  if (exerciseTitle) {
+    // The title text is inside a card. Use getByText to find the title, then find
+    // the nearest ancestor that is a direct card container (not the whole page).
+    // Assignment cards have a "Start" button as a sibling/descendant.
+    const titleEl = page.getByText(exerciseTitle).first();
+    // Navigate up to the card boundary and find its Start button
+    const startBtn = titleEl.locator("xpath=ancestor::div[contains(@class,'rounded') or contains(@class,'card')][1]//button[contains(.,'Start')]").first();
+    const hasTitleStartBtn = await startBtn.isVisible().catch(() => false);
+    if (hasTitleStartBtn) {
+      await startBtn.click();
+    } else {
+      // Fallback: click the first Start button on the page
+      await page.getByRole("button", { name: /Start/ }).first().click();
+    }
+  } else {
+    await page.getByRole("button", { name: /Start/ }).first().click();
+  }
 
   // Wait for submission page to load
   await page.waitForURL(/.*\/assignments\/.*\/take/);

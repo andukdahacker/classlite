@@ -323,21 +323,23 @@ export class GradingService {
   async getGradingQueue(centerId: string, firebaseUid: string, filters: GradingQueueFilters) {
     const db = getTenantedClient(this.prisma, centerId);
 
-    const authAccount = await db.authAccount.findUniqueOrThrow({
-      where: { provider_providerUserId: { provider: "FIREBASE", providerUserId: firebaseUid } },
-    });
-    const teacherUserId = authAccount.userId;
+    const { userId, role } = await this.resolveUser(db, firebaseUid);
+    const isPrivileged = role === "ADMIN" || role === "OWNER";
 
     const { classId, assignmentId, status, gradingStatus, sortBy = "submittedAt", sortOrder = "asc", page, limit } = filters;
 
-    // Build where clause — teacher can only see submissions for classes they teach
-    // When classId is provided, still verify teacher teaches that class
+    // Build class filter: TEACHER can only see their own classes,
+    // ADMIN/OWNER have full access within the tenant
+    const classFilter = isPrivileged
+      ? (classId ? { classId } : {})
+      : (classId
+          ? { classId, class: { teacherId: userId } }
+          : { class: { teacherId: userId } });
+
     const where: Record<string, unknown> = {
       assignment: {
         ...(assignmentId ? { id: assignmentId } : {}),
-        ...(classId
-          ? { classId, class: { teacherId: teacherUserId } }
-          : { class: { teacherId: teacherUserId } }),
+        ...classFilter,
         exercise: {
           skill: { in: ["WRITING", "SPEAKING"] },
         },

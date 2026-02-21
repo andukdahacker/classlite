@@ -21,7 +21,10 @@ interface JwtPayload {
 }
 
 export class CsvImportController {
-  constructor(private readonly csvImportService: CsvImportService) {}
+  constructor(
+    private readonly csvImportService: CsvImportService,
+    private readonly resolveUid: (firebaseUid: string) => Promise<string>,
+  ) {}
 
   /**
    * Generate and return CSV template
@@ -41,10 +44,11 @@ export class CsvImportController {
     const centerId = user.centerId;
     if (!centerId) throw AppError.unauthorized("Center ID missing from token");
 
+    const userId = await this.resolveUid(user.uid);
     const result = await this.csvImportService.parseAndValidate(
       buffer,
       centerId,
-      user.uid,
+      userId,
       fileName
     );
 
@@ -81,7 +85,7 @@ export class CsvImportController {
         importLogId: input.importLogId,
         selectedRowIds: input.selectedRowIds,
         centerId,
-        requestingUserId: user.uid,
+        requestingUserId: await this.resolveUid(user.uid),
       },
     });
 
@@ -201,7 +205,7 @@ export class CsvImportController {
         importLogId,
         selectedRowIds: rowsToRetry.map((r) => r.id),
         centerId,
-        requestingUserId: user.uid,
+        requestingUserId: await this.resolveUid(user.uid),
         isRetry: true,
       },
     });

@@ -391,27 +391,14 @@ export class AuthService {
   private readonly LOCKOUT_MINUTES = 15;
 
   /**
-   * Check if running in emulator/test mode (lockout disabled)
-   */
-  private isEmulatorMode(): boolean {
-    return !!process.env.FIREBASE_AUTH_EMULATOR_HOST;
-  }
-
-  /**
    * Check if an account is locked due to too many failed attempts
    * NOTE: Always returns consistent response to prevent email enumeration attacks
-   * NOTE: Lockout is disabled when running with Firebase emulator (E2E tests)
    */
   async checkLoginAttempt(email: string): Promise<{
     locked: boolean;
     retryAfterMinutes?: number;
     attemptsRemaining?: number;
   }> {
-    // Disable lockout in emulator mode for E2E testing
-    if (this.isEmulatorMode()) {
-      return { locked: false, attemptsRemaining: this.MAX_ATTEMPTS };
-    }
-
     const normalizedEmail = email.toLowerCase().trim();
 
     const attempt = await this.prisma.loginAttempt.findUnique({
@@ -458,7 +445,6 @@ export class AuthService {
 
   /**
    * Record a login attempt (success resets, failure increments)
-   * NOTE: Lockout is disabled when running with Firebase emulator (E2E tests)
    */
   async recordLoginAttempt(
     email: string,
@@ -467,11 +453,6 @@ export class AuthService {
     locked: boolean;
     retryAfterMinutes?: number;
   }> {
-    // Disable lockout in emulator mode for E2E testing
-    if (this.isEmulatorMode()) {
-      return { locked: false };
-    }
-
     const normalizedEmail = email.toLowerCase().trim();
 
     if (success) {

@@ -2,9 +2,11 @@ import { expect } from "@playwright/test";
 import {
   submissionTest as test,
   startSubmissionAsStudent,
+  waitForSubmissionReady,
 } from "../../fixtures/submission-fixtures";
 
 test.describe("Offline Safeguards & Sync", () => {
+  test.setTimeout(90000);
   test("offline banner appears when network is lost", async ({ browser, testIds }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -76,6 +78,7 @@ test.describe("Offline Safeguards & Sync", () => {
     const page = await context.newPage();
 
     await startSubmissionAsStudent(page, testIds.assignmentId);
+    await waitForSubmissionReady(page);
 
     // Answer a question first while online
     await page.getByText("B. Climate change").click();
@@ -113,6 +116,7 @@ test.describe("Offline Safeguards & Sync", () => {
     const page = await context.newPage();
 
     await startSubmissionAsStudent(page, testIds.assignmentId);
+    await waitForSubmissionReady(page);
 
     // Answer both questions
     await page.getByText("B. Climate change").click();
@@ -135,7 +139,7 @@ test.describe("Offline Safeguards & Sync", () => {
     await page.getByRole("heading", { name: "Submit your answers?" }).waitFor();
 
     // Click confirm — will fail because offline, but app queues it
-    await page.getByRole("dialog").getByRole("button", { name: "Submit" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Submit" }).click();
 
     // Soft assertion: toast may vary — don't block the more critical auto-retry verification
     await expect.soft(

@@ -370,7 +370,7 @@ export function SubmissionPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background" data-submission-id={submissionId || undefined}>
       <SubmissionHeader
         title={exerciseTitle}
         currentQuestion={currentIndex}

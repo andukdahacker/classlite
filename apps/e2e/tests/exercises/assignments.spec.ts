@@ -153,8 +153,14 @@ test.describe("Assignment Flow (AC4)", () => {
 
     await fillAndSubmitAssignmentDialog(page, exercise.title);
 
-    // Verify assignment appears in the list
+    // Use search to find the assignment (table may be paginated across many pages)
     await page.waitForLoadState("networkidle");
+    const searchInput = page.getByPlaceholder(/search by exercise title/i);
+    if (await searchInput.isVisible().catch(() => false)) {
+      await searchInput.fill(exercise.title);
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(500);
+    }
     await expect(page.getByText(exercise.title)).toBeVisible({
       timeout: 10000,
     });

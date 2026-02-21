@@ -140,6 +140,35 @@ async function seedFirebaseUsers() {
           console.log(`   ✗ Failed to create ${user.email}: ${error}`);
         }
       }
+
+      // Set custom claims (role, center_id) on the Firebase user so that
+      // tokens include these claims from the first sign-in. This prevents
+      // the race condition where the client's cached token lacks claims.
+      if (user.firebaseUid) {
+        const claimsResponse = await fetch(
+          `http://${emulatorHost}/identitytoolkit.googleapis.com/v1/projects/${projectId}/accounts:update`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer owner",
+            },
+            body: JSON.stringify({
+              localId: user.firebaseUid,
+              customAttributes: JSON.stringify({
+                role: user.role,
+                center_id: TEST_CENTER.id,
+              }),
+            }),
+          }
+        );
+        if (claimsResponse.ok) {
+          console.log(`   ✓ Set custom claims for ${user.email} (role: ${user.role})`);
+        } else {
+          const errBody = await claimsResponse.text();
+          console.log(`   ✗ Failed to set claims for ${user.email} (${claimsResponse.status}): ${errBody.substring(0, 200)}`);
+        }
+      }
     } catch (error) {
       console.log(`   ✗ Error creating ${user.email}:`, error);
     }
@@ -292,43 +321,34 @@ async function verifyFirebaseLogin() {
   const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
   if (!emulatorHost) return;
 
-  const projectId = process.env.FIREBASE_PROJECT_ID || "claite-87848";
-
-  // Try to look up users by email using the emulator's lookup endpoint
-  console.log("🔍 Verifying Firebase users exist...");
+  // Verify each user can sign in (confirms user + password are correct)
+  console.log("🔍 Verifying Firebase users can sign in...");
   for (const user of TEST_USERS) {
     try {
-      // Use accounts:lookup to check if user exists
       const response = await fetch(
-        `http://${emulatorHost}/identitytoolkit.googleapis.com/v1/accounts:lookup?key=fake-api-key`,
+        `http://${emulatorHost}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: [user.email],
+            email: user.email,
+            password: TEST_PASSWORD,
+            returnSecureToken: true,
           }),
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        if (data.users && data.users.length > 0) {
-          console.log(`   ✓ Found ${user.email} (uid: ${data.users[0].localId})`);
-        } else {
-          console.log(`   ✗ User not found: ${user.email}`);
-        }
+        console.log(`   ✓ Verified ${user.email} (uid: ${data.localId})`);
       } else {
         const error = await response.text();
-        console.log(`   ✗ Lookup failed for ${user.email}: ${error}`);
+        console.log(`   ✗ Sign-in failed for ${user.email}: ${error}`);
       }
     } catch (error) {
-      console.log(`   ✗ Error looking up ${user.email}:`, error);
+      console.log(`   ✗ Error verifying ${user.email}:`, error);
     }
   }
-
-  // Note: REST API verification may fail due to project context issues
-  // The browser's Firebase SDK works correctly with the emulator
-  console.log("   Note: If browser tests pass, the emulator is working correctly.");
 }
 
 async function main() {

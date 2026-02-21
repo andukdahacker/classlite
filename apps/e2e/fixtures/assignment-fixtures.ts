@@ -137,7 +137,9 @@ export async function createAssignmentViaAPI(
   }
 
   const body = await response.json();
-  const data = body.data ?? body;
+  const raw = body.data ?? body;
+  // API returns an array of assignments (one per class) — extract first element
+  const data = Array.isArray(raw) ? raw[0] : raw;
   return { id: data.id, exerciseId: options.exerciseId };
 }
 

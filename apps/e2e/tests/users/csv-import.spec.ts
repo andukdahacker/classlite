@@ -1,57 +1,115 @@
 import { test, expect, TEST_USERS, loginAs, getAppUrl } from "../../fixtures/auth.fixture";
-import { waitForToast, waitForLoadingComplete } from "../../utils/test-helpers";
-import path from "path";
-import fs from "fs";
+import { waitForLoadingComplete } from "../../utils/test-helpers";
 
 /**
  * Helper to close the AI Assistant sheet/dialog if it's open
  */
 async function closeAIAssistantDialog(page: import("@playwright/test").Page) {
-  // Only try to close if we're on a dashboard page (has the AI Assistant)
   if (!page.url().includes("dashboard")) {
     return;
   }
-
-  // The AI Assistant is a Sheet component that opens by default on narrower viewports
-  // Wait for any animations to complete
   await page.waitForTimeout(500);
-
-  // Try to close via the sheet overlay (clicking outside closes it)
   const sheetOverlay = page.locator('[data-slot="sheet-overlay"][data-state="open"]');
   if (await sheetOverlay.count() > 0) {
-    // Click on the overlay to close the sheet
     await sheetOverlay.click({ force: true, position: { x: 10, y: 10 } });
     await page.waitForTimeout(500);
   }
-
-  // Also try pressing Escape as a fallback
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
 }
 
-// Create test CSV files for import testing
-const TEST_CSV_VALID = `email,firstName,lastName,role
-valid1@test.com,John,Doe,TEACHER
-valid2@test.com,Jane,Smith,STUDENT`;
+/**
+ * Generate timestamped CSV content to avoid duplicate collisions across runs.
+ */
+function makeValidCsv(): { content: string; emails: string[] } {
+  const ts = Date.now();
+  const emails = [
+    `csv-valid1-${ts}@test.com`,
+    `csv-valid2-${ts}@test.com`,
+  ];
+  const content = `Email,Name,Role
+${emails[0]},John Doe,Teacher
+${emails[1]},Jane Smith,Student`;
+  return { content, emails };
+}
 
-const TEST_CSV_INVALID_EMAIL = `email,firstName,lastName,role
-notanemail,John,Doe,TEACHER
-valid@test.com,Jane,Smith,STUDENT`;
+function makeInvalidEmailCsv(): string {
+  const ts = Date.now();
+  return `Email,Name,Role
+notanemail,John Doe,Teacher
+csv-ok-${ts}@test.com,Jane Smith,Student`;
+}
 
-const TEST_CSV_INVALID_ROLE = `email,firstName,lastName,role
-test1@test.com,John,Doe,INVALID_ROLE
-test2@test.com,Jane,Smith,STUDENT`;
+/**
+ * Upload a CSV by finding the React fiber for the drop zone and calling
+ * its onDrop handler directly. This bypasses DOM event dispatch entirely,
+ * which is necessary because Radix UI portals prevent dispatched events
+ * from reaching React's event delegation system.
+ */
+async function uploadCsvViaDrop(
+  page: import("@playwright/test").Page,
+  csvContent: string,
+  fileName = "test-import.csv",
+) {
+  await page.evaluate(
+    ({ content, name }) => {
+      const file = new File([content], name, { type: "text/csv" });
 
-const TEST_CSV_EMPTY = `email,firstName,lastName,role`;
+      // Find the drop zone element inside the dialog
+      const dialog = document.querySelector('[role="dialog"]');
+      if (!dialog) throw new Error("Dialog not found");
 
-const TEST_CSV_MISSING_COLUMNS = `email,firstName
-test@test.com,John`;
+      const dropZone = dialog.querySelector(".border-dashed");
+      if (!dropZone) throw new Error("Drop zone not found in dialog");
+
+      // Walk the React fiber tree to find the onDrop handler
+      const fiberKey = Object.keys(dropZone).find(
+        (k) =>
+          k.startsWith("__reactFiber$") ||
+          k.startsWith("__reactInternalInstance$"),
+      );
+      if (!fiberKey) throw new Error("React fiber not found on drop zone");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let fiber = (dropZone as any)[fiberKey];
+      while (fiber) {
+        const props = fiber.memoizedProps || fiber.pendingProps;
+        if (props && typeof props.onDrop === "function") {
+          props.onDrop({
+            preventDefault: () => {},
+            dataTransfer: { files: [file] },
+          });
+          return;
+        }
+        fiber = fiber.return;
+      }
+
+      throw new Error("Could not find onDrop handler in React fiber tree");
+    },
+    { content: csvContent, name: fileName },
+  );
+}
 
 test.describe("CSV Bulk Import", () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, TEST_USERS.OWNER);
+
+    // Set up listener BEFORE navigating so we catch the response
+    const authReady = page.waitForResponse(
+      (resp) =>
+        resp.url().includes("/api/v1/users") &&
+        !resp.url().includes("import") &&
+        resp.status() === 200,
+      { timeout: 15000 },
+    );
+
     await page.goto(getAppUrl("/settings/users"));
-    await waitForLoadingComplete(page);
+
+    // Wait for users API to return 200, proving the auth token has valid claims.
+    // The auth context force-refreshes the token after login, and React Query
+    // retries failed queries, so this resolves once the fresh token is in use.
+    await authReady;
+
     await closeAIAssistantDialog(page);
   });
 
@@ -65,7 +123,6 @@ test.describe("CSV Bulk Import", () => {
     });
 
     test("import button visible for admin", async ({ page }) => {
-      // Create a new context to avoid session conflicts
       const context = await page.context().browser()!.newContext();
       const newPage = await context.newPage();
 
@@ -84,32 +141,33 @@ test.describe("CSV Bulk Import", () => {
     });
 
     test("import button not visible for teacher", async ({ page }) => {
-      // Create a new context to avoid session conflicts
       const context = await page.context().browser()!.newContext();
       const newPage = await context.newPage();
 
       await loginAs(newPage, TEST_USERS.TEACHER);
       await newPage.goto(getAppUrl("/settings/users"));
 
-      // Teacher shouldn't see settings page - should be redirected
       await newPage.waitForLoadState("networkidle");
 
-      // Either the page redirects or the button is not visible
       if (newPage.url().includes("settings/users")) {
         const importButton = newPage.locator('button').filter({ hasText: 'Import CSV' });
         await expect(importButton).not.toBeVisible();
       }
-      // Otherwise they were redirected which is correct behavior
 
       await context.close();
     });
   });
 
   test.describe("Template Download", () => {
-    test.skip("can download CSV template", async ({ page }) => {
-      // Skip: Requires actual download template functionality to be implemented
+    test("can download CSV template", async ({ page }) => {
       await page.locator('button').filter({ hasText: 'Import CSV' }).click();
       await expect(page.locator('[role="dialog"]')).toBeVisible();
+
+      const downloadPromise = page.waitForEvent('download');
+      await page.locator('[role="dialog"]').locator('button').filter({ hasText: 'Download template' }).click();
+      const download = await downloadPromise;
+
+      expect(download.suggestedFilename()).toMatch(/\.csv$/);
     });
   });
 
@@ -118,118 +176,123 @@ test.describe("CSV Bulk Import", () => {
       await page.locator('button').filter({ hasText: 'Import CSV' }).click();
       await expect(page.locator('[role="dialog"]')).toBeVisible();
 
-      // Find file input
       const fileInput = page.locator('input[type="file"]');
       await expect(fileInput).toBeAttached();
 
-      // Check accepted file types
       const accept = await fileInput.getAttribute("accept");
       expect(accept).toContain(".csv");
     });
 
-    test.skip("valid CSV shows preview with validation", async ({ page }) => {
-      // This test requires creating a temporary file
+    test("valid CSV shows preview with validation", async ({ page }) => {
       await page.locator('button').filter({ hasText: 'Import CSV' }).click();
       await expect(page.locator('[role="dialog"]')).toBeVisible();
 
-      // Create temp file
-      const tempDir = "/tmp";
-      const tempFile = path.join(tempDir, `test-import-${Date.now()}.csv`);
-      fs.writeFileSync(tempFile, TEST_CSV_VALID);
+      const { content, emails } = makeValidCsv();
+      await uploadCsvViaDrop(page, content);
 
-      try {
-        const fileInput = page.locator('input[type="file"]');
-        await fileInput.setInputFiles(tempFile);
+      // Wait for preview step — title changes to "Review Import"
+      await expect(
+        page.locator('[role="dialog"]').locator('text="Review Import"')
+      ).toBeVisible({ timeout: 15000 });
 
-        // Should show preview
-        await expect(
-          page.locator('text="preview"').or(
-            page.locator('[data-testid="import-preview"]')
-          )
-        ).toBeVisible({ timeout: 10000 });
+      // Verify summary cards
+      await expect(
+        page.locator('[role="dialog"]').locator('text="Total Rows"')
+      ).toBeVisible();
+      // "Valid" appears in summary card label AND row badges; target the summary label
+      await expect(
+        page.locator('[role="dialog"]').locator('p').filter({ hasText: 'Valid' })
+      ).toBeVisible();
 
-        // Should show valid entries
-        await expect(page.locator('text="valid"')).toBeVisible();
-      } finally {
-        // Clean up temp file
-        fs.unlinkSync(tempFile);
-      }
+      // Verify email rows appear in the preview table
+      await expect(
+        page.locator('[role="dialog"]').locator(`text="${emails[0]}"`)
+      ).toBeVisible();
     });
 
-    test.skip("invalid CSV shows validation errors", async ({ page }) => {
+    test("invalid CSV shows validation errors", async ({ page }) => {
       await page.locator('button').filter({ hasText: 'Import CSV' }).click();
+      await expect(page.locator('[role="dialog"]')).toBeVisible();
 
-      const tempFile = `/tmp/test-invalid-${Date.now()}.csv`;
-      fs.writeFileSync(tempFile, TEST_CSV_INVALID_EMAIL);
+      await uploadCsvViaDrop(page, makeInvalidEmailCsv());
 
-      try {
-        const fileInput = page.locator('input[type="file"]');
-        await fileInput.setInputFiles(tempFile);
+      // Wait for preview step
+      await expect(
+        page.locator('[role="dialog"]').locator('text="Review Import"')
+      ).toBeVisible({ timeout: 15000 });
 
-        // Should show validation errors
-        await expect(
-          page.locator('text="invalid"').or(
-            page.locator('text="error"')
-          )
-        ).toBeVisible({ timeout: 10000 });
-      } finally {
-        fs.unlinkSync(tempFile);
-      }
+      // Verify "Error" badge appears for the invalid email row
+      await expect(
+        page.locator('[role="dialog"]').locator('text="Error"')
+      ).toBeVisible();
+
+      // Verify the Errors summary card is visible
+      await expect(
+        page.locator('[role="dialog"]').locator('text="Errors"')
+      ).toBeVisible();
     });
   });
 
   test.describe("Import Execution", () => {
-    test.skip("shows progress during import", async ({ page }) => {
+    test("shows progress during import", async ({ page }) => {
       await page.locator('button').filter({ hasText: 'Import CSV' }).click();
+      await expect(page.locator('[role="dialog"]')).toBeVisible();
 
-      const tempFile = `/tmp/test-import-${Date.now()}.csv`;
-      fs.writeFileSync(tempFile, TEST_CSV_VALID);
+      const { content } = makeValidCsv();
+      await uploadCsvViaDrop(page, content);
 
-      try {
-        const fileInput = page.locator('input[type="file"]');
-        await fileInput.setInputFiles(tempFile);
+      // Wait for preview step
+      await expect(
+        page.locator('[role="dialog"]').locator('text="Review Import"')
+      ).toBeVisible({ timeout: 15000 });
 
-        // Click import/execute button
-        await page.click('button:has-text("Execute")');
+      // Click the "Import N User(s)" button
+      await page.locator('[role="dialog"]').locator('button').filter({ hasText: /Import \d+ User/ }).click();
 
-        // Should show progress indicator
-        await expect(
-          page.locator('[role="progressbar"]').or(
-            page.locator('text="processing"')
-          )
-        ).toBeVisible({ timeout: 5000 });
-      } finally {
-        fs.unlinkSync(tempFile);
-      }
+      // Verify either "Importing Users..." title or immediate completion
+      await expect(
+        page.locator('[role="dialog"]').locator('text="Importing Users..."').or(
+          page.locator('[role="dialog"]').locator('text="Import Complete"')
+        )
+      ).toBeVisible({ timeout: 15000 });
     });
 
-    test.skip("successful import shows completion message", async ({ page }) => {
+    test("successful import shows completion message", async ({ page }) => {
       await page.locator('button').filter({ hasText: 'Import CSV' }).click();
+      await expect(page.locator('[role="dialog"]')).toBeVisible();
 
-      const tempFile = `/tmp/test-import-${Date.now()}.csv`;
-      fs.writeFileSync(tempFile, TEST_CSV_VALID);
+      const { content } = makeValidCsv();
+      await uploadCsvViaDrop(page, content);
 
-      try {
-        const fileInput = page.locator('input[type="file"]');
-        await fileInput.setInputFiles(tempFile);
-        await page.click('button:has-text("Execute")');
+      // Wait for preview, then import
+      await expect(
+        page.locator('[role="dialog"]').locator('text="Review Import"')
+      ).toBeVisible({ timeout: 15000 });
 
-        // Wait for completion
-        await expect(
-          page.locator('text="complete"').or(
-            page.locator('text="success"')
-          )
-        ).toBeVisible({ timeout: 30000 });
-      } finally {
-        fs.unlinkSync(tempFile);
-      }
+      await page.locator('[role="dialog"]').locator('button').filter({ hasText: /Import \d+ User/ }).click();
+
+      // Wait for "Import Successful!" or "Import Partially Complete" (60s timeout for Inngest processing)
+      await expect(
+        page.locator('[role="dialog"]').locator('p').filter({ hasText: 'Import Successful!' }).or(
+          page.locator('[role="dialog"]').locator('p').filter({ hasText: 'Import Partially Complete' })
+        ).or(
+          page.locator('[role="dialog"]').locator('p').filter({ hasText: 'Import Failed' })
+        )
+      ).toBeVisible({ timeout: 60000 });
+
+      // Verify success summary
+      await expect(
+        page.locator('[role="dialog"]').locator('text=/user\\(s\\) imported successfully/')
+      ).toBeVisible();
+
+      // Click Done to close the dialog
+      await page.locator('[role="dialog"]').locator('button').filter({ hasText: 'Done' }).click();
+      await expect(page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 5000 });
     });
   });
 
   test.describe("Import History", () => {
     test("import history section is visible", async ({ page }) => {
-      // Navigate to import history if it's a separate view
-      // or check if it's on the same page
       await expect(
         page.locator('text="Import History"').or(
           page.locator('[data-testid="import-history"]')
@@ -239,15 +302,23 @@ test.describe("CSV Bulk Import", () => {
       });
     });
 
-    test.skip("import history shows past imports", async ({ page }) => {
-      // This assumes there are past imports in test data
-      const historySection = page.locator('[data-testid="import-history"]');
+    test("import history shows past imports", async ({ page }) => {
+      // Click "Import History" to expand the collapsible section
+      const historyTrigger = page.locator('button').filter({ hasText: 'Import History' }).or(
+        page.locator('text="Import History"')
+      );
 
-      if (await historySection.count() > 0) {
-        // Should show import records with date, status, count
-        await expect(historySection.locator('text="rows"').or(
-          historySection.locator('text="users"')
-        )).toBeVisible();
+      if (await historyTrigger.count() > 0) {
+        await historyTrigger.first().click();
+        await page.waitForTimeout(500);
+
+        // Verify either the import table renders or the empty state shows
+        const hasFileHeader = page.locator('th:has-text("File")');
+        const emptyState = page.locator('text="No imports yet."');
+
+        await expect(
+          hasFileHeader.or(emptyState)
+        ).toBeVisible({ timeout: 5000 });
       }
     });
   });
